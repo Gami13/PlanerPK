@@ -1,8 +1,10 @@
 package main
 
 import (
-	timetableExtractor "GoogleCalendarTimetable/src/TimetableExtractor"
+	"GoogleCalendarTimetable/src/googleCalendar"
+	"GoogleCalendarTimetable/src/timetableExtractor"
 	"GoogleCalendarTimetable/src/utils"
+	"GoogleCalendarTimetable/src/webServer"
 	"fmt"
 )
 
@@ -12,4 +14,6 @@ func main() {
 	timetable := timetableExtractor.GetTimetable(config)
 
 	fmt.Println(timetable)
+	go webServer.Start()
+	googleCalendar.Run()
 }
