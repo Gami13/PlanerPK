@@ -56,8 +56,7 @@ func getDaysStartEnd(file *excelize.File, config *utils.Config) []utils.Day {
 			if row[config.HourColumn] == config.DayStart {
 				day := utils.Day{
 					StartingRow: number,
-					WeekDay:     time.Weekday((len(days) % 7) + 1),
-				}
+					WeekDay:     time.Weekday((len(days) + 1) % 7)}
 				days = append(days, day)
 			}
 			if row[config.HourColumn] == config.DayEnd {
@@ -101,7 +100,6 @@ func toCharStr(i int) string {
 	return string(rune('A' - 1 + i))
 }
 
-// TODO: sometimes the name of the teacher and the type of class are swapped, for example: "JiPP AWyrz lab. s. 143"
 func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day utils.Day) utils.Class {
 	var class utils.Class
 	regex := regexp.MustCompile(`(  |\n)+`)

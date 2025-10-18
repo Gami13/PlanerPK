@@ -16,8 +16,12 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	fmt.Println("Code: ", code)
-	googleCalendar.AuthorizeFromCode(code)
+	_, err := googleCalendar.AuthorizeFromCode(code)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Authorization failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	config := utils.NewConfig()
 
 	googleCalendar.ImportTimetable(config, 3)
