@@ -33,3 +33,4 @@ go.work.sum
 
 /downloads
 credentials.json
+/token.json

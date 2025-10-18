@@ -6,25 +6,24 @@ import (
 )
 
 type Config struct {
-	ExcelPath   string
-	SheetName   string
-	LastRow     int
-	HourColumn  int
-	DayStart    string
-	DayEnd      string
-	GroupColumn int
+	ExcelPath  string
+	SheetName  string
+	LastRow    int
+	HourColumn int
+	DayStart   string
+	DayEnd     string
 }
 
 type Day struct {
 	StartingRow int
 	EndingRow   int
-	WeekDay     string
+	WeekDay     time.Weekday
 }
 
 type Class struct {
 	Name           string
 	Type           string
-	Day            string
+	Day            time.Weekday
 	StartTime      time.Time
 	EndTime        time.Time
 	Location       string
@@ -32,20 +31,45 @@ type Class struct {
 	AdditionalInfo string
 }
 
-var DayNames = []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
-
 func (c Class) String() string {
-	return fmt.Sprintf("%s (%s) %s-%s | %s | %s | %s", c.Name, c.Type, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Teacher, c.Location, c.AdditionalInfo)
+	text := fmt.Sprintf("%s (%s) %s-%s | %s | %s", c.Name, c.Type, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Teacher, c.Location)
+	if c.AdditionalInfo != "" {
+		text += fmt.Sprintf(" | %s", c.AdditionalInfo)
+	}
+	return text
 }
 
 func NewConfig() *Config {
 	return &Config{
-		ExcelPath:   "C:/Users/gamin/Desktop/Projects/GoogleCalendarTimetable/downloads/10102025_8_INFORMATYKA-zima-rozklad-STACJONARNE-2025_2026.xlsx",
-		SheetName:   "2025_2026",
-		LastRow:     365,
-		HourColumn:  1,
-		DayStart:    "7.30",
-		DayEnd:      "21.00",
-		GroupColumn: 3,
+		ExcelPath:  "C:/Users/gamin/Desktop/Projects/GoogleCalendarTimetable/downloads/10102025_8_INFORMATYKA-zima-rozklad-STACJONARNE-2025_2026.xlsx",
+		SheetName:  "2025_2026",
+		LastRow:    365,
+		HourColumn: 1,
+		DayStart:   "7.30",
+		DayEnd:     "21.00",
 	}
+}
+
+func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
+	today := time.Now()
+	daysUntil := (int(weekday) - int(today.Weekday()) + 7) % 7
+	next := today.AddDate(0, 0, daysUntil)
+	return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+//JiPP - Języki i paradygmaty programowania
+//WdI - Wstęp do informatyki
+//F - Fizyka
+//AM - Analiza matematyczna
+//J.angielski - Język angielski
+//LdI - Logika dla inżynierów
+//AzG - Algebra z geometrią
+//J. niemiecki - Język niemiecki
+
+//wykład, lab., ćwiczenia
+
+var ClassTypes = []string{
+	"wykład",
+	"lab.",
+	"ćwiczenia",
 }
