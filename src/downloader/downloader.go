@@ -38,7 +38,7 @@ func DidChange(timetablePath string, url string) (bool, error) {
 		return false, nil
 	}
 
-	if localName != remoteName && localName != remoteName + "x" {
+	if localName != remoteName && localName != remoteName+"x" {
 		return true, nil
 	}
 
@@ -85,8 +85,8 @@ func DownloadTimetable(url string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-        return destination, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-    }
+		return destination, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
 
 	lastModified := resp.Header.Get("Last-Modified")
 	lastModifiedTime, err := time.Parse(time.RFC1123, lastModified)
@@ -111,6 +111,12 @@ func DownloadTimetable(url string) (string, error) {
 }
 
 func Xls2Xlsx(src string, dest string) (string, error) {
+	if os.PathSeparator == '\\' {
+
+		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
+		return dest + filepath.Base(src) + "x", cmd.Run()
+	}
+
 	cmd := exec.Command("libreoffice", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
 	return dest + filepath.Base(src) + "x", cmd.Run()
 }
