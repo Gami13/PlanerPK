@@ -1,0 +1,11 @@
+# Variables
+@server_url = http://localhost:8080
+@access_token = your_access_token_here
+### Update Chosen Column
+PUT {{server_url}}/setChosenColumn HTTP/1.1
+Authorization: {{access_token}}
+Content-Type: application/json
+
+{
+	"chosenColumn": 3
+}

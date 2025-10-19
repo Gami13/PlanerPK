@@ -1,17 +1,18 @@
 package timetableExtractor
 
 import (
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
 	"fmt"
 	"regexp"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
+
 	"github.com/xuri/excelize/v2"
 )
 
-func GetTimetable(config *utils.Config, timetablePath string, groupColumn int) map[time.Weekday][]utils.Class {
+func GetTimetable(config *types.Config, timetablePath string, groupColumn int) types.Timetable {
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
 		fmt.Println(err)
@@ -24,7 +25,7 @@ func GetTimetable(config *utils.Config, timetablePath string, groupColumn int) m
 		}
 	}()
 
-	timetable := make(map[time.Weekday][]utils.Class)
+	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file, config)
 	for _, day := range days {
 		classes := traverseDay(file, config.SheetName, day, groupColumn)
@@ -42,9 +43,9 @@ func GetTimetable(config *utils.Config, timetablePath string, groupColumn int) m
 
 }
 
-func getDaysStartEnd(file *excelize.File, config *utils.Config) []utils.Day {
+func getDaysStartEnd(file *excelize.File, config *types.Config) []types.Day {
 	// Find starting rows for each day
-	var days []utils.Day
+	var days []types.Day
 	rows, err := file.GetRows(config.SheetName)
 	if err != nil {
 		fmt.Println(err)
@@ -54,13 +55,13 @@ func getDaysStartEnd(file *excelize.File, config *utils.Config) []utils.Day {
 		if len(row) > 1 {
 
 			if row[config.HourColumn] == config.DayStart {
-				day := utils.Day{
+				day := types.Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7)}
 				days = append(days, day)
 			}
 			if row[config.HourColumn] == config.DayEnd {
-				day := utils.Day{
+				day := types.Day{
 					EndingRow: number,
 				}
 				days[len(days)-1].EndingRow = day.EndingRow
@@ -71,8 +72,8 @@ func getDaysStartEnd(file *excelize.File, config *utils.Config) []utils.Day {
 	return days
 }
 
-func traverseDay(file *excelize.File, sheetName string, day utils.Day, groupColumn int) []utils.Class {
-	var classes []utils.Class
+func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int) []types.Class {
+	var classes []types.Class
 
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
@@ -100,15 +101,15 @@ func toCharStr(i int) string {
 	return string(rune('A' - 1 + i))
 }
 
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day utils.Day) utils.Class {
-	var class utils.Class
+func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day) types.Class {
+	var class types.Class
 	regex := regexp.MustCompile(`(  |\n)+`)
 	parts := regex.Split(text, -1)
 	parts = removeEmptyStrings(parts)
 	parts = fixClassParts(parts)
 	class.Name = strings.TrimSpace(parts[0])
 
-	if slices.Contains(utils.ClassTypes, strings.TrimSpace(parts[1])) {
+	if slices.Contains(types.ClassTypes, strings.TrimSpace(parts[1])) {
 		class.Type = strings.TrimSpace(parts[1])
 		class.Teacher = strings.TrimSpace(parts[2])
 	} else {

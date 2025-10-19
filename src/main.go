@@ -1,15 +1,16 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/timetableExtractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
-	"fmt"
 )
 
 func main() {
-	config := utils.NewConfig()
+	config := types.NewConfig()
 	// googleCalendar.AuthorizeFromCode("")
 	// timetable := timetableExtractor.GetTimetable(config, 3)
 
@@ -22,7 +23,10 @@ func main() {
 
 	timetablePath := downloader.TIMETABLE_DOWNLOAD_DESTINATION + "17102025_9_INFORMATYKA-zima-rozklad-STACJONARNE-2025_2026.xls" // TODO: Get currently local timetable path, if doesn't exist, download and skip to Xls2Xlsx
 	didChange, err := downloader.DidChange(timetablePath, timetableUrl)
-
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	if didChange {
 		fmt.Println("Timetable changed, downloading a new timetable")
 
@@ -47,8 +51,6 @@ func main() {
 	timetable := timetableExtractor.GetTimetable(config, timetablePath, 3)
 
 	fmt.Println(timetable)
-	// fmt.Println(timetable)
-	_ = timetableExtractor.GetTimetable(config, timetablePath, 3)
 	webServer.Start()
 	// googleCalendar.Run()
 }

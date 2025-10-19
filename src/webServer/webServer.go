@@ -1,10 +1,14 @@
 package webServer
 
 import (
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
+
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
+
+	_ "modernc.org/sqlite"
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -25,8 +29,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 func Start() {
 
 	ctx := context.Background()
-	//TODO: @Frytak285 Pls change so its not in memory, this is a placeholder
-	db, err := sql.Open("sqlite", ":memory:")
+	db, err := sql.Open("sqlite", "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000")
 	if err != nil {
 		panic(err)
 	}
@@ -34,8 +37,15 @@ func Start() {
 	query := database.New(db)
 	hctx := database.NewEndpointContext(query, ctx)
 
+	err = database.InitializeDatabase(db)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Initialized database successfully.")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /authorize", hctx.AuthorizeEndpoint)
+	mux.HandleFunc("PUT /setChosenColumn", hctx.SetChoseColumnEndpoint)
 
 	handler := corsMiddleware(mux)
 	http.ListenAndServe(":8080", handler)
