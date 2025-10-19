@@ -4,11 +4,14 @@ import (
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/timetableExtractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 	"fmt"
 )
 
 func main() {
 	config := utils.NewConfig()
+	// googleCalendar.AuthorizeFromCode("")
+	// timetable := timetableExtractor.GetTimetable(config, 3)
 
 	// Fetch the timetable url
 	timetableUrl, err := downloader.FetchTimetableUrl()
@@ -41,7 +44,11 @@ func main() {
 		timetablePath = timetablePath + "x" // TODO: Get currently local timetable path that is converted to xlsx
 	}
 
-	timetable := timetableExtractor.GetTimetable(config, timetablePath)
+	timetable := timetableExtractor.GetTimetable(config, timetablePath, 3)
 
 	fmt.Println(timetable)
+	// fmt.Println(timetable)
+	_ = timetableExtractor.GetTimetable(config, timetablePath, 3)
+	webServer.Start()
+	// googleCalendar.Run()
 }
