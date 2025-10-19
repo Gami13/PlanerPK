@@ -1,0 +1,39 @@
+schema = 3
+
+[mod]
+  [mod."github.com/antchfx/htmlquery"]
+    version = "v1.3.4"
+    hash = "sha256-nrtIgRgdOvo0iIQyrhHOFKOmoT8e2gduUsct3f5zDNA="
+  [mod."github.com/antchfx/xpath"]
+    version = "v1.3.3"
+    hash = "sha256-Ent9bgBTjKS8/61LKrIu/JcBI/Qsv6EEIojwsMjCgdY="
+  [mod."github.com/golang/groupcache"]
+    version = "v0.0.0-20210331224755-41bb18bfe9da"
+    hash = "sha256-7Gs7CS9gEYZkbu5P4hqPGBpeGZWC64VDwraSKFF+VR0="
+  [mod."github.com/richardlehane/mscfb"]
+    version = "v1.0.4"
+    hash = "sha256-xlekcIlVTZFbwVlmQvwoQIl1mS3u8+WPdxDlx44xa/U="
+  [mod."github.com/richardlehane/msoleps"]
+    version = "v1.0.4"
+    hash = "sha256-LF/Jwj7ffxprxvFk4P+8EaMtAB4pOYqHp2mimCgZMYY="
+  [mod."github.com/tiendc/go-deepcopy"]
+    version = "v1.6.0"
+    hash = "sha256-hSkcChNHyPBjJAdjwU8lyacaY8JOvE3+pF09JLBSKXM="
+  [mod."github.com/xuri/efp"]
+    version = "v0.0.1"
+    hash = "sha256-joNF/T3ZygwbK2/LJ3wkri4Gg7FANmZjMxoLKaxBQlg="
+  [mod."github.com/xuri/excelize/v2"]
+    version = "v2.9.1"
+    hash = "sha256-p5FOzjKC16dxXziz8um9aAbkQ8j23FN6UNXGXJ/lmrc="
+  [mod."github.com/xuri/nfp"]
+    version = "v0.0.1"
+    hash = "sha256-07g5gelAX7vqNHBBjVnVZApGwNiwlCp/BQUytdKCR1k="
+  [mod."golang.org/x/crypto"]
+    version = "v0.38.0"
+    hash = "sha256-5tTXlXQBlfW1sSNDAIalOpsERbTJlZqbwCIiih4T4rY="
+  [mod."golang.org/x/net"]
+    version = "v0.40.0"
+    hash = "sha256-BhDOHTP8RekXDQDf9HlORSmI2aPacLo53fRXtTgCUH8="
+  [mod."golang.org/x/text"]
+    version = "v0.25.0"
+    hash = "sha256-gkOd4CuWr7OfCEk2EZ8KG5t9NRG7bM9Zj/lpv3y28yg="

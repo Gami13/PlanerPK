@@ -1,7 +1,7 @@
 package timetableExtractor
 
 import (
-	"GoogleCalendarTimetable/src/utils"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,8 +10,8 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func GetTimetable(config *utils.Config) map[string][]utils.Class {
-	file, err := excelize.OpenFile(config.ExcelPath)
+func GetTimetable(config *utils.Config, timetablePath string) map[string][]utils.Class {
+	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)

@@ -6,7 +6,6 @@ import (
 )
 
 type Config struct {
-	ExcelPath   string
 	SheetName   string
 	LastRow     int
 	HourColumn  int
@@ -40,7 +39,6 @@ func (c Class) String() string {
 
 func NewConfig() *Config {
 	return &Config{
-		ExcelPath:   "C:/Users/gamin/Desktop/Projects/GoogleCalendarTimetable/downloads/10102025_8_INFORMATYKA-zima-rozklad-STACJONARNE-2025_2026.xlsx",
 		SheetName:   "2025_2026",
 		LastRow:     365,
 		HourColumn:  1,
