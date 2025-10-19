@@ -51,7 +51,7 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, fmt.Sprintf("Failed to get user info: %v", err), http.StatusInternalServerError)
 		return
 	}
-	chudUser := User{
+	user := User{
 		Email:        &userInfo.Email,
 		Name:         &userInfo.Name,
 		GivenName:    &userInfo.GivenName,
@@ -62,12 +62,12 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		Expiry:       tok.Expiry,
 		ExpiresIn:    tok.ExpiresIn,
 	}
-	err = ec.Query.UpsertChudUser(&chudUser)
+	err = ec.Query.UpsertUser(&user)
 	if err != nil {
 		fmt.Printf("Failed to save user: %v\n", err)
 		return
 	}
 
 	fmt.Println("UwU")
-	w.Write([]byte(chudUser.AccessToken))
+	w.Write([]byte(user.AccessToken))
 }

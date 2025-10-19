@@ -78,7 +78,7 @@ func (q *Queries) createTables() error {
 	return nil
 }
 
-func (q *Queries) UpsertChudUser(user *User) error {
+func (q *Queries) UpsertUser(user *User) error {
 	upsertUser := `
 	INSERT INTO users (email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -101,7 +101,7 @@ func (q *Queries) UpsertChudUser(user *User) error {
 	return nil
 }
 
-func (q *Queries) GetChudUserByEmail(email string) (*User, error) {
+func (q *Queries) GetUserByEmail(email string) (*User, error) {
 	getUser := `
 	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
 	FROM users
@@ -117,7 +117,7 @@ func (q *Queries) GetChudUserByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (q *Queries) GetAllChudUsers() ([]*User, error) {
+func (q *Queries) GetAllUsers() ([]*User, error) {
 	getUsers := `
 	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
 	FROM users;
