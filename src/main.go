@@ -21,31 +21,35 @@ func main() {
 		return
 	}
 
-	timetablePath := downloader.TIMETABLE_DOWNLOAD_DESTINATION + "17102025_9_INFORMATYKA-zima-rozklad-STACJONARNE-2025_2026.xls" // TODO: Get currently local timetable path, if doesn't exist, download and skip to Xls2Xlsx
-	didChange, err := downloader.DidChange(timetablePath, timetableUrl)
+	// If doesn't exist, download
+	timetablePath, err := timetableExtractor.GetCurrentTimetable()
 	if err != nil {
 		fmt.Println(err)
-		return
-	}
-	if didChange {
-		fmt.Println("Timetable changed, downloading a new timetable")
+		fmt.Println("No timetable present")
 
-		// Download the new timetable
-		timetablePath, err = downloader.DownloadTimetable(timetableUrl)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		// Convert xls to xlsx
-		timetablePath, err = downloader.Xls2Xlsx(timetablePath, downloader.TIMETABLE_DOWNLOAD_DESTINATION)
+		timetablePath, err = downloader.DownloadAndProcessTimetable(timetableUrl)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	} else {
-		fmt.Println("Timetable did not change")
-		timetablePath = timetablePath + "x" // TODO: Get currently local timetable path that is converted to xlsx
+		didChange, err := downloader.DidChange(timetablePath, timetableUrl)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if didChange {
+			fmt.Println("Timetable changed, downloading a new timetable")
+			timetablePath, err = downloader.DownloadAndProcessTimetable(timetableUrl)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else {
+			fmt.Println("Timetable did not change")
+			timetablePath = timetablePath + "x"
+		}
 	}
 
 	timetable := timetableExtractor.GetTimetable(config, timetablePath, 3)

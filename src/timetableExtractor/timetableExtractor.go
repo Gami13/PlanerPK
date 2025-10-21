@@ -1,6 +1,7 @@
 package timetableExtractor
 
 import (
+	"os"
 	"fmt"
 	"regexp"
 	"slices"
@@ -11,6 +12,24 @@ import (
 
 	"github.com/xuri/excelize/v2"
 )
+
+const CURRENT_TIMETABLE_DESTINATION = "./current_timetable/"
+
+// Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
+func GetCurrentTimetable() (string, error) {
+	entries, err := os.ReadDir(CURRENT_TIMETABLE_DESTINATION)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+        if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
+            return CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
+        }
+    }
+
+	return "", fmt.Errorf("no .xls file found in %s", CURRENT_TIMETABLE_DESTINATION)
+}
 
 func GetTimetable(config *types.Config, timetablePath string, groupColumn int) types.Timetable {
 	file, err := excelize.OpenFile(timetablePath)

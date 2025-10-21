@@ -32,6 +32,7 @@ go.work.sum
 # .vscode/
 
 /downloads
+/current_timetable
 /result
 credentials.json
 /token.json

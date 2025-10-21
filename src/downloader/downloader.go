@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/timetableExtractor"
 )
 
 const TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
 const TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
 
+// Get the url of the timetable from the PKs website
 func FetchTimetableUrl() (string, error) {
 	doc, err := htmlquery.LoadURL(TIMETABLE_URL)
 
@@ -27,6 +29,7 @@ func FetchTimetableUrl() (string, error) {
 	return link, nil
 }
 
+// Check if the timetable changed compared to the PKs timetable
 func DidChange(timetablePath string, url string) (bool, error) {
 	localName, err := filepath.Abs(timetablePath)
 	if err != nil {
@@ -72,7 +75,10 @@ func DidChange(timetablePath string, url string) (bool, error) {
 	return false, nil
 }
 
+// Downloads the timetable from PKs website
+// Returns filepath.Abs(TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
 func DownloadTimetable(url string) (string, error) {
+	// Get the absolute path to the destination
 	destination, err := filepath.Abs(TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
 	if err != nil {
 		return destination, err
@@ -105,11 +111,14 @@ func DownloadTimetable(url string) (string, error) {
 		return destination, fmt.Errorf("failed to save the timetable file: %w", err)
 	}
 
+	// Set properties so they are the same as the one from the download link for later comparison of possible changes
 	os.Chtimes(destination, lastModifiedTime, lastModifiedTime)
 
 	return destination, err
 }
 
+// Convert an .xls file to an .xlsx file
+// Returns the path to the .xlsx file
 func Xls2Xlsx(src string, dest string) (string, error) {
 	if os.PathSeparator == '\\' {
 
@@ -119,4 +128,25 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 
 	cmd := exec.Command("libreoffice", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
 	return dest + filepath.Base(src) + "x", cmd.Run()
+}
+
+// Download a timetable from the PK website, convert it to .xlsx and move to the timetableExtractor.CURRENT_TIMETABLE_DESTINATION
+// Returns the path timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx)
+func DownloadAndProcessTimetable(url string) (string, error) {
+	// Download the new timetable
+	timetablePathXls, err := DownloadTimetable(url)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert .xls to .xlsx
+	timetablePathXlsx, err := Xls2Xlsx(timetablePathXls, TIMETABLE_DOWNLOAD_DESTINATION)
+	if err != nil {
+		return "", err
+	}
+
+	// Move the timetable to the current timetable destination
+	os.Rename(timetablePathXls, timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXls))
+	os.Rename(timetablePathXlsx, timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx))
+	return timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
 }
