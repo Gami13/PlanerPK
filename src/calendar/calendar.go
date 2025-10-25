@@ -170,7 +170,6 @@ func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 
 // can return that it found one and its identical, or that it found one but it's different, or that it found none, and can return the found event if any
 // returns: (found bool, different bool, event *calendar.Event)
-// ! Currently does not detect if an event was deleted from the source (sheet) and should be deleted from the calendar as well
 func checkForExistingEvent(newEvent calendar.Event, currentEvents []*calendar.Event) (bool, bool, *calendar.Event) {
 	for _, event := range currentEvents {
 
