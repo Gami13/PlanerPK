@@ -31,7 +31,7 @@ func GetCurrentTimetable() (string, error) {
 	return "", fmt.Errorf("no .xls file found in %s", CURRENT_TIMETABLE_DESTINATION)
 }
 
-func GetTimetable(config *types.Config, timetablePath string, groupColumn int) types.Timetable {
+func GetTimetable(config *types.Config, timetablePath string, groupColumn int) Timetable {
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
 		fmt.Println(err)
@@ -44,7 +44,7 @@ func GetTimetable(config *types.Config, timetablePath string, groupColumn int) t
 		}
 	}()
 
-	timetable := make(types.Timetable)
+	timetable := make(Timetable)
 	days := getDaysStartEnd(file, config)
 	for _, day := range days {
 		classes := traverseDay(file, config.SheetName, day, groupColumn)
@@ -62,9 +62,9 @@ func GetTimetable(config *types.Config, timetablePath string, groupColumn int) t
 
 }
 
-func getDaysStartEnd(file *excelize.File, config *types.Config) []types.Day {
+func getDaysStartEnd(file *excelize.File, config *types.Config) []Day {
 	// Find starting rows for each day
-	var days []types.Day
+	var days []Day
 	rows, err := file.GetRows(config.SheetName)
 	if err != nil {
 		fmt.Println(err)
@@ -74,13 +74,13 @@ func getDaysStartEnd(file *excelize.File, config *types.Config) []types.Day {
 		if len(row) > 1 {
 
 			if row[config.HourColumn] == config.DayStart {
-				day := types.Day{
+				day := Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7)}
 				days = append(days, day)
 			}
 			if row[config.HourColumn] == config.DayEnd {
-				day := types.Day{
+				day := Day{
 					EndingRow: number,
 				}
 				days[len(days)-1].EndingRow = day.EndingRow
@@ -91,8 +91,8 @@ func getDaysStartEnd(file *excelize.File, config *types.Config) []types.Day {
 	return days
 }
 
-func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int) []types.Class {
-	var classes []types.Class
+func traverseDay(file *excelize.File, sheetName string, day Day, groupColumn int) []Class {
+	var classes []Class
 
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
@@ -120,15 +120,15 @@ func toCharStr(i int) string {
 	return string(rune('A' - 1 + i))
 }
 
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day) types.Class {
-	var class types.Class
+func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day Day) Class {
+	var class Class
 	regex := regexp.MustCompile(`(  |\n)+`)
 	parts := regex.Split(text, -1)
 	parts = removeEmptyStrings(parts)
 	parts = fixClassParts(parts)
 	class.Name = strings.TrimSpace(parts[0])
 
-	if slices.Contains(types.ClassTypes, strings.TrimSpace(parts[1])) {
+	if slices.Contains(ClassTypes, strings.TrimSpace(parts[1])) {
 		class.Type = strings.TrimSpace(parts[1])
 		class.Teacher = strings.TrimSpace(parts[2])
 	} else {

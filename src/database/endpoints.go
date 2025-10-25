@@ -6,12 +6,14 @@ import (
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 )
 
-// PUT /setChoseColumn
+// PUT /setChosenColumn
 // in body: chosenColumn: int
 // sets the chosen column for the user associated with the access token in the Authorization header
-func (ec *EndpointContext) SetChoseColumnEndpoint(w http.ResponseWriter, r *http.Request) {
+func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *http.Request) {
 	accessToken := r.Header.Get("Authorization")
 	if accessToken == "" {
 		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
@@ -28,6 +30,22 @@ func (ec *EndpointContext) SetChoseColumnEndpoint(w http.ResponseWriter, r *http
 		http.Error(w, fmt.Sprintf("Failed to update chosen column: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	//Update the timetable
+	//TODO: This is currently a temporary solution, as it makes the endpoint slow, In the future, we should have a non-blocking way to update the timetable
+	config := types.NewConfig()
+	timetablePath, err := extractor.GetCurrentTimetable()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get current timetable: %v", err), http.StatusInternalServerError)
+		return
+	}
+	timetable := extractor.GetTimetable(config, timetablePath+"x", requestBody.ChosenColumn)
+	token, err := ec.Query.GetTokenByAccessToken(accessToken)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get token: %v", err), http.StatusInternalServerError)
+		return
+	}
+	calendar.ImportTimetable(config, timetable, token)
 	w.WriteHeader(http.StatusOK)
 }
 

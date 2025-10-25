@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"golang.org/x/oauth2"
 	_ "modernc.org/sqlite"
 )
 
@@ -151,4 +152,20 @@ func (q *Queries) UpdateChosenColumn(accessToken string, chosenColumn int) error
 		return err
 	}
 	return nil
+}
+
+func (q *Queries) GetTokenByAccessToken(accessToken string) (*oauth2.Token, error) {
+	getUser := `
+	SELECT access_token, token_type, refresh_token, expiry, expires_in
+	FROM users
+	WHERE access_token = ?;
+	`
+	row := q.db.QueryRow(getUser, accessToken)
+	var token oauth2.Token
+	err := row.Scan(&token.AccessToken, &token.TokenType, &token.RefreshToken, &token.Expiry, &token.ExpiresIn)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return nil, err
+	}
+	return &token, nil
 }

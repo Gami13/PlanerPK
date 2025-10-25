@@ -45,7 +45,7 @@ func Start() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /authorize", hctx.AuthorizeEndpoint)
-	mux.HandleFunc("PUT /setChosenColumn", hctx.SetChoseColumnEndpoint)
+	mux.HandleFunc("PUT /setChosenColumn", hctx.SetChosenColumnEndpoint)
 
 	handler := corsMiddleware(mux)
 	http.ListenAndServe(":8080", handler)

@@ -4,39 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
-
-// Retrieves a token from a local file.
-func tokenFromFile() (*oauth2.Token, error) {
-	f, err := os.Open("token.json")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	tok := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(tok)
-	return tok, err
-}
-
-// Saves a token to a file path.
-func saveToken(path string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		log.Fatalf("Unable to cache oauth token: %v", err)
-	}
-	defer f.Close()
-	json.NewEncoder(f).Encode(token)
-}
 
 func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service, error) {
 	config, err := createConfig()
@@ -55,46 +33,49 @@ func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service,
 	return srv, nil
 }
 
-// func ImportTimetable(config *types.Config, timetable types.Timetable) {
-// 	ctx := context.Background()
+func ImportTimetable(config *types.Config, timetable extractor.Timetable, token *oauth2.Token) {
+	ctx := context.Background()
 
-// 	srv, err := createService(ctx)
-// 	if err != nil {
-// 		log.Fatalf("Unable to create calendar service: %v", err)
-// 	}
+	srv, err := createService(ctx, token)
+	if err != nil {
+		log.Fatalf("Unable to create calendar service: %v", err)
+	}
+	currentEvents, err := getCurrentEvents(srv)
+	if err != nil {
+		log.Fatalf("Unable to get current events: %v", err)
+	}
 
-// 	// Create calendar events from the timetable
-// 	for day, entry := range timetable {
-// 		// Name (type) - Teacher | Location | AdditionalInfo
-// 		fmt.Println("Inserting day: ", day)
-// 		dayDate := utils.GetDateOfNextWeekday(day)
-// 		for _, class := range entry {
-// 			startTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), class.StartTime.Hour(), class.StartTime.Minute(), 0, 0, time.Now().Local().Location())
-// 			endTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), class.EndTime.Hour(), class.EndTime.Minute(), 0, 0, time.Now().Local().Location())
+	// Create calendar events from the timetable
+	for day, entry := range timetable {
+		// Name (type) - Teacher | Location | AdditionalInfo
+		fmt.Println("Inserting day: ", day)
+		for _, class := range entry {
+			event := class.ToEvent()
+			found, different, existingEvent := checkForExistingEvent(event, currentEvents)
+			if found {
+				if different {
+					// Update the event
+					fmt.Println("Updating event")
+					_, err := srv.Events.Update("primary", existingEvent.Id, &event).Do()
+					if err != nil {
+						log.Printf("Unable to update event: %v", err)
+					}
+				}
+				fmt.Println("Event already exists, skipping creation")
+				continue
+			}
+			// Create the event
 
-// 			summary := fmt.Sprintf("%s (%s) - %s | %s", class.Name, class.Type, class.Teacher, class.Location)
-// 			if class.AdditionalInfo != "" {
-// 				summary += fmt.Sprintf(" | %s", class.AdditionalInfo)
-// 			}
+			fmt.Println("Creating event: ", event.Summary)
+			_, err := srv.Events.Insert("primary", &event).Do()
+			if err != nil {
+				log.Printf("Unable to create event: %v", err)
+			}
+		}
 
-// 			event := &calendar.Event{
-// 				Summary: summary,
-// 				Start: &calendar.EventDateTime{
-// 					DateTime: startTime.Format(time.RFC3339),
-// 				},
-// 				End: &calendar.EventDateTime{
-// 					DateTime: endTime.Format(time.RFC3339),
-// 				},
-// 			}
-// 			_, err := srv.Events.Insert("primary", event).Do()
-// 			if err != nil {
-// 				log.Printf("Unable to create event: %v", err)
-// 			}
-// 		}
+	}
 
-// 	}
-
-// }
+}
 
 func createConfig() (*oauth2.Config, error) {
 	b, err := os.ReadFile("credentials.json")
@@ -127,7 +108,7 @@ func AuthorizeFromCode(code string) (*oauth2.Token, error) {
 	return tok, nil
 }
 
-func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
+func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 	config, err := createConfig()
 	if err != nil {
 		log.Fatalf("Unable to create config: %v", err)
@@ -140,12 +121,12 @@ func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading user info response: ", err)
 		return nil, err
 	}
-	var result types.UserInfo
+	var result UserInfo
 	if err := json.Unmarshal(data, &result); err != nil {
 		fmt.Println("Error unmarshalling user info response: ", err)
 		return nil, err
@@ -154,4 +135,43 @@ func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
 	fmt.Println("Got Chud data: ", result.String())
 	return &result, nil
 
+}
+
+func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
+	//extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
+	events, err := srv.Events.List("primary").ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve next ten of the user's events: %v", err)
+		return nil, err
+	}
+
+	// Filter events by extendedProperties
+	filteredEvents := make([]*calendar.Event, 0)
+	for _, event := range events.Items {
+		if event.ExtendedProperties != nil && event.ExtendedProperties.Private != nil {
+			if event.ExtendedProperties.Private["added_by"] == extractor.ADDED_BY {
+				filteredEvents = append(filteredEvents, event)
+			}
+		}
+	}
+	return filteredEvents, nil
+}
+
+// can return that it found one and its identical, or that it found one but it's different, or that it found none, and can return the found event if any
+// returns: (found bool, different bool, event *calendar.Event)
+// ! Currently does not detect if an event was deleted from the source (sheet) and should be deleted from the calendar as well
+func checkForExistingEvent(newEvent calendar.Event, currentEvents []*calendar.Event) (bool, bool, *calendar.Event) {
+	for _, event := range currentEvents {
+
+		if event.ExtendedProperties.Private["event_id"] == newEvent.ExtendedProperties.Private["event_id"] {
+			if event.ExtendedProperties.Private["hash"] != newEvent.ExtendedProperties.Private["hash"] {
+				fmt.Println("Event differs: ", event.Summary, " vs ", newEvent.Summary)
+				return true, true, event
+			}
+			fmt.Println("Event is identical: ", event.Summary)
+			return true, false, event
+		}
+	}
+	fmt.Println("Event not found: ", newEvent.Summary)
+	return false, false, nil
 }
