@@ -1,6 +1,4 @@
-//thist is copied from the docs btw
-
-package googleCalendar
+package calendar
 
 import (
 	"context"

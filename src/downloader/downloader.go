@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
 	"github.com/antchfx/htmlquery"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/timetableExtractor"
 )
 
 const TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
@@ -146,7 +146,7 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Move the timetable to the current timetable destination
-	os.Rename(timetablePathXls, timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXls))
-	os.Rename(timetablePathXlsx, timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx))
-	return timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
+	os.Rename(timetablePathXls, extractor.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXls))
+	os.Rename(timetablePathXlsx, extractor.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXlsx))
+	return extractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
 }

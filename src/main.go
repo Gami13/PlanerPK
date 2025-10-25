@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/timetableExtractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 )
@@ -22,7 +22,7 @@ func main() {
 	}
 
 	// If doesn't exist, download
-	timetablePath, err := timetableExtractor.GetCurrentTimetable()
+	timetablePath, err := extractor.GetCurrentTimetable()
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("No timetable present")
@@ -52,7 +52,7 @@ func main() {
 		}
 	}
 
-	timetable := timetableExtractor.GetTimetable(config, timetablePath, 3)
+	timetable := extractor.GetTimetable(config, timetablePath, 3)
 
 	fmt.Println(timetable)
 	webServer.Start()

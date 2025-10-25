@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/googleCalendar"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
 )
 
 // PUT /setChoseColumn
@@ -40,13 +40,13 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tok, err := googleCalendar.AuthorizeFromCode(code)
+	tok, err := calendar.AuthorizeFromCode(code)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Authorization failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	userInfo, err := googleCalendar.GetUserInfo(tok)
+	userInfo, err := calendar.GetUserInfo(tok)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user info: %v", err), http.StatusInternalServerError)
 		return

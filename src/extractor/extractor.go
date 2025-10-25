@@ -1,8 +1,8 @@
-package timetableExtractor
+package extractor
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -23,10 +23,10 @@ func GetCurrentTimetable() (string, error) {
 	}
 
 	for _, entry := range entries {
-        if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
-            return CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
-        }
-    }
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
+			return CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
+		}
+	}
 
 	return "", fmt.Errorf("no .xls file found in %s", CURRENT_TIMETABLE_DESTINATION)
 }
