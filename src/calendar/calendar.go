@@ -46,11 +46,14 @@ func ImportTimetable(config *types.Config, timetable extractor.Timetable, token 
 	}
 
 	// Create calendar events from the timetable
+	newEvents := make(map[string]*calendar.Event)
 	for day, entry := range timetable {
 		// Name (type) - Teacher | Location | AdditionalInfo
 		fmt.Println("Inserting day: ", day)
 		for _, class := range entry {
 			event := class.ToEvent()
+			newEvents[event.ExtendedProperties.Private["event_id"]] = &event
+
 			found, different, existingEvent := checkForExistingEvent(event, currentEvents)
 			if found {
 				if different {
@@ -73,6 +76,14 @@ func ImportTimetable(config *types.Config, timetable extractor.Timetable, token 
 			}
 		}
 
+	}
+	eventsToDelete := findEventsToDelete(currentEvents, newEvents)
+	for _, event := range eventsToDelete {
+		fmt.Println("Deleting event: ", event.Summary)
+		err := srv.Events.Delete("primary", event.Id).Do()
+		if err != nil {
+			log.Printf("Unable to delete event: %v", err)
+		}
 	}
 
 }
@@ -174,4 +185,14 @@ func checkForExistingEvent(newEvent calendar.Event, currentEvents []*calendar.Ev
 	}
 	fmt.Println("Event not found: ", newEvent.Summary)
 	return false, false, nil
+}
+
+func findEventsToDelete(currentEvents []*calendar.Event, newEvents map[string]*calendar.Event) []*calendar.Event {
+	eventsToDelete := make([]*calendar.Event, 0)
+	for _, event := range currentEvents {
+		if _, ok := newEvents[event.ExtendedProperties.Private["event_id"]]; !ok {
+			eventsToDelete = append(eventsToDelete, event)
+		}
+	}
+	return eventsToDelete
 }
