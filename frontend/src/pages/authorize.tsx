@@ -1,16 +1,30 @@
-import { createEffect, Suspense } from 'solid-js';
-import AboutData from './about.data';
+import { createEffect } from 'solid-js';
+import { useLocation, useNavigate } from '@solidjs/router';
 
-export default function About() {
-  const name = AboutData();
+export default function Authorize() {
+  const location = useLocation();
+  const navigate = useNavigate();
 
   createEffect(() => {
-    console.log(name());
-  });
+    const code = new URLSearchParams(location.search).get("code");
 
+    if (code) {
+      fetch(`http://localhost:8080/api/authorize?code=${code}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.access_token) {
+            document.cookie = `access_token=${data.access_token}; path=/; max-age=604800; samesite=strict`;
+            navigate("/settings");
+          }
+        })
+        .catch(error => {
+          console.error("Authorization error:", error);
+        });
+    }
+  });
   return (
-    <section class="bg-pink-100 text-gray-700 p-8">
-        <h1>Authorization</h1>
-    </section>
+    <main>
+        <h1>Autoryzacja...</h1>
+    </main>
   );
 }
