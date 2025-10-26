@@ -8,46 +8,50 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
 
 	"github.com/xuri/excelize/v2"
 )
 
-const CURRENT_TIMETABLE_DESTINATION = "./current_timetable/"
-
 // Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
 func GetCurrentTimetable() (string, error) {
-	entries, err := os.ReadDir(CURRENT_TIMETABLE_DESTINATION)
+	entries, err := os.ReadDir(constants.CURRENT_TIMETABLE_DESTINATION)
 	if err != nil {
 		return "", err
 	}
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
-			return CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
+			return constants.CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
 		}
 	}
 
-	return "", fmt.Errorf("no .xls file found in %s", CURRENT_TIMETABLE_DESTINATION)
+	return "", fmt.Errorf("no .xls file found in %s", constants.CURRENT_TIMETABLE_DESTINATION)
 }
 
-func GetTimetable(config *types.Config, timetablePath string, groupColumn int) Timetable {
+func GetTimetable(groupColumn int) (Timetable, error) {
+
+	timetablePath, err := GetCurrentTimetable()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current timetable: %v", err)
+	}
+	timetablePath = timetablePath + "x" //excelize requires .xlsx extension
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
-		fmt.Println(err)
-		panic(err)
+		return nil, err
 	}
 	defer func() {
 		// Close the spreadsheet.
 		if err := file.Close(); err != nil {
 			fmt.Println(err)
+			return
 		}
 	}()
 
 	timetable := make(Timetable)
-	days := getDaysStartEnd(file, config)
+	days := getDaysStartEnd(file)
 	for _, day := range days {
-		classes := traverseDay(file, config.SheetName, day, groupColumn)
+		classes := traverseDay(file, day, groupColumn)
 		timetable[day.WeekDay] = classes
 
 	}
@@ -58,14 +62,13 @@ func GetTimetable(config *types.Config, timetablePath string, groupColumn int) T
 			fmt.Println("  Class: ", class.String())
 		}
 	}
-	return timetable
-
+	return timetable, nil
 }
 
-func getDaysStartEnd(file *excelize.File, config *types.Config) []Day {
+func getDaysStartEnd(file *excelize.File) []Day {
 	// Find starting rows for each day
 	var days []Day
-	rows, err := file.GetRows(config.SheetName)
+	rows, err := file.GetRows(constants.SHEET_NAME)
 	if err != nil {
 		fmt.Println(err)
 		return days
@@ -73,13 +76,13 @@ func getDaysStartEnd(file *excelize.File, config *types.Config) []Day {
 	for number, row := range rows {
 		if len(row) > 1 {
 
-			if row[config.HourColumn] == config.DayStart {
+			if row[constants.HOUR_COLUMN] == constants.DAY_START {
 				day := Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7)}
 				days = append(days, day)
 			}
-			if row[config.HourColumn] == config.DayEnd {
+			if row[constants.HOUR_COLUMN] == constants.DAY_END {
 				day := Day{
 					EndingRow: number,
 				}
@@ -91,13 +94,13 @@ func getDaysStartEnd(file *excelize.File, config *types.Config) []Day {
 	return days
 }
 
-func traverseDay(file *excelize.File, sheetName string, day Day, groupColumn int) []Class {
+func traverseDay(file *excelize.File, day Day, groupColumn int) []Class {
 	var classes []Class
 
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		cell := getCell(file, sheetName, i, groupColumn)
+		cell := getCell(file, constants.SHEET_NAME, i, groupColumn)
 		classText := cell
 		if classText != "" {
 

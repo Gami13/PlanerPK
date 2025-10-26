@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 )
 
 // PUT /setChosenColumn
@@ -32,20 +30,13 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 	}
 
 	//Update the timetable
-	//TODO: This is currently a temporary solution, as it makes the endpoint slow, In the future, we should have a non-blocking way to update the timetable
-	config := types.NewConfig()
-	timetablePath, err := extractor.GetCurrentTimetable()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get current timetable: %v", err), http.StatusInternalServerError)
-		return
-	}
-	timetable := extractor.GetTimetable(config, timetablePath+"x", requestBody.ChosenColumn)
 	token, err := ec.Query.GetTokenByAccessToken(accessToken)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get token: %v", err), http.StatusInternalServerError)
 		return
 	}
-	calendar.ImportTimetable(config, timetable, token)
+
+	go calendar.ImportTimetable(requestBody.ChosenColumn, token)
 	w.WriteHeader(http.StatusOK)
 }
 

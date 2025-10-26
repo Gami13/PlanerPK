@@ -5,14 +5,10 @@ import (
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 )
 
 func main() {
-	config := types.NewConfig()
-	// googleCalendar.AuthorizeFromCode("")
-	// timetable := timetableExtractor.GetTimetable(config, 3)
 
 	// Fetch the timetable url
 	timetableUrl, err := downloader.FetchTimetableUrl()
@@ -52,9 +48,9 @@ func main() {
 		}
 	}
 
-	timetable := extractor.GetTimetable(config, timetablePath, 3)
+	// timetable := extractor.GetTimetable(3)
 
-	fmt.Println(timetable)
+	// fmt.Println(timetable)
 	webServer.Start()
 	// googleCalendar.Run()
 }

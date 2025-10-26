@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -33,9 +32,13 @@ func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service,
 	return srv, nil
 }
 
-func ImportTimetable(config *types.Config, timetable extractor.Timetable, token *oauth2.Token) {
+func ImportTimetable(groupColumn int, token *oauth2.Token) {
 	ctx := context.Background()
 
+	timetable, err := extractor.GetTimetable(groupColumn)
+	if err != nil {
+		log.Fatalf("Unable to get timetable: %v", err)
+	}
 	srv, err := createService(ctx, token)
 	if err != nil {
 		log.Fatalf("Unable to create calendar service: %v", err)

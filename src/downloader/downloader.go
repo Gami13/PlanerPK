@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
 	"github.com/antchfx/htmlquery"
 )
 
@@ -146,7 +146,7 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Move the timetable to the current timetable destination
-	os.Rename(timetablePathXls, extractor.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXls))
-	os.Rename(timetablePathXlsx, extractor.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXlsx))
-	return extractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
+	os.Rename(timetablePathXls, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXls))
+	os.Rename(timetablePathXlsx, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXlsx))
+	return constants.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
 }
