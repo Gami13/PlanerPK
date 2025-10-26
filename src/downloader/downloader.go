@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
 	"github.com/antchfx/htmlquery"
 )
 
@@ -149,4 +150,45 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	os.Rename(timetablePathXls, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXls))
 	os.Rename(timetablePathXlsx, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXlsx))
 	return constants.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
+}
+
+// Updates the timetable if it changed, using FetchTimetableUrl, DidChange and DownloadAndProcessTimetable
+// Returns (didChange bool, timetablePath string, err error)
+func UpdateTimetable() (didChange bool, path string, err error) {
+	timetableUrl, err := FetchTimetableUrl()
+	if err != nil {
+		fmt.Println(err)
+		return false, "", err
+	}
+
+	timetablePath, err := extractor.GetCurrentTimetablePath()
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("No timetable present")
+
+		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
+		if err != nil {
+			fmt.Println(err)
+			return false, "", err
+		}
+		return true, timetablePath, nil
+	}
+
+	didChange, err = DidChange(timetablePath, timetableUrl)
+	if err != nil {
+		fmt.Println(err)
+		return didChange, timetablePath, err
+	}
+
+	if didChange {
+		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
+		if err != nil {
+			fmt.Println(err)
+			return didChange, timetablePath, err
+		}
+
+		return didChange, timetablePath, nil
+	}
+	return didChange, timetablePath, nil
+
 }
