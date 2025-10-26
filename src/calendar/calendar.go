@@ -37,7 +37,8 @@ func GenerateAuthURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	//"&prompt=consent"
+	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	return authURL, nil
 }
 

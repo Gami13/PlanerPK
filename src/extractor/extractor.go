@@ -8,25 +8,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 
 	"github.com/xuri/excelize/v2"
 )
 
 // Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
 func GetCurrentTimetablePath() (string, error) {
-	entries, err := os.ReadDir(constants.CURRENT_TIMETABLE_DESTINATION)
+	entries, err := os.ReadDir(global.TIMETABLE_CURRENT_DESTINATION)
 	if err != nil {
 		return "", err
 	}
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
-			return constants.CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
+			return global.TIMETABLE_CURRENT_DESTINATION + entry.Name(), nil
 		}
 	}
 
-	return "", fmt.Errorf("no .xls file found in %s", constants.CURRENT_TIMETABLE_DESTINATION)
+	return "", fmt.Errorf("no .xls file found in %s", global.TIMETABLE_CURRENT_DESTINATION)
 }
 
 func GetTimetable(groupColumn int) (Timetable, error) {
@@ -68,7 +68,7 @@ func GetTimetable(groupColumn int) (Timetable, error) {
 func getDaysStartEnd(file *excelize.File) []Day {
 	// Find starting rows for each day
 	var days []Day
-	rows, err := file.GetRows(constants.SHEET_NAME)
+	rows, err := file.GetRows(global.SHEET_NAME)
 	if err != nil {
 		fmt.Println(err)
 		return days
@@ -76,13 +76,13 @@ func getDaysStartEnd(file *excelize.File) []Day {
 	for number, row := range rows {
 		if len(row) > 1 {
 
-			if row[constants.HOUR_COLUMN] == constants.DAY_START {
+			if row[global.HOUR_COLUMN] == global.DAY_START {
 				day := Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7)}
 				days = append(days, day)
 			}
-			if row[constants.HOUR_COLUMN] == constants.DAY_END {
+			if row[global.HOUR_COLUMN] == global.DAY_END {
 				day := Day{
 					EndingRow: number,
 				}
@@ -100,7 +100,7 @@ func traverseDay(file *excelize.File, day Day, groupColumn int) []Class {
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		cell := getCell(file, constants.SHEET_NAME, i, groupColumn)
+		cell := getCell(file, global.SHEET_NAME, i, groupColumn)
 		classText := cell
 		if classText != "" {
 

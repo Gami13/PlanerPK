@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"os"
+	"strconv"
 	"time"
+
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 )
 
 func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
@@ -21,3 +25,76 @@ func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
 //J. niemiecki - Język niemiecki
 
 //wykład, lab., ćwiczenia
+
+// var LAST_ROW = 365
+// var HOUR_COLUMN = 1
+// var DAY_START = "7.30"
+// var DAY_END = "21.00"
+// var DATABASE_SOURCE = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000"
+// var DATABASE_DRIVER = "sqlite"
+// var MINUTES_BETWEEN = 5
+// var SERVER_PORT = "8080"
+// var TIMETABLE_CURRENT_DESTINATION = "./current_timetable/"
+// var TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
+// var TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
+// Loads all environment variables from the system, if they don't exist, uses default ones
+func LoadEnvVariables() {
+	sheetNames := os.Getenv("SHEET_NAME")
+	if sheetNames != "" {
+		global.SHEET_NAME = sheetNames
+	}
+	lastRow := os.Getenv("LAST_ROW")
+	if lastRow != "" {
+		val, err := strconv.Atoi(lastRow)
+		if err == nil {
+			global.LAST_ROW = val
+		}
+	}
+	hourColumn := os.Getenv("HOUR_COLUMN")
+	if hourColumn != "" {
+		val, err := strconv.Atoi(hourColumn)
+		if err == nil {
+			global.HOUR_COLUMN = val
+		}
+	}
+	dayStart := os.Getenv("DAY_START")
+	if dayStart != "" {
+		global.DAY_START = dayStart
+	}
+	dayEnd := os.Getenv("DAY_END")
+	if dayEnd != "" {
+		global.DAY_END = dayEnd
+	}
+	databaseSource := os.Getenv("DATABASE_SOURCE")
+	if databaseSource != "" {
+		global.DATABASE_SOURCE = databaseSource
+	}
+	databaseDriver := os.Getenv("DATABASE_DRIVER")
+	if databaseDriver != "" {
+		global.DATABASE_DRIVER = databaseDriver
+	}
+	minutesBetween := os.Getenv("MINUTES_BETWEEN")
+	if minutesBetween != "" {
+		val, err := strconv.Atoi(minutesBetween)
+		if err == nil {
+			global.MINUTES_BETWEEN = val
+		}
+	}
+	serverPort := os.Getenv("SERVER_PORT")
+	if serverPort != "" {
+		global.SERVER_PORT = serverPort
+	}
+	timetableCurrentDestination := os.Getenv("TIMETABLE_CURRENT_DESTINATION")
+	if timetableCurrentDestination != "" {
+		global.TIMETABLE_CURRENT_DESTINATION = timetableCurrentDestination
+	}
+	timetableURL := os.Getenv("TIMETABLE_URL")
+	if timetableURL != "" {
+		global.TIMETABLE_URL = timetableURL
+	}
+	timetableDownloadDestination := os.Getenv("TIMETABLE_DOWNLOAD_DESTINATION")
+	if timetableDownloadDestination != "" {
+		global.TIMETABLE_DOWNLOAD_DESTINATION = timetableDownloadDestination
+	}
+
+}

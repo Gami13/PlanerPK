@@ -6,26 +6,25 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 )
 
 func main() {
 
+	utils.LoadEnvVariables()
+	fmt.Println("Loaded environment variables.")
+
 	// Fetch the timetable url
-	didChange, path, err := downloader.UpdateTimetable()
+	_, _, err := downloader.UpdateTimetable()
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if didChange {
-		fmt.Println("Timetable updated, new path: " + path)
-
+		fmt.Println("Error updating timetable:", err)
 	}
 
-	db, err := sql.Open(constants.DATABASE_DRIVER, constants.DATABASE_SOURCE)
+	db, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
 	if err != nil {
 		panic(err)
 	}
@@ -39,7 +38,7 @@ func main() {
 
 	queries := database.New(db)
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(time.Duration(global.MINUTES_BETWEEN) * time.Minute)
 	done := make(chan bool)
 	fmt.Println("Starting web server")
 	webServer.Start(db)

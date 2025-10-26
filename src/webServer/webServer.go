@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 
 	_ "modernc.org/sqlite"
 )
@@ -39,5 +40,5 @@ func Start(db *sql.DB) {
 	mux.HandleFunc("GET /api/getUserInfo", hctx.GetUserInfoEndpoint)
 
 	handler := corsMiddleware(mux)
-	http.ListenAndServe(":8080", handler)
+	http.ListenAndServe(":"+global.SERVER_PORT, handler)
 }

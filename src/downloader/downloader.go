@@ -9,17 +9,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 	"github.com/antchfx/htmlquery"
 )
 
-const TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-const TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
-
 // Get the url of the timetable from the PKs website
 func FetchTimetableUrl() (string, error) {
-	doc, err := htmlquery.LoadURL(TIMETABLE_URL)
+	doc, err := htmlquery.LoadURL(global.TIMETABLE_URL)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
@@ -80,7 +77,7 @@ func DidChange(timetablePath string, url string) (bool, error) {
 // Returns filepath.Abs(TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
 func DownloadTimetable(url string) (string, error) {
 	// Get the absolute path to the destination
-	destination, err := filepath.Abs(TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
+	destination, err := filepath.Abs(global.TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
 	if err != nil {
 		return destination, err
 	}
@@ -141,15 +138,15 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Convert .xls to .xlsx
-	timetablePathXlsx, err := Xls2Xlsx(timetablePathXls, TIMETABLE_DOWNLOAD_DESTINATION)
+	timetablePathXlsx, err := Xls2Xlsx(timetablePathXls, global.TIMETABLE_DOWNLOAD_DESTINATION)
 	if err != nil {
 		return "", err
 	}
 
 	// Move the timetable to the current timetable destination
-	os.Rename(timetablePathXls, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXls))
-	os.Rename(timetablePathXlsx, constants.CURRENT_TIMETABLE_DESTINATION+filepath.Base(timetablePathXlsx))
-	return constants.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx), nil
+	os.Rename(timetablePathXls, global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXls))
+	os.Rename(timetablePathXlsx, global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXlsx))
+	return global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx), nil
 }
 
 // Updates the timetable if it changed, using FetchTimetableUrl, DidChange and DownloadAndProcessTimetable
