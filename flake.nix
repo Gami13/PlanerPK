@@ -25,6 +25,8 @@
     {
         devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
+                pnpm
+                nodejs
                 libreoffice
             ];
 

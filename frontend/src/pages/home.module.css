@@ -1,0 +1,84 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4em;
+    padding: 2em;
+    overflow: hidden;
+}
+
+.main > .basic_section {
+    display: flex;
+    align-items: center;
+    gap: 4em;
+}
+
+.main > .basic_section > div:nth-child(1) {
+    display: flex;
+    flex-direction: column;
+    max-width: 48em;
+}
+
+.header {
+    font-size: 2.8em;
+    font-weight: 500;
+}
+
+.register_button {
+    margin-top: 2em;
+    font-size: 1.2em;
+    padding: 0.4em;
+    padding-left: 1em;
+    padding-right: 1em;
+    border-radius: 9999999px;
+    align-self: center;
+    background-color: #44aaFF;
+    color: white;
+}
+
+.google_calendar_preview {
+    box-sizing: border-box;
+
+    max-width: 100%;
+    height: auto;
+
+    border-style: solid;
+    border-color: black;
+    border-width: 1px;
+    border-radius: 8px;
+}
+
+.main > .basic_section > div:nth-child(2) {
+    display: inline-block;
+    max-width: 48em;
+
+    transition: transform 0.3s ease, border-width 0.3s ease;
+}
+
+@media all and (min-width: 0em) {
+    .main > .basic_section {
+        flex-direction: column;
+    }
+}
+
+@media all and (min-width: 38em) {
+    .main > .basic_section > div:nth-child(2) {
+        transform-origin: center center;
+    }
+
+    .main > .basic_section > div:nth-child(2):hover {
+        transform: scale(1.75);
+    }
+}
+
+/* We'll see */
+/*@media all and (min-width: 87em) {
+    .main > .basic_section {
+        flex-direction: row;
+    }
+
+    .main > .basic_section > div:nth-child(2) {
+        transform-origin: top right;
+        min-width: 40em;
+    }
+}*/

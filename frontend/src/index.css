@@ -1,0 +1,17 @@
+* {
+    box-sizing: border-box;
+    
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    padding: 0;
+    margin: 0;
+
+    border-style: none;
+    border-width: 0;
+    border-color: black;
+}
+
+main {
+    width: 100vw;
+    height: 100vh;
+}
