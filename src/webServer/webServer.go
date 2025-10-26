@@ -26,26 +26,18 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start() {
+func Start(db *sql.DB) {
 
 	ctx := context.Background()
-	db, err := sql.Open("sqlite", "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
+
 	query := database.New(db)
 	hctx := database.NewEndpointContext(query, ctx)
-
-	err = database.InitializeDatabase(db)
-	if err != nil {
-		panic(err)
-	}
 	fmt.Println("Initialized database successfully.")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /authorize", hctx.AuthorizeEndpoint)
-	mux.HandleFunc("PUT /setChosenColumn", hctx.SetChosenColumnEndpoint)
+	mux.HandleFunc("GET /api/authorize", hctx.AuthorizeEndpoint)
+	mux.HandleFunc("PUT /api/setChosenColumn", hctx.SetChosenColumnEndpoint)
+	mux.HandleFunc("GET /api/getAuthURL", hctx.GetAuthURLEndpoint)
 
 	handler := corsMiddleware(mux)
 	http.ListenAndServe(":8080", handler)

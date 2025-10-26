@@ -1,60 +1,37 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/constants"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/types"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 )
 
 func main() {
-	config := types.NewConfig()
-	// googleCalendar.AuthorizeFromCode("")
-	// timetable := timetableExtractor.GetTimetable(config, 3)
 
 	// Fetch the timetable url
-	timetableUrl, err := downloader.FetchTimetableUrl()
+	didChange, path, err := downloader.UpdateTimetable()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	if didChange {
+		fmt.Println("Timetable updated, new path: " + path)
 
-	// If doesn't exist, download
-	timetablePath, err := extractor.GetCurrentTimetable()
-	if err != nil {
-		fmt.Println(err)
-		fmt.Println("No timetable present")
-
-		timetablePath, err = downloader.DownloadAndProcessTimetable(timetableUrl)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	} else {
-		didChange, err := downloader.DidChange(timetablePath, timetableUrl)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		if didChange {
-			fmt.Println("Timetable changed, downloading a new timetable")
-			timetablePath, err = downloader.DownloadAndProcessTimetable(timetableUrl)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-		} else {
-			fmt.Println("Timetable did not change")
-			timetablePath = timetablePath + "x"
-		}
 	}
 
-	timetable := extractor.GetTimetable(config, timetablePath, 3)
+	db, err := sql.Open(constants.DATABASE_DRIVER, constants.DATABASE_SOURCE)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
-	fmt.Println(timetable)
-	webServer.Start()
-	// googleCalendar.Run()
+	err = database.InitializeDatabase(db)
+	if err != nil {
+		panic(err)
+	}
+	webServer.Start(db)
 }

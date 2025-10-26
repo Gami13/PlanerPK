@@ -68,7 +68,7 @@ func (q *Queries) createTables() error {
 		refresh_token TEXT NOT NULL,
 		expiry TIMESTAMP NOT NULL,
 		expires_in INTEGER NOT NULL,
-		chosen_column INTEGER,
+		chosen_column INTEGER DEFAULT -1,
 		is_active BOOLEAN DEFAULT 1
 	);
 	`
@@ -79,10 +79,11 @@ func (q *Queries) createTables() error {
 	return nil
 }
 
-func (q *Queries) UpsertUser(user *User) error {
+func (q *Queries) UpsertUser(user *User) (User, error) {
+	//should probably return all user fields
 	upsertUser := `
-	INSERT INTO users (email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO users (email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT(email) DO UPDATE SET
 		name = excluded.name,
 		given_name = excluded.given_name,
@@ -91,15 +92,16 @@ func (q *Queries) UpsertUser(user *User) error {
 		token_type = excluded.token_type,
 		refresh_token = excluded.refresh_token,
 		expiry = excluded.expiry,
-		expires_in = excluded.expires_in,
-		chosen_column = excluded.chosen_column;
+		expires_in = excluded.expires_in
+	RETURNING email,name,given_name,picture,access_token,token_type,refresh_token,expiry,expires_in,chosen_column;
 	`
-	_, err := q.db.Exec(upsertUser, user.Email, user.Name, user.GivenName, user.Picture, user.AccessToken, user.TokenType, user.RefreshToken, user.Expiry, user.ExpiresIn, user.ChosenColumn)
+	var returnedUser User
+	err := q.db.QueryRow(upsertUser, user.Email, user.Name, user.GivenName, user.Picture, user.AccessToken, user.TokenType, user.RefreshToken, user.Expiry, user.ExpiresIn).Scan(&returnedUser.Email, &returnedUser.Name, &returnedUser.GivenName, &returnedUser.Picture, &returnedUser.AccessToken, &returnedUser.TokenType, &returnedUser.RefreshToken, &returnedUser.Expiry, &returnedUser.ExpiresIn, &returnedUser.ChosenColumn)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return err
+		return User{}, err
 	}
-	return nil
+	return returnedUser, nil
 }
 
 func (q *Queries) GetUserByEmail(email string) (*User, error) {
