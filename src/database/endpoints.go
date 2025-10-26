@@ -100,3 +100,30 @@ func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Req
 	}
 	w.Write([]byte(authURL))
 }
+
+func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Request) {
+	accessToken := r.Header.Get("Authorization")
+	if accessToken == "" {
+		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+	user, err := ec.Query.GetUserByAccessToken(accessToken)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get user: %v", err), http.StatusInternalServerError)
+		return
+	}
+	response := UserInfoResponse{
+		Email:        *user.Email,
+		Name:         *user.Name,
+		GivenName:    *user.GivenName,
+		Picture:      *user.Picture,
+		IsActive:     *user.IsActive,
+		ChosenColumn: *user.ChosenColumn,
+	}
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Write(responseBytes)
+}

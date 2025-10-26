@@ -39,3 +39,12 @@ type AuthorizeResponse struct {
 	Name         string `json:"name"`
 	Picture      string `json:"picture"`
 }
+
+type UserInfoResponse struct {
+	Email        string `json:"email"`
+	Name         string `json:"name"`
+	GivenName    string `json:"given_name"`
+	Picture      string `json:"picture"`
+	IsActive     bool   `json:"is_active"`
+	ChosenColumn int    `json:"chosen_column"`
+}

@@ -41,8 +41,10 @@ func main() {
 
 	ticker := time.NewTicker(5 * time.Minute)
 	done := make(chan bool)
+	fmt.Println("Starting web server")
+	webServer.Start(db)
 	fmt.Println("Starting timetable update ticker (5 min interval)")
-	go func() {
+	func() {
 		for {
 			select {
 			case <-done:
@@ -54,8 +56,7 @@ func main() {
 			}
 		}
 	}()
-	fmt.Println("Starting web server")
-	webServer.Start(db)
+
 }
 
 func updateAllTimetables(queries *database.Queries) {

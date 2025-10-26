@@ -171,3 +171,19 @@ func (q *Queries) GetTokenByAccessToken(accessToken string) (*oauth2.Token, erro
 	}
 	return &token, nil
 }
+
+func (q *Queries) GetUserByAccessToken(accessToken string) (*User, error) {
+	getUser := `
+	SELECT email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
+	FROM users
+	WHERE access_token = ?;
+	`
+	row := q.db.QueryRow(getUser, accessToken)
+	var user User
+	err := row.Scan(&user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return nil, err
+	}
+	return &user, nil
+}

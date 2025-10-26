@@ -1,11 +1,16 @@
 # Variables
 @server_url = http://localhost:8080
-@access_token = your_access_token_here
+@access_token = 
 ### Update Chosen Column
-PUT {{server_url}}/setChosenColumn HTTP/1.1
+PUT {{server_url}}/api/setChosenColumn HTTP/1.1
 Authorization: {{access_token}}
 Content-Type: application/json
 
 {
 	"chosenColumn": 3
 }
+
+
+### Get User Info
+GET {{server_url}}/api/getUserInfo HTTP/1.1
+Authorization: {{access_token}}
