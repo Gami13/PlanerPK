@@ -3,7 +3,6 @@ package webServer
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
@@ -32,7 +31,6 @@ func Start(db *sql.DB) {
 
 	query := database.New(db)
 	hctx := database.NewEndpointContext(query, ctx)
-	fmt.Println("Initialized database successfully.")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/authorize", hctx.AuthorizeEndpoint)

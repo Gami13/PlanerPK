@@ -1,11 +1,16 @@
 package database
 
-import "time"
+import (
+	"time"
+
+	"golang.org/x/oauth2"
+)
 
 type User struct {
 	ID           *int
 	Email        *string
 	ChosenColumn *int
+	IsActive     *bool
 	Name         *string
 	GivenName    *string
 	Picture      *string
@@ -15,6 +20,16 @@ type User struct {
 	RefreshToken string
 	Expiry       time.Time
 	ExpiresIn    int64
+}
+
+func (u *User) Token() *oauth2.Token {
+	return &oauth2.Token{
+		AccessToken:  u.AccessToken,
+		TokenType:    u.TokenType,
+		RefreshToken: u.RefreshToken,
+		Expiry:       u.Expiry,
+		ExpiresIn:    u.ExpiresIn,
+	}
 }
 
 type AuthorizeResponse struct {

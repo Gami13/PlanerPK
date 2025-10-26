@@ -38,7 +38,6 @@ func GenerateAuthURL() (string, error) {
 		return "", err
 	}
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the authorization code: \n%s\n", authURL+"&prompt=consent")
 	return authURL, nil
 }
 

@@ -122,7 +122,7 @@ func (q *Queries) GetUserByEmail(email string) (*User, error) {
 
 func (q *Queries) GetAllUsers() ([]*User, error) {
 	getUsers := `
-	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
+	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
 	FROM users;
 	`
 	rows, err := q.db.Query(getUsers)
@@ -134,7 +134,7 @@ func (q *Queries) GetAllUsers() ([]*User, error) {
 	var users []*User
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn); err != nil {
+		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive); err != nil {
 			return nil, err
 		}
 		users = append(users, &user)
