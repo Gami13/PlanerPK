@@ -71,12 +71,32 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		Expiry:       tok.Expiry,
 		ExpiresIn:    tok.ExpiresIn,
 	}
-	err = ec.Query.UpsertUser(&user)
+	newUser, err := ec.Query.UpsertUser(&user)
 	if err != nil {
 		fmt.Printf("Failed to save user: %v\n", err)
 		return
 	}
 
-	fmt.Println("UwU")
-	w.Write([]byte(user.AccessToken))
+	response := AuthorizeResponse{
+		AccessToken:  newUser.AccessToken,
+		Email:        *newUser.Email,
+		ChosenColumn: *newUser.ChosenColumn,
+		Name:         *newUser.Name,
+		Picture:      *newUser.Picture,
+	}
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Write(responseBytes)
+}
+
+func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Request) {
+	authURL, err := calendar.GenerateAuthURL()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to generate auth URL: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte(authURL))
 }

@@ -35,8 +35,9 @@ func Start(db *sql.DB) {
 	fmt.Println("Initialized database successfully.")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /authorize", hctx.AuthorizeEndpoint)
-	mux.HandleFunc("PUT /setChosenColumn", hctx.SetChosenColumnEndpoint)
+	mux.HandleFunc("GET /api/authorize", hctx.AuthorizeEndpoint)
+	mux.HandleFunc("PUT /api/setChosenColumn", hctx.SetChosenColumnEndpoint)
+	mux.HandleFunc("GET /api/getAuthURL", hctx.GetAuthURLEndpoint)
 
 	handler := corsMiddleware(mux)
 	http.ListenAndServe(":8080", handler)

@@ -189,6 +189,6 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 
 		return didChange, timetablePath, nil
 	}
-	return didChange, timetablePath, nil
+	return didChange, timetablePath + "x", nil
 
 }

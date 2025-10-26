@@ -13,7 +13,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// Get the currently used .xlsx timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
+// Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
 func GetCurrentTimetablePath() (string, error) {
 	entries, err := os.ReadDir(constants.CURRENT_TIMETABLE_DESTINATION)
 	if err != nil {
@@ -21,12 +21,12 @@ func GetCurrentTimetablePath() (string, error) {
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xlsx") {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
 			return constants.CURRENT_TIMETABLE_DESTINATION + entry.Name(), nil
 		}
 	}
 
-	return "", fmt.Errorf("no .xlsx file found in %s", constants.CURRENT_TIMETABLE_DESTINATION)
+	return "", fmt.Errorf("no .xls file found in %s", constants.CURRENT_TIMETABLE_DESTINATION)
 }
 
 func GetTimetable(groupColumn int) (Timetable, error) {
