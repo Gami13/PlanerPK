@@ -2,26 +2,31 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
 )
 
 func main() {
+	// Initialize logger first
+	if err := utils.InitializeLogging("./logs"); err != nil {
+		panic("Failed to initialize logger: " + err.Error())
+	}
 
 	utils.LoadEnvVariables()
-	fmt.Println("Loaded environment variables.")
+	slog.Info("Environment variables loaded")
 
 	// Fetch the timetable url
 	_, _, err := downloader.UpdateTimetable()
 	if err != nil {
-		fmt.Println("Error updating timetable:", err)
+		slog.Error("Failed to update timetable", slog.Any("error", err))
 	}
 
 	db, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
@@ -32,25 +37,26 @@ func main() {
 
 	err = database.InitializeDatabase(db)
 	if err != nil {
+		slog.Error("Failed to initialize database", slog.Any("error", err))
 		panic(err)
 	}
-	fmt.Println("Initialized database successfully.")
+	slog.Info("Database initialized successfully")
 
 	queries := database.New(db)
 
 	ticker := time.NewTicker(time.Duration(global.MINUTES_BETWEEN) * time.Minute)
 	done := make(chan bool)
-	fmt.Println("Starting web server")
+	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
 	webServer.Start(db)
-	fmt.Println("Starting timetable update ticker (5 min interval)")
+	slog.Info("Starting timetable update ticker",
+		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
 	func() {
 		for {
 			select {
 			case <-done:
 				return
 			case t := <-ticker.C:
-
-				fmt.Println("Tick at", t)
+				slog.Info("Timetable update triggered", slog.Time("tick_time", t))
 				updateAllTimetables(queries)
 			}
 		}
@@ -61,26 +67,30 @@ func main() {
 func updateAllTimetables(queries *database.Queries) {
 	users, err := queries.GetAllUsers()
 	if err != nil {
-		fmt.Println("Error fetching users:", err)
+		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
 	}
 	didChange, _, err := downloader.UpdateTimetable()
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to update timetable", slog.Any("error", err))
 		return
 	}
 	if !didChange {
-		fmt.Println("No timetable changes detected; skipping updates.")
+		slog.Info("No timetable changes detected, skipping updates")
 		return
 	}
 
-	for _, user := range users {
+	slog.Info("Timetable changed, updating for all active users",
+		slog.Int("total_users", len(users)))
 
+	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
 			continue
 		}
 
-		fmt.Println("Updating timetable for user:", user.Email)
+		slog.Info("Updating timetable for user",
+			slog.String("email", *user.Email),
+			slog.Int("column", *user.ChosenColumn))
 		calendar.ImportTimetable(*user.ChosenColumn, user.Token())
 	}
 }

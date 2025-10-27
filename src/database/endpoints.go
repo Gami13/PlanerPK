@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
@@ -14,6 +15,7 @@ import (
 func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *http.Request) {
 	accessToken := r.Header.Get("Authorization")
 	if accessToken == "" {
+		slog.Warn("Missing Authorization header", slog.String("endpoint", "SetChosenColumn"))
 		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
 		return
 	}
@@ -21,10 +23,19 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 		ChosenColumn int `json:"chosenColumn"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		slog.Error("Failed to parse request body",
+			slog.String("endpoint", "SetChosenColumn"),
+			slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to parse request body: %v", err), http.StatusBadRequest)
 		return
 	}
+
+	slog.Info("Setting chosen column", slog.Int("column", requestBody.ChosenColumn))
+
 	if err := ec.Query.UpdateChosenColumn(accessToken, requestBody.ChosenColumn); err != nil {
+		slog.Error("Failed to update chosen column",
+			slog.Int("column", requestBody.ChosenColumn),
+			slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to update chosen column: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -32,31 +43,37 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 	//Update the timetable
 	token, err := ec.Query.GetTokenByAccessToken(accessToken)
 	if err != nil {
+		slog.Error("Failed to get token", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to get token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	slog.Info("Triggering timetable import", slog.Int("column", requestBody.ChosenColumn))
 	go calendar.ImportTimetable(requestBody.ChosenColumn, token)
 	w.WriteHeader(http.StatusOK)
 }
 
 func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Request) {
-
 	//Get the oauth code from the request
 	code := r.URL.Query().Get("code")
 	if code == "" {
+		slog.Warn("Missing code parameter", slog.String("endpoint", "Authorize"))
 		http.Error(w, "Missing code parameter", http.StatusBadRequest)
 		return
 	}
 
+	slog.Info("Processing authorization", slog.String("endpoint", "Authorize"))
+
 	tok, err := calendar.AuthorizeFromCode(code)
 	if err != nil {
+		slog.Error("Authorization failed", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Authorization failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	userInfo, err := calendar.GetUserInfo(tok)
 	if err != nil {
+		slog.Error("Failed to get user info", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to get user info: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -73,9 +90,14 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 	}
 	newUser, err := ec.Query.UpsertUser(&user)
 	if err != nil {
-		fmt.Printf("Failed to save user: %v\n", err)
+		slog.Error("Failed to save user",
+			slog.String("email", userInfo.Email),
+			slog.Any("error", err))
 		return
 	}
+
+	slog.Info("User authorized successfully",
+		slog.String("email", *newUser.Email))
 
 	response := AuthorizeResponse{
 		AccessToken:  newUser.AccessToken,
@@ -86,6 +108,7 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
+		slog.Error("Failed to marshal response", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -93,8 +116,10 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 }
 
 func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Generating auth URL", slog.String("endpoint", "GetAuthURL"))
 	authURL, err := calendar.GenerateAuthURL()
 	if err != nil {
+		slog.Error("Failed to generate auth URL", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to generate auth URL: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -104,14 +129,19 @@ func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Req
 func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Request) {
 	accessToken := r.Header.Get("Authorization")
 	if accessToken == "" {
+		slog.Warn("Missing Authorization header", slog.String("endpoint", "GetUserInfo"))
 		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
 		return
 	}
 	user, err := ec.Query.GetUserByAccessToken(accessToken)
 	if err != nil {
+		slog.Error("Failed to get user", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to get user: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	slog.Debug("Retrieved user info", slog.String("email", *user.Email))
+
 	response := UserInfoResponse{
 		Email:        *user.Email,
 		Name:         *user.Name,
@@ -122,8 +152,10 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
+		slog.Error("Failed to marshal response", slog.Any("error", err))
 		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
 		return
 	}
 	w.Write(responseBytes)
 }
+

@@ -2,6 +2,7 @@ package extractor
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"slices"
@@ -30,38 +31,40 @@ func GetCurrentTimetablePath() (string, error) {
 }
 
 func GetTimetable(groupColumn int) (Timetable, error) {
-
 	timetablePath, err := GetCurrentTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
 	}
 	timetablePath = timetablePath + "x" //excelize requires .xlsx extension
+	slog.Debug("Opening timetable file",
+		slog.String("path", timetablePath),
+		slog.Int("column", groupColumn))
+
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
+		slog.Error("Failed to open timetable file", slog.Any("error", err))
 		return nil, err
 	}
 	defer func() {
 		// Close the spreadsheet.
 		if err := file.Close(); err != nil {
-			fmt.Println(err)
+			slog.Error("Failed to close timetable file", slog.Any("error", err))
 			return
 		}
 	}()
 
 	timetable := make(Timetable)
 	days := getDaysStartEnd(file)
+	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
+
 	for _, day := range days {
 		classes := traverseDay(file, day, groupColumn)
 		timetable[day.WeekDay] = classes
-
+		slog.Debug("Processed day",
+			slog.String("day", day.WeekDay.String()),
+			slog.Int("classes", len(classes)))
 	}
 
-	for day, classes := range timetable {
-		fmt.Println(day)
-		for _, class := range classes {
-			fmt.Println("  Class: ", class.String())
-		}
-	}
 	return timetable, nil
 }
 
@@ -70,7 +73,7 @@ func getDaysStartEnd(file *excelize.File) []Day {
 	var days []Day
 	rows, err := file.GetRows(global.SHEET_NAME)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to get rows from timetable", slog.Any("error", err))
 		return days
 	}
 	for number, row := range rows {
@@ -174,8 +177,13 @@ func fixClassParts(parts []string) []string {
 func getCell(file *excelize.File, sheet string, row int, col int) string {
 	cell, err := file.GetCellValue(sheet, fmt.Sprintf("%s%d", toCharStr(col+1), row+1))
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to get cell value",
+			slog.String("sheet", sheet),
+			slog.Int("row", row),
+			slog.Int("col", col),
+			slog.Any("error", err))
 		return ""
 	}
 	return cell
 }
+

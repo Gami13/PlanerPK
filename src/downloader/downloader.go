@@ -3,6 +3,7 @@ package downloader
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -154,38 +155,42 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 func UpdateTimetable() (didChange bool, path string, err error) {
 	timetableUrl, err := FetchTimetableUrl()
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to fetch timetable URL", slog.Any("error", err))
 		return false, "", err
 	}
 
+	slog.Debug("Fetched timetable URL", slog.String("url", timetableUrl))
+
 	timetablePath, err := extractor.GetCurrentTimetablePath()
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("No timetable present")
+		slog.Info("No timetable present, downloading new one")
 
 		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Failed to download and process timetable", slog.Any("error", err))
 			return false, "", err
 		}
+		slog.Info("Downloaded initial timetable", slog.String("path", timetablePath))
 		return true, timetablePath, nil
 	}
 
 	didChange, err = DidChange(timetablePath, timetableUrl)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to check if timetable changed", slog.Any("error", err))
 		return didChange, timetablePath, err
 	}
 
 	if didChange {
+		slog.Info("Timetable changed, downloading new version")
 		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Failed to download and process timetable", slog.Any("error", err))
 			return didChange, timetablePath, err
 		}
-
+		slog.Info("Downloaded updated timetable", slog.String("path", timetablePath))
 		return didChange, timetablePath, nil
 	}
+	slog.Debug("No timetable changes detected")
 	return didChange, timetablePath + "x", nil
-
 }
+

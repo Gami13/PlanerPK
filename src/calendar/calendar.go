@@ -3,9 +3,8 @@ package calendar
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
@@ -18,7 +17,7 @@ import (
 func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service, error) {
 	config, err := createConfig()
 	if err != nil {
-		log.Fatalf("Unable to create config: %v", err)
+		slog.Error("Failed to create OAuth config", slog.Any("error", err))
 		return nil, err
 	}
 
@@ -26,7 +25,7 @@ func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service,
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve Calendar client: %v", err)
+		slog.Error("Failed to create calendar service", slog.Any("error", err))
 		return nil, err
 	}
 	return srv, nil
@@ -45,24 +44,31 @@ func GenerateAuthURL() (string, error) {
 func ImportTimetable(groupColumn int, token *oauth2.Token) {
 	ctx := context.Background()
 
+	slog.Info("Starting timetable import", slog.Int("group_column", groupColumn))
+
 	timetable, err := extractor.GetTimetable(groupColumn)
 	if err != nil {
-		log.Fatalf("Unable to get timetable: %v", err)
+		slog.Error("Failed to get timetable",
+			slog.Int("group_column", groupColumn),
+			slog.Any("error", err))
+		return
 	}
 	srv, err := createService(ctx, token)
 	if err != nil {
-		log.Fatalf("Unable to create calendar service: %v", err)
+		slog.Error("Failed to create calendar service", slog.Any("error", err))
+		return
 	}
 	currentEvents, err := getCurrentEvents(srv)
 	if err != nil {
-		log.Fatalf("Unable to get current events: %v", err)
+		slog.Error("Failed to get current events", slog.Any("error", err))
+		return
 	}
 
 	// Create calendar events from the timetable
 	newEvents := make(map[string]*calendar.Event)
+	var createdCount, updatedCount, skippedCount int
 	for day, entry := range timetable {
-		// Name (type) - Teacher | Location | AdditionalInfo
-		fmt.Println("Inserting day: ", day)
+		slog.Debug("Processing day", slog.String("day", day.String()))
 		for _, class := range entry {
 			event := class.ToEvent()
 			newEvents[event.ExtendedProperties.Private["event_id"]] = &event
@@ -70,48 +76,66 @@ func ImportTimetable(groupColumn int, token *oauth2.Token) {
 			found, different, existingEvent := checkForExistingEvent(event, currentEvents)
 			if found {
 				if different {
-					// Update the event
-					fmt.Println("Updating event")
+					slog.Info("Updating event",
+						slog.String("summary", event.Summary))
 					_, err := srv.Events.Update("primary", existingEvent.Id, &event).Do()
 					if err != nil {
-						log.Printf("Unable to update event: %v", err)
+						slog.Error("Failed to update event",
+							slog.String("summary", event.Summary),
+							slog.Any("error", err))
+					} else {
+						updatedCount++
 					}
 				}
-				fmt.Println("Event already exists, skipping creation")
+				skippedCount++
 				continue
 			}
 			// Create the event
-
-			fmt.Println("Creating event: ", event.Summary)
+			slog.Info("Creating event", slog.String("summary", event.Summary))
 			_, err := srv.Events.Insert("primary", &event).Do()
 			if err != nil {
-				log.Printf("Unable to create event: %v", err)
+				slog.Error("Failed to create event",
+					slog.String("summary", event.Summary),
+					slog.Any("error", err))
+			} else {
+				createdCount++
 			}
 		}
-
 	}
 	eventsToDelete := findEventsToDelete(currentEvents, newEvents)
+	var deletedCount int
 	for _, event := range eventsToDelete {
-		fmt.Println("Deleting event: ", event.Summary)
+		slog.Info("Deleting event", slog.String("summary", event.Summary))
 		err := srv.Events.Delete("primary", event.Id).Do()
 		if err != nil {
-			log.Printf("Unable to delete event: %v", err)
+			slog.Error("Failed to delete event",
+				slog.String("summary", event.Summary),
+				slog.Any("error", err))
+		} else {
+			deletedCount++
 		}
 	}
 
+	slog.Info("Timetable import completed",
+		slog.Int("created", createdCount),
+		slog.Int("updated", updatedCount),
+		slog.Int("deleted", deletedCount),
+		slog.Int("skipped", skippedCount))
 }
 
 func createConfig() (*oauth2.Config, error) {
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
+		slog.Error("Failed to read credentials file", slog.Any("error", err))
+		return nil, err
 	}
 
 	scopes := []string{calendar.CalendarScope, "email", "profile"}
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, scopes...)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		slog.Error("Failed to parse credentials file", slog.Any("error", err))
+		return nil, err
 	}
 	return config, nil
 }
@@ -132,37 +156,39 @@ func AuthorizeFromCode(code string) (*oauth2.Token, error) {
 func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 	config, err := createConfig()
 	if err != nil {
-		log.Fatalf("Unable to create config: %v", err)
+		slog.Error("Failed to create config for user info", slog.Any("error", err))
+		return nil, err
 	}
 	client := config.Client(context.Background(), token)
 
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
-		fmt.Println("Error getting user info: ", err)
+		slog.Error("Failed to get user info from Google", slog.Any("error", err))
 		return nil, err
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading user info response: ", err)
+		slog.Error("Failed to read user info response", slog.Any("error", err))
 		return nil, err
 	}
 	var result UserInfo
 	if err := json.Unmarshal(data, &result); err != nil {
-		fmt.Println("Error unmarshalling user info response: ", err)
+		slog.Error("Failed to unmarshal user info", slog.Any("error", err))
 		return nil, err
 	}
 
-	fmt.Println("Got Chud data: ", result.String())
+	slog.Info("Retrieved user info",
+		slog.String("email", result.Email),
+		slog.String("name", result.Name))
 	return &result, nil
-
 }
 
 func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 	//extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
 	events, err := srv.Events.List("primary").ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
 	if err != nil {
-		log.Fatalf("Unable to retrieve next ten of the user's events: %v", err)
+		slog.Error("Failed to retrieve calendar events", slog.Any("error", err))
 		return nil, err
 	}
 
@@ -175,6 +201,7 @@ func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 			}
 		}
 	}
+	slog.Debug("Retrieved current events", slog.Int("count", len(filteredEvents)))
 	return filteredEvents, nil
 }
 
@@ -182,17 +209,18 @@ func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 // returns: (found bool, different bool, event *calendar.Event)
 func checkForExistingEvent(newEvent calendar.Event, currentEvents []*calendar.Event) (bool, bool, *calendar.Event) {
 	for _, event := range currentEvents {
-
 		if event.ExtendedProperties.Private["event_id"] == newEvent.ExtendedProperties.Private["event_id"] {
 			if event.ExtendedProperties.Private["hash"] != newEvent.ExtendedProperties.Private["hash"] {
-				fmt.Println("Event differs: ", event.Summary, " vs ", newEvent.Summary)
+				slog.Debug("Event differs",
+					slog.String("old_summary", event.Summary),
+					slog.String("new_summary", newEvent.Summary))
 				return true, true, event
 			}
-			fmt.Println("Event is identical: ", event.Summary)
+			slog.Debug("Event is identical", slog.String("summary", event.Summary))
 			return true, false, event
 		}
 	}
-	fmt.Println("Event not found: ", newEvent.Summary)
+	slog.Debug("Event not found", slog.String("summary", newEvent.Summary))
 	return false, false, nil
 }
 

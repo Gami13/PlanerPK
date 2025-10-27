@@ -1,7 +1,11 @@
 package utils
 
 import (
+	"fmt"
+	"io"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -97,4 +101,43 @@ func LoadEnvVariables() {
 		global.TIMETABLE_DOWNLOAD_DESTINATION = timetableDownloadDestination
 	}
 
+}
+
+func InitializeLogging(logDir string) error {
+	// Create logs directory if it doesn't exist
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("failed to create log directory: %w", err)
+	}
+
+	// Create log file with timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	logFilePath := filepath.Join(logDir, fmt.Sprintf("app_%s.log", timestamp))
+
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %w", err)
+	}
+
+	// Create a multi-writer that writes to both file and console
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+
+	// Create a handler with nice formatting
+	handler := slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// Customize time format
+			if a.Key == slog.TimeKey {
+				return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05"))
+			}
+			return a
+		},
+	})
+
+	slog.SetDefault(slog.New(handler))
+
+	slog.Info("Logger initialized",
+		slog.String("log_file", logFilePath),
+		slog.String("log_level", "INFO"))
+
+	return nil
 }

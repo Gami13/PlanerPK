@@ -34,6 +34,7 @@ go.work.sum
 /downloads
 /current_timetable
 /result
+/logs
 credentials.json
 /token.json
 /database.db

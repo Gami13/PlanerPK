@@ -3,6 +3,7 @@ package webServer
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
@@ -27,7 +28,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func Start(db *sql.DB) {
-
 	ctx := context.Background()
 
 	query := database.New(db)
@@ -40,5 +40,10 @@ func Start(db *sql.DB) {
 	mux.HandleFunc("GET /api/getUserInfo", hctx.GetUserInfoEndpoint)
 
 	handler := corsMiddleware(mux)
-	http.ListenAndServe(":"+global.SERVER_PORT, handler)
+
+	slog.Info("Web server listening", slog.String("port", global.SERVER_PORT))
+	if err := http.ListenAndServe(":"+global.SERVER_PORT, handler); err != nil {
+		slog.Error("Web server failed", slog.Any("error", err))
+	}
 }
+
