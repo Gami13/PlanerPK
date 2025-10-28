@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/lmittmann/tint"
 )
 
 func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
@@ -122,18 +123,11 @@ func InitializeLogging(logDir string) error {
 	multiWriter := io.MultiWriter(os.Stdout, logFile)
 
 	// Create a handler with nice formatting
-	handler := slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Customize time format
-			if a.Key == slog.TimeKey {
-				return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05"))
-			}
-			return a
-		},
-	})
 
-	slog.SetDefault(slog.New(handler))
+	slog.SetDefault(slog.New(tint.NewHandler(multiWriter, &tint.Options{
+		Level:      slog.LevelDebug,
+		TimeFormat: time.Stamp,
+	})))
 
 	slog.Info("Logger initialized",
 		slog.String("log_file", logFilePath),

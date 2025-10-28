@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -41,6 +42,7 @@ func GenerateAuthURL() (string, error) {
 	return authURL, nil
 }
 
+// TODO: update the date of last sync for each user
 func ImportTimetable(groupColumn int, token *oauth2.Token) {
 	ctx := context.Background()
 
@@ -115,6 +117,8 @@ func ImportTimetable(groupColumn int, token *oauth2.Token) {
 			deletedCount++
 		}
 	}
+
+	database.Query.UpdateUserSyncTime(token.AccessToken)
 
 	slog.Info("Timetable import completed",
 		slog.Int("created", createdCount),

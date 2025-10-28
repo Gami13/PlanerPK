@@ -47,7 +47,7 @@ func main() {
 	ticker := time.NewTicker(time.Duration(global.MINUTES_BETWEEN) * time.Minute)
 	done := make(chan bool)
 	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
-	webServer.Start(db)
+	go webServer.Start(db)
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
 	func() {
@@ -75,16 +75,22 @@ func updateAllTimetables(queries *database.Queries) {
 		slog.Error("Failed to update timetable", slog.Any("error", err))
 		return
 	}
-	if !didChange {
-		slog.Info("No timetable changes detected, skipping updates")
-		return
-	}
 
-	slog.Info("Timetable changed, updating for all active users",
-		slog.Int("total_users", len(users)))
-
+	//if didnt change i still want to update if it hasnt been updated for 3 days
+	//!Magic number alert!
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
+			slog.Info("Skipping timetable update for inactive user or user without chosen column",
+				slog.String("email", *user.Email),
+				slog.Int("column", *user.ChosenColumn))
+
+			continue
+		}
+		timeSinceSync := time.Since(*user.LastSynced)
+		if !didChange && timeSinceSync.Hours() < 72 {
+			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
+				slog.String("email", *user.Email),
+				slog.Int("column", *user.ChosenColumn))
 			continue
 		}
 

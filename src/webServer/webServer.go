@@ -31,7 +31,7 @@ func Start(db *sql.DB) {
 	ctx := context.Background()
 
 	query := database.New(db)
-	hctx := database.NewEndpointContext(query, ctx)
+	hctx := NewEndpointContext(query, ctx)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/authorize", hctx.AuthorizeEndpoint)
@@ -46,4 +46,3 @@ func Start(db *sql.DB) {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}
 }
-

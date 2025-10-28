@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
-
 	"github.com/xuri/excelize/v2"
 )
 
@@ -186,4 +185,3 @@ func getCell(file *excelize.File, sheet string, row int, col int) string {
 	}
 	return cell
 }
-

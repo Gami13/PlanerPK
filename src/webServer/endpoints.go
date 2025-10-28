@@ -1,13 +1,31 @@
-package database
+package webServer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 )
+
+type EndpointContext struct {
+	Query *database.Queries
+	Ctx   context.Context
+}
+
+func NewEndpointContext(query *database.Queries, ctx context.Context) *EndpointContext {
+	if query == nil {
+		panic("Query is nil!")
+	}
+	if ctx == nil {
+		panic("Context is nil!")
+	}
+
+	return &EndpointContext{Query: query, Ctx: ctx}
+}
 
 // PUT /setChosenColumn
 // in body: chosenColumn: int
@@ -77,7 +95,7 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, fmt.Sprintf("Failed to get user info: %v", err), http.StatusInternalServerError)
 		return
 	}
-	user := User{
+	user := database.User{
 		Email:        &userInfo.Email,
 		Name:         &userInfo.Name,
 		GivenName:    &userInfo.GivenName,
@@ -99,7 +117,7 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 	slog.Info("User authorized successfully",
 		slog.String("email", *newUser.Email))
 
-	response := AuthorizeResponse{
+	response := database.AuthorizeResponse{
 		AccessToken:  newUser.AccessToken,
 		Email:        *newUser.Email,
 		ChosenColumn: *newUser.ChosenColumn,
@@ -142,7 +160,7 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 
 	slog.Debug("Retrieved user info", slog.String("email", *user.Email))
 
-	response := UserInfoResponse{
+	response := database.UserInfoResponse{
 		Email:        *user.Email,
 		Name:         *user.Name,
 		GivenName:    *user.GivenName,
@@ -158,4 +176,3 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 	}
 	w.Write(responseBytes)
 }
-

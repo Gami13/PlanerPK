@@ -14,6 +14,7 @@ type User struct {
 	Name         *string
 	GivenName    *string
 	Picture      *string
+	LastSynced   *time.Time
 
 	AccessToken  string
 	TokenType    string

@@ -1,9 +1,9 @@
 package database
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"golang.org/x/oauth2"
 	_ "modernc.org/sqlite"
@@ -29,21 +29,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	}
 }
 
-type EndpointContext struct {
-	Query *Queries
-	Ctx   context.Context
-}
+var Query *Queries
 
-func NewEndpointContext(query *Queries, ctx context.Context) *EndpointContext {
-	if query == nil {
-		panic("Query is nil!")
-	}
-	if ctx == nil {
-		panic("Context is nil!")
-	}
-
-	return &EndpointContext{Query: query, Ctx: ctx}
-}
+// Probably a big no no, but i didnt want to figure out how to pass it to every function that needs it, but it also should work just fine like this
 
 // just creates the chud tables if they dont exist yet
 func InitializeDatabase(db *sql.DB) error {
@@ -52,6 +40,7 @@ func InitializeDatabase(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+	Query = query
 	return nil
 }
 
@@ -69,7 +58,8 @@ func (q *Queries) createTables() error {
 		expiry TIMESTAMP NOT NULL,
 		expires_in INTEGER NOT NULL,
 		chosen_column INTEGER DEFAULT -1,
-		is_active BOOLEAN DEFAULT 1
+		is_active BOOLEAN DEFAULT 1,
+		last_synced TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);
 	`
 	_, err := q.db.Exec(createUserTable)
@@ -122,7 +112,7 @@ func (q *Queries) GetUserByEmail(email string) (*User, error) {
 
 func (q *Queries) GetAllUsers() ([]*User, error) {
 	getUsers := `
-	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
+	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 	FROM users;
 	`
 	rows, err := q.db.Query(getUsers)
@@ -130,13 +120,18 @@ func (q *Queries) GetAllUsers() ([]*User, error) {
 		return nil, err
 	}
 	defer rows.Close()
-
+	var date string
 	var users []*User
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive); err != nil {
+		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive, &date); err != nil {
 			return nil, err
 		}
+		newTime, err := time.Parse(time.RFC3339, date)
+		if err != nil {
+			return nil, err
+		}
+		user.LastSynced = &newTime
 		users = append(users, &user)
 	}
 	return users, nil
@@ -186,4 +181,18 @@ func (q *Queries) GetUserByAccessToken(accessToken string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (q *Queries) UpdateUserSyncTime(accessToken string) error {
+	updateSyncTime := `
+	UPDATE users
+	SET last_synced = CURRENT_TIMESTAMP
+	WHERE access_token = ?;
+	`
+	_, err := q.db.Exec(updateSyncTime, accessToken)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+	return nil
 }
