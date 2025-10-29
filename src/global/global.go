@@ -12,3 +12,5 @@ var SERVER_PORT = "8080"
 var TIMETABLE_CURRENT_DESTINATION = "./current_timetable/"
 var TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
 var TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
+var CALENDAR_CREDENTIALS_PATH = "./credentials.json"
+var TIME_BETWEEN_SYNC_HOURS = 72

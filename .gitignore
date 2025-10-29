@@ -38,3 +38,6 @@ go.work.sum
 credentials.json
 /token.json
 /database.db
+
+static/*
+

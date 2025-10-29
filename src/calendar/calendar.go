@@ -9,6 +9,7 @@ import (
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -128,7 +129,7 @@ func ImportTimetable(groupColumn int, token *oauth2.Token) {
 }
 
 func createConfig() (*oauth2.Config, error) {
-	b, err := os.ReadFile("credentials.json")
+	b, err := os.ReadFile(global.CALENDAR_CREDENTIALS_PATH)
 	if err != nil {
 		slog.Error("Failed to read credentials file", slog.Any("error", err))
 		return nil, err

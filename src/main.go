@@ -76,8 +76,6 @@ func updateAllTimetables(queries *database.Queries) {
 		return
 	}
 
-	//if didnt change i still want to update if it hasnt been updated for 3 days
-	//!Magic number alert!
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
 			slog.Info("Skipping timetable update for inactive user or user without chosen column",
@@ -87,7 +85,7 @@ func updateAllTimetables(queries *database.Queries) {
 			continue
 		}
 		timeSinceSync := time.Since(*user.LastSynced)
-		if !didChange && timeSinceSync.Hours() < 72 {
+		if !didChange && timeSinceSync.Hours() < float64(global.TIME_BETWEEN_SYNC_HOURS) {
 			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
 				slog.String("email", *user.Email),
 				slog.Int("column", *user.ChosenColumn))

@@ -38,6 +38,8 @@ func Start(db *sql.DB) {
 	mux.HandleFunc("PUT /api/setChosenColumn", hctx.SetChosenColumnEndpoint)
 	mux.HandleFunc("GET /api/getAuthURL", hctx.GetAuthURLEndpoint)
 	mux.HandleFunc("GET /api/getUserInfo", hctx.GetUserInfoEndpoint)
+	//serves the frontend
+	mux.Handle("/", http.FileServer(http.Dir("./static/")))
 
 	handler := corsMiddleware(mux)
 
