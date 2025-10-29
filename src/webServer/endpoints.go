@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"path"
+	"strings"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
@@ -182,4 +185,23 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 		return
 	}
 	w.Write(responseBytes)
+}
+
+var fs = http.FileServer(http.Dir("./static/"))
+
+func (ec *EndpointContext) ServeFrontend(w http.ResponseWriter, r *http.Request) {
+
+	if r.URL.Path != "/" {
+		fullPath := "./static/" + strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+		_, err := os.Stat(fullPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				return
+			}
+			// Requested file does not exist so we return the default (resolves to index.html)
+			r.URL.Path = "/"
+		}
+	}
+	fs.ServeHTTP(w, r)
 }

@@ -8,14 +8,13 @@
 
 ### Input Validation & Error Handling
 - [✅] Validate `chosenColumn` input (check if within valid range, non-negative)
-- [ ] Replace all `panic()` calls with proper error handling and HTTP error responses
-- [ ] Add validation for all endpoint inputs
+- [✅] Replace all `panic()` calls with proper error handling and HTTP error responses
 - [ ] Return user-friendly error messages (hide technical details from users)
 
 ### CORS Configuration
-- [ ] Replace `Access-Control-Allow-Origin: *` with whitelist of allowed origins
-- [ ] Load allowed origins from environment variables
-- [ ] Set proper CORS headers (credentials, methods, headers)
+- [✅] Replace `Access-Control-Allow-Origin: *` with whitelist of allowed origins
+- [✅] Load allowed origins from credentials.json
+- [✅] Set proper CORS headers (credentials, methods, headers)
 
 ### User Management
 - [ ] Add DELETE `/api/account` endpoint for user deletion (GDPR compliance)

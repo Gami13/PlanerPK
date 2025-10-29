@@ -1,8 +1,9 @@
-import { createSignal, createResource } from 'solid-js';
-import styles from './home.module.css'
+import { createResource } from 'solid-js';
+import { Endpoints } from '../constants';
+import styles from './home.module.css';
 
 const fetchAuthURL = async () => {
-  const response = await fetch(`http://localhost:8080/api/getAuthURL`);
+  const response = await fetch(Endpoints.GetAuthURL);
   return response.text();
 }
 
@@ -25,7 +26,7 @@ export default function Home() {
         </div>
 
         <div>
-          <img class={styles.google_calendar_preview} src="/google-calendar-preview.png"/>
+          <img class={styles.google_calendar_preview} src="/google-calendar-preview.png" />
         </div>
       </section>
     </main>

@@ -29,9 +29,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	}
 }
 
-var Query *Queries
-
 // Probably a big no no, but i didnt want to figure out how to pass it to every function that needs it, but it also should work just fine like this
+var Query *Queries
 
 // just creates the chud tables if they dont exist yet
 func InitializeDatabase(db *sql.DB) error {

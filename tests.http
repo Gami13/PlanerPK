@@ -2,7 +2,7 @@
 @server_url = http://localhost:8080
 @access_token = 
 ### Update Chosen Column
-PUT {{server_url}}/api/setChosenColumn HTTP/1.1
+PUT {{server_url}}/api/chosenColumn HTTP/1.1
 Authorization: {{access_token}}
 Content-Type: application/json
 
@@ -12,5 +12,5 @@ Content-Type: application/json
 
 
 ### Get User Info
-GET {{server_url}}/api/getUserInfo HTTP/1.1
+GET {{server_url}}/api/userInfo HTTP/1.1
 Authorization: {{access_token}}
