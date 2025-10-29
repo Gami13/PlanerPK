@@ -119,6 +119,13 @@ func LoadEnvVariables() {
 			global.TIME_BETWEEN_SYNC_HOURS = val
 		}
 	}
+	lastColummn := os.Getenv("LAST_COLUMN")
+	if lastColummn != "" {
+		val, err := strconv.Atoi(lastColummn)
+		if err == nil {
+			global.LAST_COLUMN = val
+		}
+	}
 
 }
 

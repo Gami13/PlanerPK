@@ -6,6 +6,7 @@ var HOUR_COLUMN = 1
 var DAY_START = "7.30"
 var DAY_END = "21.00"
 var DATABASE_SOURCE = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000"
+var LAST_COLUMN = 40
 var DATABASE_DRIVER = "sqlite"
 var MINUTES_BETWEEN = 5
 var SERVER_PORT = "8080"

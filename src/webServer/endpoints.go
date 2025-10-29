@@ -9,6 +9,7 @@ import (
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
 )
 
 type EndpointContext struct {
@@ -49,6 +50,12 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 	}
 
 	slog.Info("Setting chosen column", slog.Int("column", requestBody.ChosenColumn))
+
+	if requestBody.ChosenColumn < 0 || requestBody.ChosenColumn > global.LAST_COLUMN {
+		slog.Warn("Invalid chosen column value", slog.Int("column", requestBody.ChosenColumn))
+		http.Error(w, "Invalid chosen column value", http.StatusBadRequest)
+		return
+	}
 
 	if err := ec.Query.UpdateChosenColumn(accessToken, requestBody.ChosenColumn); err != nil {
 		slog.Error("Failed to update chosen column",
