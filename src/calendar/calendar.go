@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
@@ -191,7 +192,8 @@ func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 
 func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 	//extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
-	events, err := srv.Events.List("primary").ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
+	t := time.Now().Format(time.RFC3339)
+	events, err := srv.Events.List("primary").TimeMin(t).ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
 	if err != nil {
 		slog.Error("Failed to retrieve calendar events", slog.Any("error", err))
 		return nil, err
