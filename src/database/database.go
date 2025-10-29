@@ -59,7 +59,7 @@ func (q *Queries) createTables() error {
 		expires_in INTEGER NOT NULL,
 		chosen_column INTEGER DEFAULT -1,
 		is_active BOOLEAN DEFAULT 1,
-		last_synced TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		last_synced TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 	);
 	`
 	_, err := q.db.Exec(createUserTable)
@@ -186,7 +186,7 @@ func (q *Queries) GetUserByAccessToken(accessToken string) (*User, error) {
 func (q *Queries) UpdateUserSyncTime(accessToken string) error {
 	updateSyncTime := `
 	UPDATE users
-	SET last_synced = CURRENT_TIMESTAMP
+	SET last_synced = (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 	WHERE access_token = ?;
 	`
 	_, err := q.db.Exec(updateSyncTime, accessToken)

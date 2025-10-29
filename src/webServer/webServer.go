@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
@@ -34,10 +35,27 @@ func Start(db *sql.DB) {
 	hctx := NewEndpointContext(query, ctx)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/authorize", hctx.AuthorizeEndpoint)
-	mux.HandleFunc("PUT /api/setChosenColumn", hctx.SetChosenColumnEndpoint)
-	mux.HandleFunc("GET /api/getAuthURL", hctx.GetAuthURLEndpoint)
-	mux.HandleFunc("GET /api/getUserInfo", hctx.GetUserInfoEndpoint)
+	rateLimiter := NewRateLimiter()
+	generalPolicy := RateLimitPolicy{
+		Name:     "general",
+		Requests: global.GENERAL_RATE_LIMIT_PER_MINUTE,
+		Window:   time.Minute,
+	}
+	setChosenColumnPolicy := RateLimitPolicy{
+		Name:        "setChosenColumn-strict",
+		Requests:    3,
+		Window:      time.Hour,
+		BanDuration: 7 * 24 * time.Hour,
+	}
+
+	registerGeneral := func(pattern string, handler http.HandlerFunc) {
+		mux.Handle(pattern, rateLimitMiddleware(rateLimiter, generalPolicy, handler))
+	}
+
+	registerGeneral("GET /api/authorize", hctx.AuthorizeEndpoint)
+	registerGeneral("GET /api/getAuthURL", hctx.GetAuthURLEndpoint)
+	registerGeneral("GET /api/getUserInfo", hctx.GetUserInfoEndpoint)
+	mux.Handle("PUT /api/setChosenColumn", rateLimitMiddleware(rateLimiter, generalPolicy, rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, http.HandlerFunc(hctx.SetChosenColumnEndpoint))))
 	//serves the frontend
 	mux.Handle("/", http.FileServer(http.Dir("./static/")))
 

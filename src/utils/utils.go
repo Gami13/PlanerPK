@@ -89,6 +89,13 @@ func LoadEnvVariables() {
 	if serverPort != "" {
 		global.SERVER_PORT = serverPort
 	}
+	generalRateLimit := os.Getenv("GENERAL_RATE_LIMIT_PER_MINUTE")
+	if generalRateLimit != "" {
+		val, err := strconv.Atoi(generalRateLimit)
+		if err == nil {
+			global.GENERAL_RATE_LIMIT_PER_MINUTE = val
+		}
+	}
 	timetableCurrentDestination := os.Getenv("TIMETABLE_CURRENT_DESTINATION")
 	if timetableCurrentDestination != "" {
 		global.TIMETABLE_CURRENT_DESTINATION = timetableCurrentDestination

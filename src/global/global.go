@@ -9,6 +9,7 @@ var DATABASE_SOURCE = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000
 var DATABASE_DRIVER = "sqlite"
 var MINUTES_BETWEEN = 5
 var SERVER_PORT = "8080"
+var GENERAL_RATE_LIMIT_PER_MINUTE = 60
 var TIMETABLE_CURRENT_DESTINATION = "./current_timetable/"
 var TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
 var TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
