@@ -108,6 +108,17 @@ func LoadEnvVariables() {
 	if timetableDownloadDestination != "" {
 		global.TIMETABLE_DOWNLOAD_DESTINATION = timetableDownloadDestination
 	}
+	calendarCredentialsPath := os.Getenv("CALENDAR_CREDENTIALS_PATH")
+	if calendarCredentialsPath != "" {
+		global.CALENDAR_CREDENTIALS_PATH = calendarCredentialsPath
+	}
+	timeBetweenSyncHours := os.Getenv("TIME_BETWEEN_SYNC_HOURS")
+	if timeBetweenSyncHours != "" {
+		val, err := strconv.Atoi(timeBetweenSyncHours)
+		if err == nil {
+			global.TIME_BETWEEN_SYNC_HOURS = val
+		}
+	}
 
 }
 
