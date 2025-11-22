@@ -1,11 +1,13 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { createEffect } from 'solid-js';
+import { createEffect, useContext } from 'solid-js';
+import { AppContext, updateLoggedInUser } from '../..';
 import { Endpoints } from '../../constants';
 import { setAccessToken } from '../../utils';
 
 export function Authorize() {
   const location = useLocation();
   const navigate = useNavigate();
+  const AppState = useContext(AppContext);
 
   createEffect(() => {
     const code = new URLSearchParams(location.search).get("code");
@@ -16,7 +18,10 @@ export function Authorize() {
         .then(data => {
           if (data.access_token) {
             setAccessToken(data.access_token);
-            navigate("/settings");
+
+            updateLoggedInUser(AppState.store, AppState.setStore).then(() => {
+              navigate("/settings");
+            });
           }
         })
         .catch(error => {

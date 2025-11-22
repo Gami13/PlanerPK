@@ -58,6 +58,15 @@ async function fetchUserInfo(accessToken: string): Promise<UserInfoResponse | un
   return response.json();
 }
 
+export async function updateLoggedInUser(store: AppStore, setStore: SetStoreFunction<AppStore>) {
+  const userToken = getAccessToken();
+  if (userToken) {
+    fetchUserInfo(userToken).then((userInfo) => {
+      setStore({ userInfo });
+      console.log("Fetched user info on update:", userInfo);
+    });
+  }
+}
 
 export function App(props: { children: Element }) {
 
@@ -67,12 +76,7 @@ export function App(props: { children: Element }) {
   });
 
   onMount(async () => {
-    const userToken = getAccessToken();
-    if (userToken) {
-      const userInfo = await fetchUserInfo(userToken);
-      setStore({ userInfo });
-      console.log("Fetched user info on app mount:", userInfo);
-    }
+    updateLoggedInUser(store, setStore);
   });
 
 
