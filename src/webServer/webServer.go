@@ -54,8 +54,19 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 	slog.Info("CORS middleware initialized", slog.String("allowed_origins", strings.Join(origins, ", ")))
 
+	// Build a lookup table so we can validate request origins quickly per request.
+	allowedOrigins := make(map[string]struct{}, len(origins))
+	for _, origin := range origins {
+		allowedOrigins[origin] = struct{}{}
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", strings.Join(origins, ", "))
+		origin := r.Header.Get("Origin")
+
+		if _, ok := allowedOrigins[origin]; ok {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Add("Vary", "Origin")
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 

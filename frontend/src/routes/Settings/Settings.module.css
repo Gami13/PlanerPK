@@ -1,0 +1,94 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2em;
+    padding: 2em;
+    width: 100%;
+}
+
+.basic_section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    width: 100%;
+}
+
+.description {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 48em);
+    text-align: center;
+    gap: 0.5em;
+}
+
+.header {
+    font-size: 2.8em;
+    font-weight: 500;
+}
+
+.setting {
+    width: min(100%, 48em);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+    padding: 1.5em;
+    border: 1px solid #e0e6f0;
+    border-radius: 16px;
+    background-color: #fff;
+}
+
+.setting_header {
+    font-size: 1.4em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.setting_description {
+    margin: 0;
+    color: #4c576a;
+}
+
+.setting select {
+    width: 100%;
+    max-width: 20em;
+    padding: 0.6em 0.9em;
+    font-size: 1em;
+    border-radius: 12px;
+    border: 1px solid #cfd8e6;
+    color: #1b2433;
+}
+
+.setting_button {
+    align-self: flex-start;
+    margin-top: 0.5em;
+    padding: 0.5em 1.6em;
+    border-radius: 9999px;
+    border: none;
+    font-size: 1.05em;
+    font-weight: 500;
+    background-color: var(--blue);
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.setting_button:hover {
+    background-color: #0286c4;
+}
+
+.setting_button:focus {
+    outline: 2px solid #9ec9ff;
+    outline-offset: 2px;
+}
+
+@media all and (min-width: 48em) {
+    .description {
+        text-align: left;
+    }
+
+    .setting_button {
+        align-self: flex-end;
+    }
+}

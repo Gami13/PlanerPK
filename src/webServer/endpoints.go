@@ -163,8 +163,8 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 	}
 	user, err := ec.Query.GetUserByAccessToken(accessToken)
 	if err != nil {
-		slog.Error("Failed to get user", slog.Any("error", err))
-		http.Error(w, fmt.Sprintf("Failed to get user: %v", err), http.StatusInternalServerError)
+		slog.Warn("Invalid access token or user not found", slog.Any("error", err))
+		http.Error(w, "Unauthorized: invalid or expired access token", http.StatusUnauthorized)
 		return
 	}
 

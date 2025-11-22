@@ -1,7 +1,9 @@
-import { createEffect } from 'solid-js';
 import { useLocation, useNavigate } from '@solidjs/router';
+import { createEffect } from 'solid-js';
+import { Endpoints } from '../../constants';
+import { setAccessToken } from '../../utils';
 
-export default function Authorize() {
+export function Authorize() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -9,11 +11,11 @@ export default function Authorize() {
     const code = new URLSearchParams(location.search).get("code");
 
     if (code) {
-      fetch(`http://localhost:8080/api/authorize?code=${code}`)
+      fetch(`${Endpoints.Authorize}?code=${code}`)
         .then(response => response.json())
         .then(data => {
           if (data.access_token) {
-            document.cookie = `access_token=${data.access_token}; path=/; max-age=604800; samesite=strict`;
+            setAccessToken(data.access_token);
             navigate("/settings");
           }
         })
@@ -24,7 +26,7 @@ export default function Authorize() {
   });
   return (
     <main>
-        <h1>Autoryzacja...</h1>
+      <h1>Autoryzacja...</h1>
     </main>
   );
 }

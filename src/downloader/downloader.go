@@ -22,8 +22,7 @@ func FetchTimetableUrl() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
 	}
-
-	link := htmlquery.InnerText(htmlquery.FindOne(doc, "//html/body/div[2]/div[2]/div/div/main/article/div/div[1]/a/@href"))
+	link := htmlquery.InnerText(htmlquery.FindOne(doc, "//html/body/div[2]/div[2]/div/div/main/article/div/ul[1]/li[1]/a/@href"))
 
 	return link, nil
 }
@@ -193,4 +192,3 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 	slog.Debug("No timetable changes detected")
 	return didChange, timetablePath + "x", nil
 }
-

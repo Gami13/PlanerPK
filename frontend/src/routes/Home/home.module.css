@@ -1,0 +1,140 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2em;
+    padding: 2em;
+    width: 100%;
+}
+
+.basic_section {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.description {
+    display: flex;
+    flex-direction: column;
+    max-width: 48em;
+}
+
+.header {
+    font-size: 2.8em;
+    font-weight: 500;
+}
+
+.register_button {
+    font-size: 1.2em;
+    padding: 0.4em;
+    padding-left: 1em;
+    padding-right: 1em;
+    border-radius: 9999999px;
+    align-self: center;
+    background-color: var(--blue);
+    color: white;
+}
+
+.google_calendar_preview {
+    box-sizing: border-box;
+
+    max-width: 100%;
+    height: auto;
+
+    border-style: solid;
+    border: 1px solid #e4e8ee;
+    border-radius: 8px;
+}
+
+.interactions_container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 48em;
+    gap: 1em;
+}
+
+.auth_buttons {
+    display: flex;
+    gap: 0.75em;
+}
+
+.primary_button,
+.secondary_button {
+    font-size: 1em;
+    font-weight: 500;
+    padding: 0.45em 1.3em;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary_button {
+    background: var(--blue);
+    color: #fff;
+}
+
+.secondary_button {
+    background-color: #fff;
+    color: #1a1a1a;
+    border: 1px solid #d0d7e2;
+}
+
+
+
+.primary_button:focus,
+.secondary_button:focus {
+    outline: 2px solid #9ec9ff;
+    outline-offset: 2px;
+}
+
+.image_container {
+    display: inline-block;
+    max-width: 95vw;
+    width: min(100%, 48em);
+
+    transition: width 0.3s ease, border-width 0.3s ease;
+}
+
+@media all and (min-width: 0em) {
+    .basic_section {
+        flex-direction: column;
+    }
+}
+
+@media all and (min-width: 38em) {
+    .image_container {
+        transform-origin: center center;
+    }
+
+    .image_container:hover {
+        width: 100%;
+    }
+}
+
+@media all and (max-width: 33.75em) {
+    .interactions_container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .auth_buttons {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* We'll see */
+/*@media all and (min-width: 87em) {
+    .main > .basic_section {
+        flex-direction: row;
+    }
+
+    .main > .basic_section > div:nth-child(2) {
+        transform-origin: top right;
+        min-width: 40em;
+    }
+}*/

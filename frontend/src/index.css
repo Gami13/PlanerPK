@@ -1,8 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
 * {
     box-sizing: border-box;
-    
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
+    font-family: "Google Sans Flex", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings:
+        "slnt" 0,
+        "wdth" 100,
+        "GRAD" 0,
+        "ROND" 0;
     padding: 0;
     margin: 0;
 
@@ -14,4 +23,8 @@
 main {
     width: 100vw;
     height: 100vh;
+}
+
+:root {
+    --blue: #039be5;
 }
