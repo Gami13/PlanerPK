@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"io/fs"
+	"sort"
 	"regexp"
 	"slices"
 	"strings"
@@ -20,10 +22,33 @@ func GetCurrentTimetablePath() (string, error) {
 		return "", err
 	}
 
+
+	// If there are multiple .xls files then get the newest one by date and warn about it
+	var xlsFiles []fs.FileInfo
+
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
-			return global.TIMETABLE_CURRENT_DESTINATION + entry.Name(), nil
+			fileInfo, err := entry.Info()
+
+			if err != nil {
+				slog.Error("Skipping possible current timetable file.")
+			}
+
+			xlsFiles = append(xlsFiles, fileInfo)
 		}
+	}
+
+	if len(xlsFiles) == 1 {
+		return global.TIMETABLE_CURRENT_DESTINATION + xlsFiles[0].Name(), nil
+	} else if len(xlsFiles) > 1 {
+		slog.Warn("Multiple current timetable files. Getting the newest one by modification date.",
+			slog.String("timetable_current_destination", global.TIMETABLE_CURRENT_DESTINATION))
+
+		sort.Slice(xlsFiles, func(i, j int) bool {
+			return xlsFiles[i].ModTime().After(xlsFiles[j].ModTime())
+		})
+
+		return global.TIMETABLE_CURRENT_DESTINATION + xlsFiles[0].Name(), nil
 	}
 
 	return "", fmt.Errorf("no .xls file found in %s", global.TIMETABLE_CURRENT_DESTINATION)
