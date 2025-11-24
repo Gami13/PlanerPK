@@ -131,6 +131,9 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 // Download a timetable from the PK website, convert it to .xlsx and move to the timetableExtractor.CURRENT_TIMETABLE_DESTINATION
 // Returns the path timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx)
 func DownloadAndProcessTimetable(url string) (string, error) {
+	// Get the current timetable that will be removed after a successfull download
+	currentTimetablePathXls, err := extractor.GetCurrentTimetablePath();
+
 	// Download the new timetable
 	timetablePathXls, err := DownloadTimetable(url)
 	if err != nil {
@@ -144,9 +147,41 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Move the timetable to the current timetable destination
-	os.Rename(timetablePathXls, global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXls))
-	os.Rename(timetablePathXlsx, global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXlsx))
-	return global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx), nil
+	newTimetablePathXls := global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXls)
+	err = os.Rename(timetablePathXls, newTimetablePathXls)
+	if err != nil {
+		slog.Error("Failed to move the new .xls timetable.",
+			slog.String("source", timetablePathXls),
+			slog.String("destination", newTimetablePathXls),
+			slog.Any("error", err))
+	}
+
+	newTimetablePathXlsx := global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXlsx)
+	err = os.Rename(timetablePathXlsx, newTimetablePathXlsx)
+	if err != nil {
+		slog.Error("Failed to move the new .xlsx timetable.",
+			slog.String("source", timetablePathXlsx),
+			slog.String("destination", newTimetablePathXlsx),
+			slog.Any("error", err))
+	}
+
+	// Delete the old timetable
+	err = os.Remove(currentTimetablePathXls)
+	if err != nil {
+		slog.Error("Failed to delete the old .xls timetable.",
+			slog.String("file", currentTimetablePathXls),
+			slog.Any("error", err))
+	}
+
+	currentTimetablePathXlsx := currentTimetablePathXls + "x"
+	err = os.Remove(currentTimetablePathXlsx)
+	if err != nil {
+		slog.Error("Failed to delete the old .xlsx timetable.",
+			slog.String("file", currentTimetablePathXlsx),
+			slog.Any("error", err))
+	}
+
+	return newTimetablePathXlsx, nil
 }
 
 // Updates the timetable if it changed, using FetchTimetableUrl, DidChange and DownloadAndProcessTimetable
@@ -189,6 +224,6 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 		slog.Info("Downloaded updated timetable", slog.String("path", timetablePath))
 		return didChange, timetablePath, nil
 	}
-	slog.Debug("No timetable changes detected")
+	slog.Info("No timetable changes detected")
 	return didChange, timetablePath + "x", nil
 }
