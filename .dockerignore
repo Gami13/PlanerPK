@@ -1,0 +1,23 @@
+# Exclude VCS and editor clutter
+.git
+.gitignore
+.vscode
+.idea
+
+# Runtime artifacts
+logs
+downloads
+current_timetable
+data
+static
+database.db
+*.log
+
+# Node build caches
+node_modules
+frontend/node_modules
+
+# Environment & credentials (mounted at runtime instead)
+.env
+.env.*
+credentials.json

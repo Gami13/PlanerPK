@@ -1,6 +1,6 @@
 
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = window.__RUNTIME_CONFIG__.API_BASE_URL;
 
 export const Endpoints = {
 	GetAuthURL: `${API_BASE_URL}/authURL`,
