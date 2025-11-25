@@ -193,6 +193,8 @@ func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 	//extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
 	t := time.Now().Format(time.RFC3339)
+	//set to start of day
+	t = time.Now().Truncate(24 * time.Hour).Format(time.RFC3339)
 	events, err := srv.Events.List("primary").TimeMin(t).ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
 	if err != nil {
 		slog.Error("Failed to retrieve calendar events", slog.Any("error", err))
