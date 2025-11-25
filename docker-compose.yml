@@ -25,6 +25,7 @@ services:
       TIMETABLE_URL : "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/" #URL of the timetable, should be a valid URL that points to the website with the timetable
       TIMETABLE_DOWNLOAD_DESTINATION : "./downloads/"
       TIME_BETWEEN_SYNC_HOURS : "72" #time between syncing the calendar, in hours, if nothing changed
+      TZ: "Europe/Warsaw" #timezone for the application
       
     volumes:
       - ./data:/app/data
