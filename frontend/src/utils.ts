@@ -5,3 +5,4 @@ export function getAccessToken(): string | null {
 	const match = document.cookie.match(new RegExp('(^| )access_token=([^;]+)'));
 	return match ? match[2] : null;
 }
+

@@ -190,6 +190,12 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 var fs = http.FileServer(http.Dir("./static/"))
 
 func (ec *EndpointContext) ServeFrontend(w http.ResponseWriter, r *http.Request) {
+	// Prevent caching of env.js since it's dynamically generated at runtime
+	if r.URL.Path == "/env.js" {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+	}
 
 	if r.URL.Path != "/" {
 		fullPath := "./static/" + strings.TrimPrefix(path.Clean(r.URL.Path), "/")

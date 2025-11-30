@@ -18,6 +18,4 @@ node_modules
 frontend/node_modules
 
 # Environment & credentials (mounted at runtime instead)
-.env
-.env.*
 credentials.json

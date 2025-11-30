@@ -21,11 +21,15 @@ RUN pnpm build
 FROM golang:1.24.4-bullseye AS backend-builder
 WORKDIR /app
 
+# Declare build arguments for cross-compilation
+ARG TARGETOS
+ARG TARGETARCH
+
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY src ./src
-RUN go build -o /app/bin/google-calendar-timetable ./src/main.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/bin/google-calendar-timetable ./src/main.go
 
 ###############################################
 # Runtime stage
@@ -41,26 +45,27 @@ RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	ca-certificates \
 	libreoffice-calc \
+	gosu \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Use non-root user for better security (UID 1000 is common default for first user)
+RUN useradd -r -u 1000 -g users -d /home/google -m google
+
 # Create a unified data root and symlink legacy paths for compatibility
+# Note: When volume is mounted at /app/data, these directories will be created there
 RUN mkdir -p data/current_timetable data/downloads data/logs \
-	&& ln -s /app/data/current_timetable /app/current_timetable \
-	&& ln -s /app/data/downloads /app/downloads \
-	&& ln -s /app/data/logs /app/logs \
-	&& ln -s /app/data/database.db /app/database.db
+	&& chown -R google:users /app/data
 
 # Copy compiled artifacts and entry script
 COPY --from=backend-builder /app/bin/google-calendar-timetable /usr/local/bin/google-calendar-timetable
 COPY --from=frontend-builder /app/static ./static
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Use non-root user for better security
-RUN useradd -r -u 10001 -g users -d /home/google -m google \
+# Fix line endings and set permissions for entrypoint script
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+	&& chmod +x /usr/local/bin/docker-entrypoint.sh \
 	&& mkdir -p /home/google/.cache/fontconfig /home/google/.cache/dconf /home/google/.config \
-	&& chown -R google:users /app /home/google \
-	&& chmod +x /usr/local/bin/docker-entrypoint.sh
-USER google
+	&& chown -R google:users /app /home/google
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

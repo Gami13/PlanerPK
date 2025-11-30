@@ -10,6 +10,7 @@ import { Component, createContext, onMount, Suspense } from 'solid-js';
 
 import { createStore, SetStoreFunction } from 'solid-js/store';
 import { Endpoints, UserInfoResponse } from './constants';
+import { ENV } from './env';
 import { Authorize } from './routes/Authorize/Authorize';
 import { Home } from './routes/Home/Home';
 import { NotFound } from './routes/NotFound/NotFound';
@@ -76,6 +77,7 @@ export function App(props: { children: Element }) {
   });
 
   onMount(async () => {
+    console.log(ENV);
     updateLoggedInUser(store, setStore);
   });
 
