@@ -20,16 +20,16 @@ func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
 	return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
 }
 
-//JiPP - Języki i paradygmaty programowania
-//WdI - Wstęp do informatyki
-//F - Fizyka
-//AM - Analiza matematyczna
-//J.angielski - Język angielski
-//LdI - Logika dla inżynierów
-//AzG - Algebra z geometrią
-//J. niemiecki - Język niemiecki
+// JiPP - Języki i paradygmaty programowania
+// WdI - Wstęp do informatyki
+// F - Fizyka
+// AM - Analiza matematyczna
+// J.angielski - Język angielski
+// LdI - Logika dla inżynierów
+// AzG - Algebra z geometrią
+// J. niemiecki - Język niemiecki
 
-//wykład, lab., ćwiczenia
+// wykład, lab., ćwiczenia
 
 // var LAST_ROW = 365
 // var HOUR_COLUMN = 1
@@ -126,7 +126,6 @@ func LoadEnvVariables() {
 			global.LAST_COLUMN = val
 		}
 	}
-
 }
 
 func InitializeLogging(logDir string) error {

@@ -42,7 +42,6 @@ func readAllowedOrigins() ([]string, error) {
 		return nil, err
 	}
 	return creds.Web.JavascriptOrigins, nil
-
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -108,7 +107,7 @@ func Start(db *sql.DB) {
 	registerGeneral("GET /api/authURL", hctx.GetAuthURLEndpoint)
 	registerGeneral("GET /api/userInfo", hctx.GetUserInfoEndpoint)
 	mux.Handle("PUT /api/chosenColumn", rateLimitMiddleware(rateLimiter, generalPolicy, rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, http.HandlerFunc(hctx.SetChosenColumnEndpoint))))
-	//serves the frontend
+	// serves the frontend
 	handler := corsMiddleware(mux)
 
 	slog.Info("Web server listening", slog.String("port", global.SERVER_PORT))

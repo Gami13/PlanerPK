@@ -61,6 +61,7 @@ func (c Class) StartTimeRFC3339() string {
 	startTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), c.StartTime.Hour(), c.StartTime.Minute(), 0, 0, time.Now().Local().Location())
 	return startTime.Format(time.RFC3339)
 }
+
 func (c Class) EndTimeRFC3339() string {
 	dayDate := utils.GetDateOfNextWeekday(c.Day)
 	endTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), c.EndTime.Hour(), c.EndTime.Minute(), 0, 0, time.Now().Local().Location())
@@ -68,7 +69,6 @@ func (c Class) EndTimeRFC3339() string {
 }
 
 func (c Class) ToEvent() calendar.Event {
-
 	event := &calendar.Event{
 		Summary: c.Summary(),
 		Start: &calendar.EventDateTime{

@@ -18,7 +18,6 @@ import (
 // Get the url of the timetable from the PKs website
 func FetchTimetableUrl() (string, error) {
 	doc, err := htmlquery.LoadURL(global.TIMETABLE_URL)
-
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
 	}
@@ -47,7 +46,11 @@ func DidChange(timetablePath string, url string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("Failed to close response body", slog.Any("error", err))
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
@@ -86,7 +89,11 @@ func DownloadTimetable(url string) (string, error) {
 	if err != nil {
 		return destination, fmt.Errorf("failed to download the timetable: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("Failed to close response body", slog.Any("error", err))
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return destination, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
@@ -102,15 +109,21 @@ func DownloadTimetable(url string) (string, error) {
 	if err != nil {
 		return destination, fmt.Errorf("failed to create the timetable file: %w", err)
 	}
-	defer file.Close()
-
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Warn("Failed to close timetable file", slog.Any("error", err))
+		}
+	}()
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
 		return destination, fmt.Errorf("failed to save the timetable file: %w", err)
 	}
 
 	// Set properties so they are the same as the one from the download link for later comparison of possible changes
-	os.Chtimes(destination, lastModifiedTime, lastModifiedTime)
+	err = os.Chtimes(destination, lastModifiedTime, lastModifiedTime)
+	if err != nil {
+		return destination, fmt.Errorf("failed to set file times: %w", err)
+	}
 
 	return destination, err
 }
@@ -132,7 +145,11 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 // Returns the path timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx)
 func DownloadAndProcessTimetable(url string) (string, error) {
 	// Get the current timetable that will be removed after a successfull download
-	currentTimetablePathXls, err := extractor.GetCurrentTimetablePath();
+	currentTimetablePathXls, err := extractor.GetCurrentTimetablePath()
+	if err != nil {
+		slog.Error("Failed to get current timetable path", slog.Any("error", err))
+		return "", fmt.Errorf("failed to get current timetable path: %w", err)
+	}
 
 	// Download the new timetable
 	timetablePathXls, err := DownloadTimetable(url)
@@ -147,7 +164,7 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Move the timetable to the current timetable destination
-	newTimetablePathXls := global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXls)
+	newTimetablePathXls := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXls)
 	err = os.Rename(timetablePathXls, newTimetablePathXls)
 	if err != nil {
 		slog.Error("Failed to move the new .xls timetable.",
@@ -156,7 +173,7 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 			slog.Any("error", err))
 	}
 
-	newTimetablePathXlsx := global.TIMETABLE_CURRENT_DESTINATION+filepath.Base(timetablePathXlsx)
+	newTimetablePathXlsx := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx)
 	err = os.Rename(timetablePathXlsx, newTimetablePathXlsx)
 	if err != nil {
 		slog.Error("Failed to move the new .xlsx timetable.",

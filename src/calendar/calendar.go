@@ -120,7 +120,10 @@ func ImportTimetable(groupColumn int, token *oauth2.Token) {
 		}
 	}
 
-	database.Query.UpdateUserSyncTime(token.AccessToken)
+	err = database.Query.UpdateUserSyncTime(token.AccessToken)
+	if err != nil {
+		slog.Error("Failed to update user sync time", slog.Any("error", err))
+	}
 
 	slog.Info("Timetable import completed",
 		slog.Int("created", createdCount),
@@ -172,7 +175,11 @@ func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 		slog.Error("Failed to get user info from Google", slog.Any("error", err))
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Error("Failed to close response body", slog.Any("error", err))
+		}
+	}()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		slog.Error("Failed to read user info response", slog.Any("error", err))
@@ -191,10 +198,9 @@ func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 }
 
 func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
-	//extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
-	t := time.Now().Format(time.RFC3339)
-	//set to start of day
-	t = time.Now().Truncate(24 * time.Hour).Format(time.RFC3339)
+	// extendedProperties has a private field "added_by" with value "GoogleCalendarTimetableImporter by Gami & Frytak"
+	// set to start of day
+	t := time.Now().Truncate(24 * time.Hour).Format(time.RFC3339)
 	events, err := srv.Events.List("primary").TimeMin(t).ShowDeleted(false).OrderBy("startTime").SingleEvents(true).Do()
 	if err != nil {
 		slog.Error("Failed to retrieve calendar events", slog.Any("error", err))

@@ -2,12 +2,12 @@ package extractor
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
-	"io/fs"
-	"sort"
 	"regexp"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,14 +22,12 @@ func GetCurrentTimetablePath() (string, error) {
 		return "", err
 	}
 
-
 	// If there are multiple .xls files then get the newest one by date and warn about it
 	var xlsFiles []fs.FileInfo
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
 			fileInfo, err := entry.Info()
-
 			if err != nil {
 				slog.Error("Skipping possible current timetable file.")
 			}
@@ -59,7 +57,7 @@ func GetTimetable(groupColumn int) (Timetable, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
 	}
-	timetablePath = timetablePath + "x" //excelize requires .xlsx extension
+	timetablePath = timetablePath + "x" // excelize requires .xlsx extension
 	slog.Debug("Opening timetable file",
 		slog.String("path", timetablePath),
 		slog.Int("column", groupColumn))
@@ -106,7 +104,8 @@ func getDaysStartEnd(file *excelize.File) []Day {
 			if row[global.HOUR_COLUMN] == global.DAY_START {
 				day := Day{
 					StartingRow: number,
-					WeekDay:     time.Weekday((len(days) + 1) % 7)}
+					WeekDay:     time.Weekday((len(days) + 1) % 7),
+				}
 				days = append(days, day)
 			}
 			if row[global.HOUR_COLUMN] == global.DAY_END {

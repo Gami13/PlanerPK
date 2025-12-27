@@ -69,7 +69,7 @@ func (q *Queries) createTables() error {
 }
 
 func (q *Queries) UpsertUser(user *User) (User, error) {
-	//should probably return all user fields
+	// should probably return all user fields
 	upsertUser := `
 	INSERT INTO users (email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -118,7 +118,11 @@ func (q *Queries) GetAllUsers() ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Println("Error closing rows: ", err)
+		}
+	}()
 	var date string
 	var users []*User
 	for rows.Next() {

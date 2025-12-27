@@ -1,18 +1,20 @@
 package global
 
-var SHEET_NAME = "2025_2026"
-var LAST_ROW = 365
-var HOUR_COLUMN = 1
-var DAY_START = "7.30"
-var DAY_END = "21.00"
-var DATABASE_SOURCE = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000"
-var LAST_COLUMN = 40
-var DATABASE_DRIVER = "sqlite"
-var MINUTES_BETWEEN = 5
-var SERVER_PORT = "8080"
-var GENERAL_RATE_LIMIT_PER_MINUTE = 60
-var TIMETABLE_CURRENT_DESTINATION = "./current_timetable/"
-var TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-var TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
-var CALENDAR_CREDENTIALS_PATH = "./credentials.json"
-var TIME_BETWEEN_SYNC_HOURS = 72
+var (
+	SHEET_NAME                     = "2025_2026"
+	LAST_ROW                       = 365
+	HOUR_COLUMN                    = 1
+	DAY_START                      = "7.30"
+	DAY_END                        = "21.00"
+	DATABASE_SOURCE                = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000"
+	LAST_COLUMN                    = 40
+	DATABASE_DRIVER                = "sqlite"
+	MINUTES_BETWEEN                = 5
+	SERVER_PORT                    = "8080"
+	GENERAL_RATE_LIMIT_PER_MINUTE  = 60
+	TIMETABLE_CURRENT_DESTINATION  = "./current_timetable/"
+	TIMETABLE_URL                  = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
+	TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
+	CALENDAR_CREDENTIALS_PATH      = "./credentials.json"
+	TIME_BETWEEN_SYNC_HOURS        = 72
+)

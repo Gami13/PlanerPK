@@ -68,7 +68,7 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 		return
 	}
 
-	//Update the timetable
+	// Update the timetable
 	token, err := ec.Query.GetTokenByAccessToken(accessToken)
 	if err != nil {
 		slog.Error("Failed to get token", slog.Any("error", err))
@@ -82,7 +82,7 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 }
 
 func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Request) {
-	//Get the oauth code from the request
+	// Get the oauth code from the request
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		slog.Warn("Missing code parameter", slog.String("endpoint", "Authorize"))
@@ -140,7 +140,9 @@ func (ec *EndpointContext) AuthorizeEndpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
 		return
 	}
-	w.Write(responseBytes)
+	if _, err := w.Write(responseBytes); err != nil {
+		slog.Error("Failed to write response", slog.Any("error", err))
+	}
 }
 
 func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +153,9 @@ func (ec *EndpointContext) GetAuthURLEndpoint(w http.ResponseWriter, r *http.Req
 		http.Error(w, fmt.Sprintf("Failed to generate auth URL: %v", err), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(authURL))
+	if _, err := w.Write([]byte(authURL)); err != nil {
+		slog.Error("Failed to write response", slog.Any("error", err))
+	}
 }
 
 func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +188,9 @@ func (ec *EndpointContext) GetUserInfoEndpoint(w http.ResponseWriter, r *http.Re
 		http.Error(w, fmt.Sprintf("Failed to marshal response: %v", err), http.StatusInternalServerError)
 		return
 	}
-	w.Write(responseBytes)
+	if _, err := w.Write(responseBytes); err != nil {
+		slog.Error("Failed to write response", slog.Any("error", err))
+	}
 }
 
 var fs = http.FileServer(http.Dir("./static/"))

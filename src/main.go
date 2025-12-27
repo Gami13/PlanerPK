@@ -33,7 +33,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("Failed to close database", slog.Any("error", err))
+		}
+	}()
 
 	err = database.InitializeDatabase(db)
 	if err != nil {
@@ -61,7 +65,6 @@ func main() {
 			}
 		}
 	}()
-
 }
 
 func updateAllTimetables(queries *database.Queries) {
