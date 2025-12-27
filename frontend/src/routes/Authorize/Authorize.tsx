@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from '@solidjs/router';
 import { createEffect, useContext } from 'solid-js';
 import { AppContext, updateLoggedInUser } from '../..';
+import { PageTitle } from '../../Components/PageTitle';
 import { Endpoints } from '../../constants';
 import { setAccessToken } from '../../utils';
 
@@ -31,6 +32,7 @@ export function Authorize() {
   });
   return (
     <main>
+      <PageTitle title="Autoryzacja" />
       <h1>Autoryzacja...</h1>
     </main>
   );

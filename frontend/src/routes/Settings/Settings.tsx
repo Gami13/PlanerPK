@@ -1,5 +1,6 @@
 import { For, useContext } from 'solid-js';
 import { AppContext } from '../..';
+import { PageTitle } from '../../Components/PageTitle';
 import { Endpoints } from '../../constants';
 import { getAccessToken } from '../../utils';
 import styles from './Settings.module.css';
@@ -29,6 +30,7 @@ export function Settings() {
 
   return (
     <main class={styles.main}>
+      <PageTitle title="Ustawienia" />
 
       <section class={styles.basic_section}>
         <div class={styles.description}>

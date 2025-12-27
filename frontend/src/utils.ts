@@ -1,3 +1,4 @@
+
 export function setAccessToken(token: string) {
 	document.cookie = `access_token=${token}; path=/; max-age=604800; samesite=strict`;
 }

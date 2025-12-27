@@ -8,6 +8,7 @@ import { Route, Router, RouteSectionProps } from '@solidjs/router';
 import { Component, createContext, onMount, Suspense } from 'solid-js';
 
 
+import { MetaProvider } from '@solidjs/meta';
 import { createStore, SetStoreFunction } from 'solid-js/store';
 import { Endpoints, UserInfoResponse } from './constants';
 import { ENV } from './env';
@@ -93,11 +94,14 @@ export function App(props: { children: Element }) {
 
 
 render(
-  () => <Router root={App as unknown as Component<RouteSectionProps<unknown>>}>
-    <Route path="/" component={Home} />
-    <Route path="/authorize" component={Authorize} />
-    <Route path="/settings" component={Settings} />
-    <Route path="**" component={NotFound} />
-  </Router>,
+  () =>
+    <MetaProvider>
+      <Router root={App as unknown as Component<RouteSectionProps<unknown>>}>
+        <Route path="/" component={Home} />
+        <Route path="/authorize" component={Authorize} />
+        <Route path="/settings" component={Settings} />
+        <Route path="**" component={NotFound} />
+      </Router>
+    </MetaProvider>,
   root,
 );

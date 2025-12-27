@@ -1,8 +1,11 @@
+import { PageTitle } from "../../Components/PageTitle";
+
 export function NotFound() {
   return (
     <section class="text-gray-700 p-8">
-      <h1 class="text-2xl font-bold">404: Not Found</h1>
-      <p class="mt-4">It's gone 😞</p>
+      <PageTitle title="Nic tu nie ma :(" />
+      <h1 >404: Not Found</h1>
+      <p >It's gone 😞</p>
     </section>
   );
 }

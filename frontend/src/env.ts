@@ -8,7 +8,7 @@ let ENV = {
 }
 
 if (isDebug) {
-	ENV.apiBaseUrl = "http://localhost:8000"
+	ENV.apiBaseUrl = "http://localhost:8080/api"
 }
 
 export { ENV };

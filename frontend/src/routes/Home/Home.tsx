@@ -1,6 +1,7 @@
 import { A } from '@solidjs/router';
 import { createResource, Show, useContext } from 'solid-js';
 import { AppContext } from '../..';
+import { PageTitle } from '../../Components/PageTitle';
 import { UserCard } from '../../Components/UserCard/UserCard';
 import { Endpoints, GOOGLE_CALENDAR_URL, PK_WEBSITE_URL, UserInfoResponse } from '../../constants';
 import { setAccessToken } from '../../utils';
@@ -23,6 +24,7 @@ export function Home() {
   console.log(AppState.store.userInfo);
   return (
     <main class={styles.main}>
+      <PageTitle />
 
       <section class={styles.basic_section}>
         <div class={styles.description}>
