@@ -1,8 +1,14 @@
 const isDebug = import.meta.env.DEV;
 
-let ENV = "${API_BASE_URL}";
+
+
+
+let ENV = {
+	apiBaseUrl: "${API_BASE_URL}"
+}
+
 if (isDebug) {
-	ENV = "http://localhost:8080/api";
+	ENV.apiBaseUrl = "http://localhost:8000"
 }
 
 export { ENV };

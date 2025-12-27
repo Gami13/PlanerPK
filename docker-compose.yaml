@@ -10,7 +10,7 @@ services:
     environment:
       SERVER_PORT: "8080"
       CALENDAR_CREDENTIALS_PATH: /app/credentials.json
-      API_BASE_URL: "https://planpk.gami.ovh/api" #base URL for the API that the frontend will communicate with. It should point to your backend server.
+      API_BASE_URL: "http://localhost:8080/api" #base URL for the API that the frontend will communicate with. It should point to your backend server.
       SHEET_NAME: "2025_2026" #name of the sheet inside of the xls file
       LAST_ROW: "365" #last row of the sheet that contains data
       HOUR_COLUMN : 1 #column that contains the hour of the lesson
