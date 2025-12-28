@@ -5,18 +5,18 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/downloader"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/downloader"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/webServer"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/utils"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/webServer"
 )
 
 func main() {
 	// Initialize logger first
-	if err := utils.InitializeLogging("./logs"); err != nil {
+	if err := utils.InitializeLogging(global.LOGS_PATH); err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}
 

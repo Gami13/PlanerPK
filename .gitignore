@@ -31,14 +31,10 @@ go.work.sum
 # .idea/
 # .vscode/
 
-/downloads
-/current_timetable
-/result
-/logs
 credentials.json
 /token.json
 /database.db
 
-static/*
+/static
 
 /data

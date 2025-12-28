@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
 	_ "modernc.org/sqlite"
 )

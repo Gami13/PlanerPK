@@ -5,5 +5,5 @@ cd frontend
 pnpm install
 pnpm run build
 cd ..
-go build -o GoogleCalendarTimetable ./src/main.go
+go build -o GoogleCalendarTimetable ./backend/main.go
 ./GoogleCalendarTimetable

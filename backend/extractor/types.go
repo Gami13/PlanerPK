@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/utils"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/utils"
 	"google.golang.org/api/calendar/v3"
 )
 

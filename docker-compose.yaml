@@ -9,7 +9,6 @@ services:
       - "8080:8080"
     environment:
       SERVER_PORT: "8080"
-      CALENDAR_CREDENTIALS_PATH: /app/credentials.json
       API_BASE_URL: "http://localhost:8080/api" #base URL for the API that the frontend will communicate with. It should point to your backend server.
       SHEET_NAME: "2025_2026" #name of the sheet inside of the xls file
       LAST_ROW: "365" #last row of the sheet that contains data
@@ -21,9 +20,10 @@ services:
       DATABASE_DRIVER : "sqlite" #driver for the database, can be sqlite or postgres
       MINUTES_BETWEEN : "5" #minutes between checking for new data
       GENERAL_RATE_LIMIT_PER_MINUT: "60" #general rate limit per minute for API requests
+      CALENDAR_CREDENTIALS_PATH: /app/credentials.json
+      TIMETABLE_DOWNLOAD_DESTINATION : "./downloads/"
       TIMETABLE_CURRENT_DESTINATION : "./current_timetable/" #destination folder for the current timetable, should be a folder inside the project
       TIMETABLE_URL : "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/" #URL of the timetable, should be a valid URL that points to the website with the timetable
-      TIMETABLE_DOWNLOAD_DESTINATION : "./downloads/"
       TIME_BETWEEN_SYNC_HOURS : "72" #time between syncing the calendar, in hours, if nothing changed
       TZ: "Europe/Warsaw" #timezone for the application
       

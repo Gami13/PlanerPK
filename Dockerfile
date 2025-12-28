@@ -14,13 +14,13 @@ FROM golang:1.24-alpine AS backend-builder
 WORKDIR /app
 ARG TARGETOS
 ARG TARGETARCH
-COPY go.mod go.sum ./
+COPY backend/go.mod ./
 RUN --mount=type=cache,target=/go/pkg/mod \
 	go mod download
-COPY src ./src
+COPY backend/ ./
 RUN --mount=type=cache,target=/root/.cache/go-build \
 	GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 \
-	go build -ldflags="-s -w" -o /app/bin/main ./src/main.go
+	go build -ldflags="-s -w" -o /app/bin/main ./main.go
 
 # --- Runtime ---
 FROM debian:bookworm-slim AS runtime

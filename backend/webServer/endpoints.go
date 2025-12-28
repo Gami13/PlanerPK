@@ -10,9 +10,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 )
 
 type EndpointContext struct {

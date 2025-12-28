@@ -3,5 +3,5 @@ Set-Location frontend
 pnpm install
 pnpm run build
 Set-Location ..
-go build -o GoogleCalendarTimetable.exe ./src/main.go
+go build -o GoogleCalendarTimetable.exe ./backend/main.go
 ./GoogleCalendarTimetable.exe

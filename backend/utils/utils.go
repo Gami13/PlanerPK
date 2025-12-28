@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/lmittmann/tint"
 )
 
@@ -125,6 +125,10 @@ func LoadEnvVariables() {
 		if err == nil {
 			global.LAST_COLUMN = val
 		}
+	}
+	logsPath := os.Getenv("LOGS_PATH")
+	if logsPath != "" {
+		global.LOGS_PATH = logsPath
 	}
 }
 

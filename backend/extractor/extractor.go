@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/xuri/excelize/v2"
 )
 

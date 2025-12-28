@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/database"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"

@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/src/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/antchfx/htmlquery"
 )
 
