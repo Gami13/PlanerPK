@@ -41,7 +41,7 @@ COPY --link --from=backend-builder /app/bin/main /usr/local/bin/google-calendar-
 COPY --link --from=frontend-builder /app/static ./static
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/
 
-# FIX: Remove Windows line endings causing the "no such file" error
+# Remove Windows line endings causing the "no such file" error
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8080

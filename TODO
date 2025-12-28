@@ -1,0 +1,11 @@
+☐ Return user-friendly error messages (hide technical details from users)
+☐ Add DELETE `/api/account` endpoint for user deletion (GDPR compliance)
+☐ Add ability for user to deactivate their account
+☐ Implement soft delete vs hard delete strategy
+☐ `GET /api/health` - Health check endpoint for monitoring if the service is up
+☐ `GET /api/preview` - Preview what events will be created (before importing)
+☐ Add retry logic for failed calendar updates
+☐ Better error handling in the ticker goroutine
+☐ Cache timetable data in memory
+☐ Create deployment guide
+☐ Write user guide

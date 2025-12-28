@@ -44,7 +44,6 @@ func GenerateAuthURL() (string, error) {
 	return authURL, nil
 }
 
-// TODO: update the date of last sync for each user
 func ImportTimetable(groupColumn int, token *oauth2.Token) {
 	ctx := context.Background()
 
