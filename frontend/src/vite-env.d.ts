@@ -1,5 +1,3 @@
-
-
 declare global {
 	interface Window {
 		__RUNTIME_CONFIG__: {
@@ -8,5 +6,4 @@ declare global {
 	}
 }
 
-export { };
-
+export {};

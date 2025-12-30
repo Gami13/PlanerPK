@@ -1,8 +1,10 @@
 import { Title } from "@solidjs/meta";
+import { Show } from "solid-js";
 
 export function PageTitle(props: { title?: string }) {
-	if (!props.title) {
-		return <Title>PlanerPK </Title>
-	}
-	return <Title>{props.title} | PlanerPK </Title>
+	return (
+		<Show when={props.title != null} fallback={<Title>PlanerPK </Title>}>
+			<Title>{props.title} | PlanerPK </Title>
+		</Show>
+	);
 }
