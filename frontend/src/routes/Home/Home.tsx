@@ -2,7 +2,7 @@ import { A } from "@solidjs/router";
 import { createResource, Show, useContext } from "solid-js";
 import { AppContext } from "../..";
 import { PageTitle } from "../../Components/PageTitle";
-import { UserCard } from "../../Components/UserCard/UserCard";
+import { UserCard } from "../../Components/UserCard";
 import { Endpoints, GOOGLE_CALENDAR_URL, PK_WEBSITE_URL, UserInfoResponse } from "../../constants";
 import { setAccessToken } from "../../utils";
 import styles from "./home.module.css";
