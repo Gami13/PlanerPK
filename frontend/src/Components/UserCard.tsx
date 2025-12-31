@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { UserInfoResponse } from "../constants";
+import { colors } from "../styleTokens.stylex";
 import { attrs } from "../utils";
 import { PillTag } from "./PillTag";
 
@@ -9,7 +10,7 @@ type UserCardProps = {
 
 const styles = stylex.create({
 	card: {
-		borderColor: "#e4e8ee",
+		borderColor: colors.defaultBorder,
 		borderRadius: "999px",
 		borderStyle: "solid",
 		borderWidth: "1px",
@@ -35,12 +36,12 @@ const styles = stylex.create({
 		flexDirection: "column",
 	},
 	name: {
-		color: "#0f172a",
+		color: colors.primaryText,
 		fontSize: "1rem",
 		fontWeight: 600,
 	},
 	email: {
-		color: "#5f6b7a",
+		color: colors.secondaryText,
 		fontSize: "1rem",
 	},
 	metaRow: {

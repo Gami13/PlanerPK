@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from "@solidjs/router";
 import { createEffect, useContext } from "solid-js";
-import { AppContext, updateLoggedInUser } from "../..";
-import { PageTitle } from "../../Components/PageTitle";
-import { Endpoints } from "../../constants";
-import { setAccessToken } from "../../utils";
+import { AppContext, updateLoggedInUser } from "..";
+import { PageTitle } from "../Components/PageTitle";
+import { Endpoints } from "../constants";
+import { setAccessToken } from "../utils";
 
 export function Authorize() {
 	const location = useLocation();

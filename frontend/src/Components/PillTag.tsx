@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
+import { colors } from "../styleTokens.stylex";
 import { attrs } from "../utils";
 
 type PillTagProps = {
@@ -14,19 +15,20 @@ const styles = stylex.create({
 		paddingBlock: "0.35rem",
 		paddingInline: "0.75rem",
 		backgroundColor: "#f4f6fb",
-		color: "#475467",
+		color: colors.secondaryText,
+
 		fontSize: "0.8rem",
 	},
 	status: {
 		fontWeight: 600,
 	},
 	statusActive: {
-		backgroundColor: "#dcfce7",
-		color: "#15803d",
+		backgroundColor: colors.activeBackground,
+		color: colors.activeText,
 	},
 	statusInactive: {
-		backgroundColor: "#fee2e2",
-		color: "#b91c1c",
+		backgroundColor: colors.inactiveBackground,
+		color: colors.inactiveText,
 	},
 });
 
