@@ -11,9 +11,9 @@ import { MetaProvider } from "@solidjs/meta";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { Endpoints, UserInfoResponse } from "./constants";
 import { ENV } from "./env";
-import { NotFound } from "./routes//NotFound";
 import { Authorize } from "./routes/Authorize";
 import { Home } from "./routes/Home";
+import { NotFound } from "./routes/NotFound";
 import { Settings } from "./routes/Settings";
 import { getAccessToken } from "./utils";
 
