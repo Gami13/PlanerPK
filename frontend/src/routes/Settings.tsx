@@ -174,30 +174,6 @@ export function Settings() {
 								)}
 							</For>
 						</Show>
-						<Show when={columns.error}>
-							<option disabled>Błąd ładowania kolumn</option>
-						</Show>
-						<Show when={columns.loading}>
-							<option disabled>Ładowanie...</option>
-						</Show>
-						<Show when={columns()}>
-							<For each={[...groupByCategory(columns()!)]}>
-								{([category, options]) => (
-									<optgroup label={category || "Inne"}>
-										<For each={options}>
-											{(option) => (
-												<option
-													value={option.column}
-													selected={AppState.store.userInfo?.chosen_column === option.column}
-												>
-													{option.label}
-												</option>
-											)}
-										</For>
-									</optgroup>
-								)}
-							</For>
-						</Show>
 					</select>
 					<Button isPrimary={true}>Zmień kolumnę</Button>
 				</form>
