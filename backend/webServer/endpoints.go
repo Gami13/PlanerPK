@@ -93,7 +93,7 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := ec.Query.UpdateChosenColumn(accessToken, requestBody.ChosenColumn); err != nil {
+	if err := ec.Query.UpdateChosenColumn(accessToken, int64(requestBody.ChosenColumn)); err != nil {
 		slog.Error("Failed to update chosen column",
 			slog.Int("column", requestBody.ChosenColumn),
 			slog.Any("error", err))
@@ -110,7 +110,7 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 	}
 
 	slog.Info("Triggering timetable import", slog.Int("column", requestBody.ChosenColumn))
-	go calendar.ImportTimetable(requestBody.ChosenColumn, token)
+	go calendar.ImportTimetable(int64(requestBody.ChosenColumn), token)
 	w.WriteHeader(http.StatusOK)
 }
 

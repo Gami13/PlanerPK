@@ -83,7 +83,7 @@ func updateAllTimetables(queries *database.Queries) {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
 			slog.Info("Skipping timetable update for inactive user or user without chosen column",
 				slog.String("email", *user.Email),
-				slog.Int("column", *user.ChosenColumn))
+				slog.Int64("column", *user.ChosenColumn))
 
 			continue
 		}
@@ -91,13 +91,13 @@ func updateAllTimetables(queries *database.Queries) {
 		if !didChange && timeSinceSync.Hours() < float64(global.TIME_BETWEEN_SYNC_HOURS) {
 			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
 				slog.String("email", *user.Email),
-				slog.Int("column", *user.ChosenColumn))
+				slog.Int64("column", *user.ChosenColumn))
 			continue
 		}
 
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
-			slog.Int("column", *user.ChosenColumn))
+			slog.Int64("column", *user.ChosenColumn))
 		calendar.ImportTimetable(*user.ChosenColumn, user.Token())
 	}
 }

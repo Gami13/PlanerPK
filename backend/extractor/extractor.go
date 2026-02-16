@@ -52,7 +52,7 @@ func GetCurrentTimetablePath() (string, error) {
 	return "", fmt.Errorf("no .xls file found in %s", global.TIMETABLE_CURRENT_DESTINATION)
 }
 
-func GetTimetable(groupColumn int) (Timetable, error) {
+func GetTimetable(groupColumn int64) (Timetable, error) {
 	timetablePath, err := GetCurrentTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
@@ -60,7 +60,7 @@ func GetTimetable(groupColumn int) (Timetable, error) {
 	timetablePath = timetablePath + "x" // excelize requires .xlsx extension
 	slog.Debug("Opening timetable file",
 		slog.String("path", timetablePath),
-		slog.Int("column", groupColumn))
+		slog.Int("column", int(groupColumn)))
 
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
@@ -120,13 +120,13 @@ func getDaysStartEnd(file *excelize.File) []Day {
 	return days
 }
 
-func traverseDay(file *excelize.File, day Day, groupColumn int) []Class {
+func traverseDay(file *excelize.File, day Day, groupColumn int64) []Class {
 	var classes []Class
 
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		cell := getCell(file, global.SHEET_NAME, i, groupColumn)
+		cell := getCell(file, global.SHEET_NAME, i, int(groupColumn))
 		classText := cell
 		if classText != "" {
 

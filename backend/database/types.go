@@ -7,9 +7,9 @@ import (
 )
 
 type User struct {
-	ID           *int
+	ID           *int64
 	Email        *string
-	ChosenColumn *int
+	ChosenColumn *int64
 	IsActive     *bool
 	Name         *string
 	GivenName    *string
@@ -36,7 +36,7 @@ func (u *User) Token() *oauth2.Token {
 type AuthorizeResponse struct {
 	AccessToken  string `json:"access_token"`
 	Email        string `json:"email"`
-	ChosenColumn int    `json:"chosen_column"`
+	ChosenColumn int64  `json:"chosen_column"`
 	Name         string `json:"name"`
 	Picture      string `json:"picture"`
 }
@@ -47,5 +47,5 @@ type UserInfoResponse struct {
 	GivenName    string `json:"given_name"`
 	Picture      string `json:"picture"`
 	IsActive     bool   `json:"is_active"`
-	ChosenColumn int    `json:"chosen_column"`
+	ChosenColumn int64  `json:"chosen_column"`
 }

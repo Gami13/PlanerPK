@@ -1,152 +1,136 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
-	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
 	"golang.org/x/oauth2"
 	_ "modernc.org/sqlite"
 )
 
-type DBTX interface {
-	Exec(string, ...interface{}) (sql.Result, error)
-	Query(string, ...interface{}) (*sql.Rows, error)
-	QueryRow(string, ...interface{}) *sql.Row
-}
+//go:embed schema.sql
+var ddl string
 
-func New(db DBTX) *Queries {
-	return &Queries{db: db}
-}
-
+// Queries wraps the sqlc-generated gen.Queries and maps results to domain types.
 type Queries struct {
-	db DBTX
+	gen *gen.Queries
+}
+
+func New(db *sql.DB) *Queries {
+	return &Queries{gen: gen.New(db)}
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
-	return &Queries{
-		db: tx,
-	}
+	return &Queries{gen: q.gen.WithTx(tx)}
 }
 
 // Probably a big no no, but i didnt want to figure out how to pass it to every function that needs it, but it also should work just fine like this
 var Query *Queries
 
-// just creates the chud tables if they dont exist yet
+// InitializeDatabase creates tables (if they don't exist) and sets up the global Query.
 func InitializeDatabase(db *sql.DB) error {
-	query := New(db)
-	err := query.createTables()
-	if err != nil {
+	if _, err := db.Exec(ddl); err != nil {
 		return err
 	}
-	Query = query
+	Query = New(db)
 	return nil
 }
 
-func (q *Queries) createTables() error {
-	createUserTable := `
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		email TEXT UNIQUE,
-		name TEXT,
-		given_name TEXT,
-		picture TEXT,
-		access_token TEXT NOT NULL,
-		token_type TEXT NOT NULL,
-		refresh_token TEXT NOT NULL,
-		expiry TIMESTAMP NOT NULL,
-		expires_in INTEGER NOT NULL,
-		chosen_column INTEGER DEFAULT -1,
-		is_active BOOLEAN DEFAULT 1,
-		last_synced TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-	);
-	`
-	_, err := q.db.Exec(createUserTable)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// ---------------------------------------------------------------------------
+// Query wrappers — same signatures as before, delegates to gen.Queries
+// ---------------------------------------------------------------------------
 
 func (q *Queries) UpsertUser(user *User) (User, error) {
-	// should probably return all user fields
-	upsertUser := `
-	INSERT INTO users (email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	ON CONFLICT(email) DO UPDATE SET
-		name = excluded.name,
-		given_name = excluded.given_name,
-		picture = excluded.picture,
-		access_token = excluded.access_token,
-		token_type = excluded.token_type,
-		refresh_token = excluded.refresh_token,
-		expiry = excluded.expiry,
-		expires_in = excluded.expires_in
-	RETURNING email,name,given_name,picture,access_token,token_type,refresh_token,expiry,expires_in,chosen_column;
-	`
-	var returnedUser User
-	err := q.db.QueryRow(upsertUser, user.Email, user.Name, user.GivenName, user.Picture, user.AccessToken, user.TokenType, user.RefreshToken, user.Expiry, user.ExpiresIn).Scan(&returnedUser.Email, &returnedUser.Name, &returnedUser.GivenName, &returnedUser.Picture, &returnedUser.AccessToken, &returnedUser.TokenType, &returnedUser.RefreshToken, &returnedUser.Expiry, &returnedUser.ExpiresIn, &returnedUser.ChosenColumn)
+	ctx := context.Background()
+	row, err := q.gen.UpsertUser(ctx, gen.UpsertUserParams{
+		Email:        user.Email,
+		Name:         user.Name,
+		GivenName:    user.GivenName,
+		Picture:      user.Picture,
+		AccessToken:  user.AccessToken,
+		TokenType:    user.TokenType,
+		RefreshToken: user.RefreshToken,
+		Expiry:       user.Expiry,
+		ExpiresIn:    user.ExpiresIn,
+	})
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return User{}, err
 	}
-	return returnedUser, nil
+	return User{
+		Email:        row.Email,
+		Name:         row.Name,
+		GivenName:    row.GivenName,
+		Picture:      row.Picture,
+		AccessToken:  row.AccessToken,
+		TokenType:    row.TokenType,
+		RefreshToken: row.RefreshToken,
+		Expiry:       row.Expiry,
+		ExpiresIn:    row.ExpiresIn,
+		ChosenColumn: row.ChosenColumn,
+	}, nil
 }
 
 func (q *Queries) GetUserByEmail(email string) (*User, error) {
-	getUser := `
-	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
-	FROM users
-	WHERE email = ?;
-	`
-	row := q.db.QueryRow(getUser, email)
-	var user User
-	err := row.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn)
+	ctx := context.Background()
+	row, err := q.gen.GetUserByEmail(ctx, &email)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
 	}
-	return &user, nil
+
+	return &User{
+		ID:           &row.ID,
+		Email:        row.Email,
+		Name:         row.Name,
+		GivenName:    row.GivenName,
+		Picture:      row.Picture,
+		AccessToken:  row.AccessToken,
+		TokenType:    row.TokenType,
+		RefreshToken: row.RefreshToken,
+		Expiry:       row.Expiry,
+		ExpiresIn:    row.ExpiresIn,
+		ChosenColumn: row.ChosenColumn,
+	}, nil
 }
 
 func (q *Queries) GetAllUsers() ([]*User, error) {
-	getUsers := `
-	SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
-	FROM users;
-	`
-	rows, err := q.db.Query(getUsers)
+	ctx := context.Background()
+	rows, err := q.gen.GetAllUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			fmt.Println("Error closing rows: ", err)
-		}
-	}()
-	var date string
-	var users []*User
-	for rows.Next() {
-		var user User
-		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive, &date); err != nil {
-			return nil, err
-		}
-		newTime, err := time.Parse(time.RFC3339, date)
-		if err != nil {
-			return nil, err
-		}
-		user.LastSynced = &newTime
-		users = append(users, &user)
+	users := make([]*User, 0, len(rows))
+	for _, row := range rows {
+		lastSynced := row.LastSynced
+		users = append(users, &User{
+			ID:           &row.ID,
+			Email:        row.Email,
+			Name:         row.Name,
+			GivenName:    row.GivenName,
+			Picture:      row.Picture,
+			AccessToken:  row.AccessToken,
+			TokenType:    row.TokenType,
+			RefreshToken: row.RefreshToken,
+			Expiry:       row.Expiry,
+			ExpiresIn:    row.ExpiresIn,
+			ChosenColumn: row.ChosenColumn,
+			IsActive:     row.IsActive,
+			LastSynced:   &lastSynced,
+		})
 	}
 	return users, nil
 }
 
-func (q *Queries) UpdateChosenColumn(accessToken string, chosenColumn int) error {
-	updateUser := `
-	UPDATE users
-	SET chosen_column = ?
-	WHERE access_token = ?;
-	`
-	_, err := q.db.Exec(updateUser, chosenColumn, accessToken)
+func (q *Queries) UpdateChosenColumn(accessToken string, chosenColumn int64) error {
+	ctx := context.Background()
+	err := q.gen.UpdateChosenColumn(ctx, gen.UpdateChosenColumnParams{
+		ChosenColumn: &chosenColumn,
+		AccessToken:  accessToken,
+	})
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return err
@@ -155,44 +139,46 @@ func (q *Queries) UpdateChosenColumn(accessToken string, chosenColumn int) error
 }
 
 func (q *Queries) GetTokenByAccessToken(accessToken string) (*oauth2.Token, error) {
-	getUser := `
-	SELECT access_token, token_type, refresh_token, expiry, expires_in
-	FROM users
-	WHERE access_token = ?;
-	`
-	row := q.db.QueryRow(getUser, accessToken)
-	var token oauth2.Token
-	err := row.Scan(&token.AccessToken, &token.TokenType, &token.RefreshToken, &token.Expiry, &token.ExpiresIn)
+	ctx := context.Background()
+	row, err := q.gen.GetTokenByAccessToken(ctx, accessToken)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
 	}
-	return &token, nil
+	return &oauth2.Token{
+		AccessToken:  row.AccessToken,
+		TokenType:    row.TokenType,
+		RefreshToken: row.RefreshToken,
+		Expiry:       row.Expiry,
+		ExpiresIn:    row.ExpiresIn,
+	}, nil
 }
 
 func (q *Queries) GetUserByAccessToken(accessToken string) (*User, error) {
-	getUser := `
-	SELECT email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
-	FROM users
-	WHERE access_token = ?;
-	`
-	row := q.db.QueryRow(getUser, accessToken)
-	var user User
-	err := row.Scan(&user.Email, &user.Name, &user.GivenName, &user.Picture, &user.AccessToken, &user.TokenType, &user.RefreshToken, &user.Expiry, &user.ExpiresIn, &user.ChosenColumn, &user.IsActive)
+	ctx := context.Background()
+	row, err := q.gen.GetUserByAccessToken(ctx, accessToken)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
 	}
-	return &user, nil
+	return &User{
+		Email:        row.Email,
+		Name:         row.Name,
+		GivenName:    row.GivenName,
+		Picture:      row.Picture,
+		AccessToken:  row.AccessToken,
+		TokenType:    row.TokenType,
+		RefreshToken: row.RefreshToken,
+		Expiry:       row.Expiry,
+		ExpiresIn:    row.ExpiresIn,
+		ChosenColumn: row.ChosenColumn,
+		IsActive:     row.IsActive,
+	}, nil
 }
 
 func (q *Queries) UpdateUserSyncTime(accessToken string) error {
-	updateSyncTime := `
-	UPDATE users
-	SET last_synced = (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-	WHERE access_token = ?;
-	`
-	_, err := q.db.Exec(updateSyncTime, accessToken)
+	ctx := context.Background()
+	err := q.gen.UpdateUserSyncTime(ctx, accessToken)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return err

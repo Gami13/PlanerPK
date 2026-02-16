@@ -44,15 +44,15 @@ func GenerateAuthURL() (string, error) {
 	return authURL, nil
 }
 
-func ImportTimetable(groupColumn int, token *oauth2.Token) {
+func ImportTimetable(groupColumn int64, token *oauth2.Token) {
 	ctx := context.Background()
 
-	slog.Info("Starting timetable import", slog.Int("group_column", groupColumn))
+	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
 
 	timetable, err := extractor.GetTimetable(groupColumn)
 	if err != nil {
 		slog.Error("Failed to get timetable",
-			slog.Int("group_column", groupColumn),
+			slog.Int64("group_column", groupColumn),
 			slog.Any("error", err))
 		return
 	}
