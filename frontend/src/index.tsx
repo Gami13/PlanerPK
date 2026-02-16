@@ -9,8 +9,9 @@ import { Component, createContext, onMount, Suspense } from "solid-js";
 
 import { MetaProvider } from "@solidjs/meta";
 import { createStore, SetStoreFunction } from "solid-js/store";
-import { Endpoints, UserInfoResponse } from "./constants";
+import { rpc } from "./api_client";
 import { ENV } from "./env";
+import type { GetUserInfoResponse } from "./gen/v1/pkplaner_pb.js";
 import { Authorize } from "./routes/Authorize";
 import { Home } from "./routes/Home";
 import { NotFound } from "./routes/NotFound";
@@ -26,13 +27,13 @@ if (!root) {
 }
 
 export type AppStore = {
-	userInfo: UserInfoResponse | undefined;
+	userInfo: GetUserInfoResponse | undefined;
 };
 
 interface AppContextValue {
 	store: AppStore;
 	setStore: SetStoreFunction<{
-		userInfo: UserInfoResponse | undefined;
+		userInfo: GetUserInfoResponse | undefined;
 	}>;
 }
 const defaultContext: AppContextValue = {
@@ -42,17 +43,12 @@ const defaultContext: AppContextValue = {
 
 export const AppContext = createContext<AppContextValue>(defaultContext);
 
-async function fetchUserInfo(accessToken: string): Promise<UserInfoResponse | undefined> {
-	const response = await fetch(Endpoints.GetUserInfo, {
-		headers: {
-			Authorization: accessToken,
-		},
-	});
-
-	if (response.status === 401) {
+async function fetchUserInfo(accessToken: string): Promise<GetUserInfoResponse | undefined> {
+	try {
+		return await rpc.getUserInfo({ accessToken });
+	} catch {
 		return undefined;
 	}
-	return response.json();
 }
 
 export async function updateLoggedInUser(store: AppStore, setStore: SetStoreFunction<AppStore>) {
@@ -67,7 +63,7 @@ export async function updateLoggedInUser(store: AppStore, setStore: SetStoreFunc
 
 export function App(props: { children: Element }) {
 	const [store, setStore] = createStore({
-		userInfo: {} as UserInfoResponse | undefined,
+		userInfo: {} as GetUserInfoResponse | undefined,
 	});
 
 	onMount(async () => {

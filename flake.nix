@@ -28,6 +28,9 @@
                 pnpm
                 nodejs
                 libreoffice
+                buf
+                protobuf
+                protoc-gen-go
             ];
 
             nativeBuildInputs = with pkgs; [

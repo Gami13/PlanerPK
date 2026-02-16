@@ -1,10 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
 import { createResource, Show, useContext } from "solid-js";
 import { AppContext } from "..";
+import { rpc } from "../api_client";
 import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
 import { UserCard } from "../Components/UserCard";
-import { Endpoints, GOOGLE_CALENDAR_URL, PK_WEBSITE_URL, UserInfoResponse } from "../constants";
+import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
+import type { GetUserInfoResponse } from "../gen/v1/pkplaner_pb.js";
 import { attrs, setAccessToken } from "../utils";
 
 const MOBILE_MAX = "@media (max-width: 33.75em)" as const;
@@ -90,8 +92,8 @@ const styles = stylex.create({
 });
 
 async function fetchAuthURL() {
-	const response = await fetch(Endpoints.GetAuthURL);
-	return response.text();
+	const res = await rpc.getAuthURL({});
+	return res.url;
 }
 
 export function logOut() {
@@ -128,7 +130,7 @@ export function Home() {
 							</Button>
 						}
 					>
-						<UserCard userInfo={AppState.store.userInfo as UserInfoResponse} />
+						<UserCard userInfo={AppState.store.userInfo as GetUserInfoResponse} />
 						<div {...attrs(stylex.props(styles.authButtons))}>
 							<Button isPrimary={true} isNavigation={true} href="/settings">
 								Ustawienia

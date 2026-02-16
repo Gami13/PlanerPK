@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package pkplaner.v1;
+
+option go_package = "github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1;pkplanerv1";
+
+// PKPlanerService provides RPCs for managing timetable calendar integration.
+service PKPlanerService {
+  // GetColumns returns available column groups parsed from the Excel header rows.
+  rpc GetColumns(GetColumnsRequest) returns (GetColumnsResponse);
+
+  // SetChosenColumn sets the chosen column for the authenticated user.
+  rpc SetChosenColumn(SetChosenColumnRequest) returns (SetChosenColumnResponse);
+
+  // Authorize exchanges an OAuth code for user credentials and returns user info.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+
+  // GetAuthURL generates a Google OAuth authorization URL.
+  rpc GetAuthURL(GetAuthURLRequest) returns (GetAuthURLResponse);
+
+  // GetUserInfo returns information about the authenticated user.
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+}
+
+// ColumnGroup represents an available column/group option parsed from the Excel header rows.
+message ColumnGroup {
+  int32 column = 1;
+  string label = 2;
+  string category = 3;
+}
+
+// GetColumnsRequest is empty — no parameters needed.
+message GetColumnsRequest {}
+
+message GetColumnsResponse {
+  repeated ColumnGroup columns = 1;
+}
+
+// SetChosenColumnRequest carries the column to select and the user's access token.
+message SetChosenColumnRequest {
+  int32 chosen_column = 1;
+  string access_token = 2;
+}
+
+message SetChosenColumnResponse {}
+
+// AuthorizeRequest carries the OAuth authorization code.
+message AuthorizeRequest {
+  string code = 1;
+}
+
+message AuthorizeResponse {
+  string access_token = 1;
+  string email = 2;
+  int64 chosen_column = 3;
+  string name = 4;
+  string picture = 5;
+}
+
+// GetAuthURLRequest is empty.
+message GetAuthURLRequest {}
+
+message GetAuthURLResponse {
+  string url = 1;
+}
+
+// GetUserInfoRequest carries the access token for authentication.
+message GetUserInfoRequest {
+  string access_token = 1;
+}
+
+message GetUserInfoResponse {
+  string email = 1;
+  string name = 2;
+  string given_name = 3;
+  string picture = 4;
+  bool is_active = 5;
+  int64 chosen_column = 6;
+}

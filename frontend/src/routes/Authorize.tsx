@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "@solidjs/router";
 import { createEffect, useContext } from "solid-js";
 import { AppContext, updateLoggedInUser } from "..";
+import { rpc } from "../api_client";
 import { PageTitle } from "../Components/PageTitle";
-import { Endpoints } from "../constants";
 import { setAccessToken } from "../utils";
 
 export function Authorize() {
@@ -14,11 +14,11 @@ export function Authorize() {
 		const code = new URLSearchParams(location.search).get("code");
 
 		if (code) {
-			fetch(`${Endpoints.Authorize}?code=${code}`)
-				.then((response) => response.json())
+			rpc
+				.authorize({ code })
 				.then((data) => {
-					if (data.access_token) {
-						setAccessToken(data.access_token);
+					if (data.accessToken) {
+						setAccessToken(data.accessToken);
 
 						updateLoggedInUser(AppState.store, AppState.setStore).then(() => {
 							navigate("/settings");

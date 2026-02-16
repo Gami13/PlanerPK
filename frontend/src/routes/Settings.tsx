@@ -2,9 +2,10 @@ import * as stylex from "@stylexjs/stylex";
 import { createResource, For, Show, useContext } from "solid-js";
 import { AppContext } from "..";
 
+import { rpc } from "../api_client";
 import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
-import { Endpoints, type ColumnGroup } from "../constants";
+import type { ColumnGroup } from "../gen/v1/pkplaner_pb.js";
 import { attrs, getAccessToken, getGroupByColumnIndex } from "../utils";
 
 const MEDIUM_SCREEN = "@media (min-width: 48em)" as const;
@@ -73,22 +74,21 @@ const styles = stylex.create({
 	},
 });
 
-async function changeChosenColumn(newColumn: number) {
-	const response = await fetch(Endpoints.SetChosenColumn, {
-		method: "PUT",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: getAccessToken() || "",
-		},
-		body: JSON.stringify({ chosenColumn: newColumn }),
-	});
-	return response.ok;
+async function changeChosenColumn(newColumn: number): Promise<boolean> {
+	try {
+		await rpc.setChosenColumn({
+			chosenColumn: newColumn,
+			accessToken: getAccessToken() || "",
+		});
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 async function fetchColumns(): Promise<ColumnGroup[]> {
-	const response = await fetch(Endpoints.GetColumns);
-	if (!response.ok) throw new Error("Failed to fetch columns");
-	return response.json();
+	const res = await rpc.getColumns({});
+	return res.columns;
 }
 
 /** Group columns by category for optgroup rendering. */
@@ -118,7 +118,7 @@ export function Settings() {
 
 				{/* <article {...attrs(stylex.props(styles.setting))}>
           			<h2 {...attrs(stylex.props(styles.settingHeader))}>Status aktywności</h2>
-         			 	<p {...attrs(stylex.props(styles.settingDescription))}>Obecny status: {AppState.store.userInfo?.is_active ? 'Aktywny' : 'Nieaktywny'}</p>
+         			 	<p {...attrs(stylex.props(styles.settingDescription))}>Obecny status: {AppState.store.userInfo?.isActive ? 'Aktywny' : 'Nieaktywny'}</p>
           				<Button isPrimary={true}>Zmień status</Button>
         			</article> 
 					*/}
@@ -134,7 +134,7 @@ export function Settings() {
 							if (success) {
 								alert("Pomyślnie zmieniono kolumnę.");
 
-								AppState.setStore("userInfo", "chosen_column", Number(chosenColumn));
+								AppState.setStore("userInfo", "chosenColumn", BigInt(chosenColumn as string));
 							} else {
 								alert("Wystąpił błąd podczas zmiany kolumny. Spróbuj ponownie.");
 							}
@@ -145,9 +145,9 @@ export function Settings() {
 					<p>Zmianę kolumny wykonuj wyłącznie w uzasadnionych przypadkach, aby uniknąć ograniczeń konta.</p>
 					<p {...attrs(stylex.props(styles.settingDescription))}>
 						Obecna kolumna:{" "}
-						{AppState.store.userInfo?.chosen_column === null
+						{AppState.store.userInfo?.chosenColumn === 0n
 							? "Nie wybrano kolumny"
-							: `${AppState.store.userInfo?.chosen_column ? getGroupByColumnIndex(columns(), AppState.store.userInfo.chosen_column)?.label : "Ładowanie..."}`}
+							: `${AppState.store.userInfo?.chosenColumn ? getGroupByColumnIndex(columns(), Number(AppState.store.userInfo.chosenColumn))?.label : "Ładowanie..."}`}
 					</p>
 					<select {...attrs(stylex.props(styles.columnSelect))} name="chosen_column" id="chosen_column">
 						<Show when={columns.error}>
@@ -164,7 +164,7 @@ export function Settings() {
 											{(option) => (
 												<option
 													value={option.column}
-													selected={AppState.store.userInfo?.chosen_column === option.column}
+													selected={Number(AppState.store.userInfo?.chosenColumn ?? 0n) === option.column}
 												>
 													{option.label}
 												</option>

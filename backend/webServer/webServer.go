@@ -1,7 +1,6 @@
 package webServer
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -11,7 +10,11 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	_ "modernc.org/sqlite"
 )
@@ -67,7 +70,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Connect-Protocol-Version, Connect-Timeout-Ms, Grpc-Timeout, X-Grpc-Web, X-User-Agent")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -79,10 +82,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func Start(db *sql.DB) {
-	ctx := context.Background()
-
 	query := database.New(db)
-	hctx := NewEndpointContext(query, ctx)
+	handler := NewPKPlanerHandler(query)
 
 	mux := http.NewServeMux()
 	rateLimiter := NewRateLimiter()
@@ -98,21 +99,28 @@ func Start(db *sql.DB) {
 		BanDuration: 7 * 24 * time.Hour,
 	}
 
-	registerGeneral := func(pattern string, handler http.HandlerFunc) {
-		mux.Handle(pattern, rateLimitMiddleware(rateLimiter, generalPolicy, handler))
-	}
+	// Mount ConnectRPC service behind rate limiting.
+	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler)
 
-	registerGeneral("/", hctx.ServeFrontend)
-	registerGeneral("GET /api/authorize", hctx.AuthorizeEndpoint)
-	registerGeneral("GET /api/authURL", hctx.GetAuthURLEndpoint)
-	registerGeneral("GET /api/userInfo", hctx.GetUserInfoEndpoint)
-	registerGeneral("GET /api/columns", hctx.GetColumnsEndpoint)
-	mux.Handle("PUT /api/chosenColumn", rateLimitMiddleware(rateLimiter, generalPolicy, rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, http.HandlerFunc(hctx.SetChosenColumnEndpoint))))
-	// serves the frontend
-	handler := corsMiddleware(mux)
+	// Wrap the SetChosenColumn endpoint with the strict policy.
+	mux.Handle(rpcPath, rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/SetChosenColumn") {
+			rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, rpcHandler).ServeHTTP(w, r)
+			return
+		}
+		rpcHandler.ServeHTTP(w, r)
+	})))
+
+	// Frontend static files (catch-all).
+	ec := &EndpointContext{Query: query}
+	mux.Handle("/", rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(ec.ServeFrontend)))
+
+	// CORS + h2c for HTTP/2 cleartext (Connect protocol).
+	corsHandler := corsMiddleware(mux)
+	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
 
 	slog.Info("Web server listening", slog.String("port", global.SERVER_PORT))
-	if err := http.ListenAndServe(":"+global.SERVER_PORT, handler); err != nil {
+	if err := http.ListenAndServe(":"+global.SERVER_PORT, h2cHandler); err != nil {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}
 }

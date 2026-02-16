@@ -1,11 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { UserInfoResponse } from "../constants";
+import type { GetUserInfoResponse } from "../gen/v1/pkplaner_pb.js";
 import { colors } from "../styleTokens.stylex";
 import { attrs } from "../utils";
 import { PillTag } from "./PillTag";
 
 type UserCardProps = {
-	userInfo: UserInfoResponse;
+	userInfo: GetUserInfoResponse;
 };
 
 const styles = stylex.create({
@@ -68,14 +68,12 @@ export function UserCard(props: UserCardProps) {
 				<div {...attrs(stylex.props(styles.metaRow))}>
 					<PillTag
 						isActivable={true}
-						isActive={props.userInfo.is_active}
-						text={props.userInfo.is_active ? "Aktywny" : "Nieaktywny"}
+						isActive={props.userInfo.isActive}
+						text={props.userInfo.isActive ? "Aktywny" : "Nieaktywny"}
 					/>
 					<PillTag
 						isActivable={false}
-						text={
-							props.userInfo.chosen_column === null ? "Nie wybrano kolumny" : `Kolumna ${props.userInfo.chosen_column}`
-						}
+						text={props.userInfo.chosenColumn === 0n ? "Nie wybrano kolumny" : `Kolumna ${props.userInfo.chosenColumn}`}
 					/>
 				</div>
 			</div>
