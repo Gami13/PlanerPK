@@ -101,26 +101,9 @@ function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
 	}
 	return map;
 }
-async function fetchColumns(): Promise<ColumnGroup[]> {
-	const response = await fetch(Endpoints.GetColumns);
-	if (!response.ok) throw new Error("Failed to fetch columns");
-	return response.json();
-}
-
-/** Group columns by category for optgroup rendering. */
-function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
-	const map = new Map<string, ColumnGroup[]>();
-	for (const col of columns) {
-		const key = col.category || "";
-		if (!map.has(key)) map.set(key, []);
-		map.get(key)!.push(col);
-	}
-	return map;
-}
 
 export function Settings() {
 	const AppState = useContext(AppContext);
-	const [columns] = createResource(fetchColumns);
 	const [columns] = createResource(fetchColumns);
 
 	return (
