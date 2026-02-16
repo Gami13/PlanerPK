@@ -1,3 +1,5 @@
+import { ColumnGroup } from "./constants";
+
 export function setAccessToken(token: string) {
 	document.cookie = `access_token=${token}; path=/; max-age=604800; samesite=strict`;
 }
@@ -37,4 +39,11 @@ export function attrs({ className, "data-style-src": dataStyleSrc, style }: Styl
 		result["data-style-src"] = dataStyleSrc;
 	}
 	return result;
+}
+
+export function getGroupByColumnIndex(
+	columns: ColumnGroup[] | undefined,
+	columnIndex: number
+): ColumnGroup | undefined {
+	return columns?.find((col) => col.column === columnIndex);
 }

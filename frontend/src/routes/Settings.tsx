@@ -1,11 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { For, useContext } from "solid-js";
+import { createResource, For, Show, useContext } from "solid-js";
 import { AppContext } from "..";
 
 import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
-import { Endpoints } from "../constants";
-import { attrs, getAccessToken } from "../utils";
+import { Endpoints, type ColumnGroup } from "../constants";
+import { attrs, getAccessToken, getGroupByColumnIndex } from "../utils";
 
 const MEDIUM_SCREEN = "@media (min-width: 48em)" as const;
 const styles = stylex.create({
@@ -85,19 +85,26 @@ async function changeChosenColumn(newColumn: number) {
 	return response.ok;
 }
 
-const columnOptions = [
-	{ value: 2, label: "Kolumna 2 (GK1)" },
-	{ value: 3, label: "Kolumna 3 (GK2)" },
-	{ value: 4, label: "Kolumna 4 (GK3)" },
-	{ value: 5, label: "Kolumna 5 (GK4)" },
-	{ value: 6, label: "Kolumna 6 (GK5)" },
-	{ value: 7, label: "Kolumna 7 (GK6)" },
-	{ value: 8, label: "Kolumna 8 (GK7)" },
-	{ value: 9, label: "Kolumna 9 (GK8)" },
-];
+async function fetchColumns(): Promise<ColumnGroup[]> {
+	const response = await fetch(Endpoints.GetColumns);
+	if (!response.ok) throw new Error("Failed to fetch columns");
+	return response.json();
+}
+
+/** Group columns by category for optgroup rendering. */
+function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
+	const map = new Map<string, ColumnGroup[]>();
+	for (const col of columns) {
+		const key = col.category || "";
+		if (!map.has(key)) map.set(key, []);
+		map.get(key)!.push(col);
+	}
+	return map;
+}
 
 export function Settings() {
 	const AppState = useContext(AppContext);
+	const [columns] = createResource(fetchColumns);
 
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
@@ -140,16 +147,33 @@ export function Settings() {
 						Obecna kolumna:{" "}
 						{AppState.store.userInfo?.chosen_column === null
 							? "Nie wybrano kolumny"
-							: `Kolumna ${AppState.store.userInfo?.chosen_column}`}
+							: `${AppState.store.userInfo?.chosen_column ? getGroupByColumnIndex(columns(), AppState.store.userInfo.chosen_column)?.label : "Ładowanie..."}`}
 					</p>
 					<select {...attrs(stylex.props(styles.columnSelect))} name="chosen_column" id="chosen_column">
-						<For each={columnOptions}>
-							{(option) => (
-								<option value={option.value} selected={AppState.store.userInfo?.chosen_column === option.value}>
-									{option.label}
-								</option>
-							)}
-						</For>
+						<Show when={columns.error}>
+							<option disabled>Błąd ładowania kolumn</option>
+						</Show>
+						<Show when={columns.loading}>
+							<option disabled>Ładowanie...</option>
+						</Show>
+						<Show when={columns()}>
+							<For each={[...groupByCategory(columns()!)]}>
+								{([category, options]) => (
+									<optgroup label={category || "Inne"}>
+										<For each={options}>
+											{(option) => (
+												<option
+													value={option.column}
+													selected={AppState.store.userInfo?.chosen_column === option.column}
+												>
+													{option.label}
+												</option>
+											)}
+										</For>
+									</optgroup>
+								)}
+							</For>
+						</Show>
 					</select>
 					<Button isPrimary={true}>Zmień kolumnę</Button>
 				</form>

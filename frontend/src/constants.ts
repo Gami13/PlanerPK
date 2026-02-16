@@ -5,6 +5,13 @@ export const Endpoints = {
 	Authorize: `${ENV.apiBaseUrl}/authorize`,
 	GetUserInfo: `${ENV.apiBaseUrl}/userInfo`,
 	SetChosenColumn: `${ENV.apiBaseUrl}/chosenColumn`,
+	GetColumns: `${ENV.apiBaseUrl}/columns`,
+};
+
+export type ColumnGroup = {
+	column: number;
+	label: string;
+	category: string;
 };
 
 export type UserInfoResponse = {
