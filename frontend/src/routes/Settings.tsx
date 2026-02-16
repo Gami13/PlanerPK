@@ -101,9 +101,26 @@ function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
 	}
 	return map;
 }
+async function fetchColumns(): Promise<ColumnGroup[]> {
+	const response = await fetch(Endpoints.GetColumns);
+	if (!response.ok) throw new Error("Failed to fetch columns");
+	return response.json();
+}
+
+/** Group columns by category for optgroup rendering. */
+function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
+	const map = new Map<string, ColumnGroup[]>();
+	for (const col of columns) {
+		const key = col.category || "";
+		if (!map.has(key)) map.set(key, []);
+		map.get(key)!.push(col);
+	}
+	return map;
+}
 
 export function Settings() {
 	const AppState = useContext(AppContext);
+	const [columns] = createResource(fetchColumns);
 	const [columns] = createResource(fetchColumns);
 
 	return (
@@ -150,6 +167,30 @@ export function Settings() {
 							: `${AppState.store.userInfo?.chosen_column ? getGroupByColumnIndex(columns(), AppState.store.userInfo.chosen_column)?.label : "Ładowanie..."}`}
 					</p>
 					<select {...attrs(stylex.props(styles.columnSelect))} name="chosen_column" id="chosen_column">
+						<Show when={columns.error}>
+							<option disabled>Błąd ładowania kolumn</option>
+						</Show>
+						<Show when={columns.loading}>
+							<option disabled>Ładowanie...</option>
+						</Show>
+						<Show when={columns()}>
+							<For each={[...groupByCategory(columns()!)]}>
+								{([category, options]) => (
+									<optgroup label={category || "Inne"}>
+										<For each={options}>
+											{(option) => (
+												<option
+													value={option.column}
+													selected={AppState.store.userInfo?.chosen_column === option.column}
+												>
+													{option.label}
+												</option>
+											)}
+										</For>
+									</optgroup>
+								)}
+							</For>
+						</Show>
 						<Show when={columns.error}>
 							<option disabled>Błąd ładowania kolumn</option>
 						</Show>
