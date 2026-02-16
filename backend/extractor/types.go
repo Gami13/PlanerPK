@@ -35,6 +35,13 @@ var ClassTypes = []string{
 	"ćwiczenia",
 }
 
+// ColumnGroup represents an available column/group option parsed from the Excel header rows.
+type ColumnGroup struct {
+	Column   int    `json:"column"`
+	Label    string `json:"label"`
+	Category string `json:"category"`
+}
+
 func (c Class) String() string {
 	text := fmt.Sprintf("%s (%s) %s-%s | %s | %s", c.Name, c.Type, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Teacher, c.Location)
 	if c.AdditionalInfo != "" {

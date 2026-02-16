@@ -12,6 +12,7 @@ import (
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 )
 
@@ -29,6 +30,38 @@ func NewEndpointContext(query *database.Queries, ctx context.Context) *EndpointC
 	}
 
 	return &EndpointContext{Query: query, Ctx: ctx}
+}
+
+// GET /api/columns
+// Returns available column groups parsed from the Excel header rows. No auth required.
+func (ec *EndpointContext) GetColumnsEndpoint(w http.ResponseWriter, r *http.Request) {
+	groups, err := extractor.GetAvailableGroups()
+	if err != nil {
+		slog.Error("Failed to get available groups", slog.Any("error", err))
+		http.Error(w, fmt.Sprintf("Failed to get available groups: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(groups); err != nil {
+		slog.Error("Failed to encode columns response", slog.Any("error", err))
+	}
+}
+
+// isValidColumn checks whether the given column index is present in the available groups.
+// Falls back to a simple range check if parsing fails.
+func isValidColumn(column int) bool {
+	groups, err := extractor.GetAvailableGroups()
+	if err != nil {
+		slog.Warn("Column validation falling back to range check", slog.Any("error", err))
+		return column >= 0 && column <= global.LAST_COLUMN
+	}
+	for _, g := range groups {
+		if g.Column == column {
+			return true
+		}
+	}
+	return false
 }
 
 // PUT /setChosenColumn
@@ -54,7 +87,7 @@ func (ec *EndpointContext) SetChosenColumnEndpoint(w http.ResponseWriter, r *htt
 
 	slog.Info("Setting chosen column", slog.Int("column", requestBody.ChosenColumn))
 
-	if requestBody.ChosenColumn < 0 || requestBody.ChosenColumn > global.LAST_COLUMN {
+	if !isValidColumn(requestBody.ChosenColumn) {
 		slog.Warn("Invalid chosen column value", slog.Int("column", requestBody.ChosenColumn))
 		http.Error(w, "Invalid chosen column value", http.StatusBadRequest)
 		return

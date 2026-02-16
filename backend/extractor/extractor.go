@@ -145,8 +145,14 @@ func traverseDay(file *excelize.File, day Day, groupColumn int) []Class {
 	return classes
 }
 
+// toCharStr converts a 1-based column number to an Excel column letter (A, B, ... Z, AA, AB, ...).
 func toCharStr(i int) string {
-	return string(rune('A' - 1 + i))
+	name, err := excelize.ColumnNumberToName(i)
+	if err != nil {
+		slog.Error("Failed to convert column number to name", slog.Int("col", i), slog.Any("error", err))
+		return ""
+	}
+	return name
 }
 
 func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day Day) Class {

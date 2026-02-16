@@ -106,6 +106,7 @@ func Start(db *sql.DB) {
 	registerGeneral("GET /api/authorize", hctx.AuthorizeEndpoint)
 	registerGeneral("GET /api/authURL", hctx.GetAuthURLEndpoint)
 	registerGeneral("GET /api/userInfo", hctx.GetUserInfoEndpoint)
+	registerGeneral("GET /api/columns", hctx.GetColumnsEndpoint)
 	mux.Handle("PUT /api/chosenColumn", rateLimitMiddleware(rateLimiter, generalPolicy, rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, http.HandlerFunc(hctx.SetChosenColumnEndpoint))))
 	// serves the frontend
 	handler := corsMiddleware(mux)
