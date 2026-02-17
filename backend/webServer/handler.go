@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 	"golang.org/x/oauth2"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	pkplanerv1 "github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 
@@ -89,7 +89,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid chosen column value"))
 	}
 
-	if err := h.Query.UpdateChosenColumn(ctx, gen.UpdateChosenColumnParams{
+	if err := h.Query.UpdateChosenColumn(ctx, db.UpdateChosenColumnParams{
 		ChosenColumn: &chosenColumn,
 		AccessToken:  accessToken,
 	}); err != nil {
@@ -152,7 +152,7 @@ func (h *PKPlanerHandler) Authorize(
 		Expiry:       tok.Expiry,
 		ExpiresIn:    tok.ExpiresIn,
 	}
-	newUser, err := h.Query.UpsertUser(ctx, gen.UpsertUserParams{
+	newUser, err := h.Query.UpsertUser(ctx, db.UpsertUserParams{
 		Email:        user.Email,
 		Name:         user.Name,
 		GivenName:    user.GivenName,

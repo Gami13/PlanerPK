@@ -3,7 +3,7 @@ package database
 import (
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	"golang.org/x/oauth2"
 )
 
@@ -34,7 +34,7 @@ func (u *User) Token() *oauth2.Token {
 	}
 }
 
-func GetToken(u *gen.User) *oauth2.Token {
+func GetToken(u *db.User) *oauth2.Token {
 	return &oauth2.Token{
 		AccessToken:  u.AccessToken,
 		TokenType:    u.TokenType,

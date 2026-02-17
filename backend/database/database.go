@@ -4,20 +4,20 @@ import (
 	"database/sql"
 	_ "embed"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	_ "modernc.org/sqlite"
 )
 
 //go:embed schema.sql
 var ddl string
 
-// Queries wraps the sqlc-generated gen.Queries and maps results to domain types.
+// Queries wraps the sqlc-generated db.Queries and maps results to domain types.
 type Queries struct {
-	*gen.Queries
+	*db.Queries
 }
 
-func New(db *sql.DB) *Queries {
-	return &Queries{gen.New(db)}
+func New(d *sql.DB) *Queries {
+	return &Queries{db.New(d)}
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
