@@ -11,11 +11,11 @@ import (
 type Querier interface {
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetTokenByAccessToken(ctx context.Context, accessToken string) (GetTokenByAccessTokenRow, error)
-	GetUserByAccessToken(ctx context.Context, accessToken string) (GetUserByAccessTokenRow, error)
-	GetUserByEmail(ctx context.Context, email *string) (GetUserByEmailRow, error)
+	GetUserByAccessToken(ctx context.Context, accessToken string) (User, error)
+	GetUserByEmail(ctx context.Context, email *string) (User, error)
 	UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumnParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
-	UpsertUser(ctx context.Context, arg UpsertUserParams) (UpsertUserRow, error)
+	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

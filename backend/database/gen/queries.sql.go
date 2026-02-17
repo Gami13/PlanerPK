@@ -80,67 +80,14 @@ func (q *Queries) GetTokenByAccessToken(ctx context.Context, accessToken string)
 }
 
 const getUserByAccessToken = `-- name: GetUserByAccessToken :one
-SELECT email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 FROM users
 WHERE access_token = ?1
 `
 
-type GetUserByAccessTokenRow struct {
-	Email        *string   `json:"email"`
-	Name         *string   `json:"name"`
-	GivenName    *string   `json:"given_name"`
-	Picture      *string   `json:"picture"`
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-	ExpiresIn    int64     `json:"expires_in"`
-	ChosenColumn *int64    `json:"chosen_column"`
-	IsActive     *bool     `json:"is_active"`
-}
-
-func (q *Queries) GetUserByAccessToken(ctx context.Context, accessToken string) (GetUserByAccessTokenRow, error) {
+func (q *Queries) GetUserByAccessToken(ctx context.Context, accessToken string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByAccessToken, accessToken)
-	var i GetUserByAccessTokenRow
-	err := row.Scan(
-		&i.Email,
-		&i.Name,
-		&i.GivenName,
-		&i.Picture,
-		&i.AccessToken,
-		&i.TokenType,
-		&i.RefreshToken,
-		&i.Expiry,
-		&i.ExpiresIn,
-		&i.ChosenColumn,
-		&i.IsActive,
-	)
-	return i, err
-}
-
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
-FROM users
-WHERE email = ?1
-`
-
-type GetUserByEmailRow struct {
-	ID           int64     `json:"id"`
-	Email        *string   `json:"email"`
-	Name         *string   `json:"name"`
-	GivenName    *string   `json:"given_name"`
-	Picture      *string   `json:"picture"`
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-	ExpiresIn    int64     `json:"expires_in"`
-	ChosenColumn *int64    `json:"chosen_column"`
-}
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (GetUserByEmailRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i GetUserByEmailRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -153,6 +100,35 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (GetUserByE
 		&i.Expiry,
 		&i.ExpiresIn,
 		&i.ChosenColumn,
+		&i.IsActive,
+		&i.LastSynced,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+FROM users
+WHERE email = ?1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.GivenName,
+		&i.Picture,
+		&i.AccessToken,
+		&i.TokenType,
+		&i.RefreshToken,
+		&i.Expiry,
+		&i.ExpiresIn,
+		&i.ChosenColumn,
+		&i.IsActive,
+		&i.LastSynced,
 	)
 	return i, err
 }
@@ -175,7 +151,7 @@ func (q *Queries) UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumn
 
 const updateUserSyncTime = `-- name: UpdateUserSyncTime :exec
 UPDATE users
-SET last_synced = (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))
 WHERE access_token = ?1
 `
 
@@ -196,7 +172,7 @@ ON CONFLICT(email) DO UPDATE SET
     refresh_token = excluded.refresh_token,
     expiry        = excluded.expiry,
     expires_in    = excluded.expires_in
-RETURNING email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
+RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 `
 
 type UpsertUserParams struct {
@@ -211,20 +187,7 @@ type UpsertUserParams struct {
 	ExpiresIn    int64     `json:"expires_in"`
 }
 
-type UpsertUserRow struct {
-	Email        *string   `json:"email"`
-	Name         *string   `json:"name"`
-	GivenName    *string   `json:"given_name"`
-	Picture      *string   `json:"picture"`
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-	ExpiresIn    int64     `json:"expires_in"`
-	ChosenColumn *int64    `json:"chosen_column"`
-}
-
-func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (UpsertUserRow, error) {
+func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, upsertUser,
 		arg.Email,
 		arg.Name,
@@ -236,8 +199,9 @@ func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (UpsertU
 		arg.Expiry,
 		arg.ExpiresIn,
 	)
-	var i UpsertUserRow
+	var i User
 	err := row.Scan(
+		&i.ID,
 		&i.Email,
 		&i.Name,
 		&i.GivenName,
@@ -248,6 +212,8 @@ func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (UpsertU
 		&i.Expiry,
 		&i.ExpiresIn,
 		&i.ChosenColumn,
+		&i.IsActive,
+		&i.LastSynced,
 	)
 	return i, err
 }

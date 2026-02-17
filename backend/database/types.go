@@ -3,18 +3,19 @@ package database
 import (
 	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
 	"golang.org/x/oauth2"
 )
 
 type User struct {
-	ID           *int64
+	ID           int64
 	Email        *string
 	ChosenColumn *int64
 	IsActive     *bool
 	Name         *string
 	GivenName    *string
 	Picture      *string
-	LastSynced   *time.Time
+	LastSynced   time.Time
 
 	AccessToken  string
 	TokenType    string
@@ -24,6 +25,16 @@ type User struct {
 }
 
 func (u *User) Token() *oauth2.Token {
+	return &oauth2.Token{
+		AccessToken:  u.AccessToken,
+		TokenType:    u.TokenType,
+		RefreshToken: u.RefreshToken,
+		Expiry:       u.Expiry,
+		ExpiresIn:    u.ExpiresIn,
+	}
+}
+
+func GetToken(u *gen.User) *oauth2.Token {
 	return &oauth2.Token{
 		AccessToken:  u.AccessToken,
 		TokenType:    u.TokenType,

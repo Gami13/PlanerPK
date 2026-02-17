@@ -6,7 +6,9 @@ import (
 	"log/slog"
 
 	"connectrpc.com/connect"
+	"golang.org/x/oauth2"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/database/gen"
 	pkplanerv1 "github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 
@@ -55,14 +57,14 @@ func (h *PKPlanerHandler) GetColumns(
 }
 
 // isValidColumn checks whether the given column index is present in the available groups.
-func isValidColumn(column int) bool {
+func isValidColumn(column int64) bool {
 	groups, err := extractor.GetAvailableGroups()
 	if err != nil {
 		slog.Warn("Column validation falling back to range check", slog.Any("error", err))
-		return column >= 0 && column <= global.LAST_COLUMN
+		return column >= 0 && column <= int64(global.LAST_COLUMN)
 	}
 	for _, g := range groups {
-		if g.Column == column {
+		if int64(g.Column) == column {
 			return true
 		}
 	}
@@ -79,29 +81,38 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
 	}
 
-	chosenColumn := int(req.Msg.ChosenColumn)
-	slog.Info("Setting chosen column", slog.Int("column", chosenColumn))
+	chosenColumn := int64(req.Msg.ChosenColumn)
+	slog.Info("Setting chosen column", slog.Int64("column", chosenColumn))
 
 	if !isValidColumn(chosenColumn) {
-		slog.Warn("Invalid chosen column value", slog.Int("column", chosenColumn))
+		slog.Warn("Invalid chosen column value", slog.Int64("column", chosenColumn))
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid chosen column value"))
 	}
 
-	if err := h.Query.UpdateChosenColumn(accessToken, int64(chosenColumn)); err != nil {
+	if err := h.Query.UpdateChosenColumn(ctx, gen.UpdateChosenColumnParams{
+		ChosenColumn: &chosenColumn,
+		AccessToken:  accessToken,
+	}); err != nil {
 		slog.Error("Failed to update chosen column",
-			slog.Int("column", chosenColumn),
+			slog.Int64("column", chosenColumn),
 			slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update chosen column: %w", err))
 	}
 
-	token, err := h.Query.GetTokenByAccessToken(accessToken)
+	token, err := h.Query.GetTokenByAccessToken(ctx, accessToken)
 	if err != nil {
 		slog.Error("Failed to get token", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token: %w", err))
 	}
 
-	slog.Info("Triggering timetable import", slog.Int("column", chosenColumn))
-	go calendar.ImportTimetable(int64(chosenColumn), token)
+	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
+	go calendar.ImportTimetable(chosenColumn, &oauth2.Token{
+		AccessToken:  token.AccessToken,
+		TokenType:    token.TokenType,
+		RefreshToken: token.RefreshToken,
+		Expiry:       token.Expiry,
+		ExpiresIn:    token.ExpiresIn,
+	}, h.Query)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }
@@ -141,7 +152,17 @@ func (h *PKPlanerHandler) Authorize(
 		Expiry:       tok.Expiry,
 		ExpiresIn:    tok.ExpiresIn,
 	}
-	newUser, err := h.Query.UpsertUser(&user)
+	newUser, err := h.Query.UpsertUser(ctx, gen.UpsertUserParams{
+		Email:        user.Email,
+		Name:         user.Name,
+		GivenName:    user.GivenName,
+		Picture:      user.Picture,
+		AccessToken:  user.AccessToken,
+		TokenType:    user.TokenType,
+		RefreshToken: user.RefreshToken,
+		Expiry:       user.Expiry,
+		ExpiresIn:    user.ExpiresIn,
+	})
 	if err != nil {
 		slog.Error("Failed to save user",
 			slog.String("email", userInfo.Email),
@@ -187,7 +208,7 @@ func (h *PKPlanerHandler) GetUserInfo(
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
 	}
 
-	user, err := h.Query.GetUserByAccessToken(accessToken)
+	user, err := h.Query.GetUserByAccessToken(ctx, accessToken)
 	if err != nil {
 		slog.Warn("Invalid access token or user not found", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthorized: invalid or expired access token"))

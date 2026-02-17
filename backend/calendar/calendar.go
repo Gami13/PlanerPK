@@ -44,7 +44,7 @@ func GenerateAuthURL() (string, error) {
 	return authURL, nil
 }
 
-func ImportTimetable(groupColumn int64, token *oauth2.Token) {
+func ImportTimetable(groupColumn int64, token *oauth2.Token, queries *database.Queries) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
@@ -119,7 +119,7 @@ func ImportTimetable(groupColumn int64, token *oauth2.Token) {
 		}
 	}
 
-	err = database.Query.UpdateUserSyncTime(token.AccessToken)
+	err = queries.UpdateUserSyncTime(ctx, token.AccessToken)
 	if err != nil {
 		slog.Error("Failed to update user sync time", slog.Any("error", err))
 	}

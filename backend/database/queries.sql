@@ -10,12 +10,13 @@ ON CONFLICT(email) DO UPDATE SET
     refresh_token = excluded.refresh_token,
     expiry        = excluded.expiry,
     expires_in    = excluded.expires_in
-RETURNING email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column;
+RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced;
 
 -- name: GetUserByEmail :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 FROM users
 WHERE email = sqlc.arg(email);
+
 
 -- name: GetAllUsers :many
 SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
@@ -32,11 +33,11 @@ FROM users
 WHERE access_token = sqlc.arg(access_token);
 
 -- name: GetUserByAccessToken :one
-SELECT email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 FROM users
 WHERE access_token = sqlc.arg(access_token);
 
 -- name: UpdateUserSyncTime :exec
 UPDATE users
-SET last_synced = (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))
 WHERE access_token = sqlc.arg(access_token);

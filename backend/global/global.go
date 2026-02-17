@@ -6,10 +6,10 @@ var (
 	HOUR_COLUMN                    = 1
 	DAY_START                      = "7.30"
 	DAY_END                        = "21.00"
-	DATABASE_SOURCE                = "file:../data/database.db?cache=shared&mode=rwc&_busy_timeout=5000"
+	DATABASE_SOURCE                = "file:../data/database.db?cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite"
 	LAST_COLUMN                    = 40
 	DATABASE_DRIVER                = "sqlite"
-	MINUTES_BETWEEN                = 5
+	MINUTES_BETWEEN                = 1
 	SERVER_PORT                    = "8080"
 	GENERAL_RATE_LIMIT_PER_MINUTE  = 60
 	TIMETABLE_CURRENT_DESTINATION  = "../data/current_timetable/"

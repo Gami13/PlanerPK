@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS users (
     expires_in    INTEGER NOT NULL,
     chosen_column INTEGER DEFAULT -1,
     is_active     BOOLEAN DEFAULT 1,
-    last_synced   TIMESTAMP NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    last_synced   TIMESTAMP NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))
 );

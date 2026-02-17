@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"time"
@@ -68,7 +69,7 @@ func main() {
 }
 
 func updateAllTimetables(queries *database.Queries) {
-	users, err := queries.GetAllUsers()
+	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
@@ -87,7 +88,7 @@ func updateAllTimetables(queries *database.Queries) {
 
 			continue
 		}
-		timeSinceSync := time.Since(*user.LastSynced)
+		timeSinceSync := time.Since(user.LastSynced)
 		if !didChange && timeSinceSync.Hours() < float64(global.TIME_BETWEEN_SYNC_HOURS) {
 			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
 				slog.String("email", *user.Email),
@@ -98,6 +99,6 @@ func updateAllTimetables(queries *database.Queries) {
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
-		calendar.ImportTimetable(*user.ChosenColumn, user.Token())
+		calendar.ImportTimetable(*user.ChosenColumn, database.GetToken(&user), queries)
 	}
 }
