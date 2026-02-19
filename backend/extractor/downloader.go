@@ -1,4 +1,4 @@
-package downloader
+package extractor
 
 import (
 	"fmt"
@@ -10,10 +10,36 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/antchfx/htmlquery"
 )
+
+func logCloseWarn(resource string, err error) {
+	if err != nil {
+		slog.Warn("Failed to close resource",
+			slog.String("resource", resource),
+			slog.Any("error", err))
+	}
+}
+
+func moveFileOrWarn(src, dst, label string) {
+	if err := os.Rename(src, dst); err != nil {
+		slog.Warn("Failed to move file",
+			slog.String("label", label),
+			slog.String("source", src),
+			slog.String("destination", dst),
+			slog.Any("error", err))
+	}
+}
+
+func removeFileOrWarn(path, label string) {
+	if err := os.Remove(path); err != nil {
+		slog.Warn("Failed to remove file",
+			slog.String("label", label),
+			slog.String("path", path),
+			slog.Any("error", err))
+	}
+}
 
 // Get the url of the timetable from the PKs website
 func FetchTimetableUrl() (string, error) {
@@ -28,28 +54,12 @@ func FetchTimetableUrl() (string, error) {
 
 // Check if the timetable changed compared to the PKs timetable
 func DidChange(timetablePath string, url string) (bool, error) {
-	localName, err := filepath.Abs(timetablePath)
-	if err != nil {
-		return false, nil
-	}
-
-	remoteName, err := filepath.Abs(timetablePath)
-	if err != nil {
-		return false, nil
-	}
-
-	if localName != remoteName && localName != remoteName+"x" {
-		return true, nil
-	}
-
 	resp, err := http.Head(url)
 	if err != nil {
 		return false, err
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			slog.Warn("Failed to close response body", slog.Any("error", err))
-		}
+		logCloseWarn("response body", resp.Body.Close())
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -90,9 +100,7 @@ func DownloadTimetable(url string) (string, error) {
 		return destination, fmt.Errorf("failed to download the timetable: %w", err)
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			slog.Warn("Failed to close response body", slog.Any("error", err))
-		}
+		logCloseWarn("response body", resp.Body.Close())
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -110,9 +118,7 @@ func DownloadTimetable(url string) (string, error) {
 		return destination, fmt.Errorf("failed to create the timetable file: %w", err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			slog.Warn("Failed to close timetable file", slog.Any("error", err))
-		}
+		logCloseWarn("timetable file", file.Close())
 	}()
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
@@ -141,13 +147,15 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 	return dest + filepath.Base(src) + "x", cmd.Run()
 }
 
-// Download a timetable from the PK website, convert it to .xlsx and move to the timetableExtractor.CURRENT_TIMETABLE_DESTINATION
-// Returns the path timetableExtractor.CURRENT_TIMETABLE_DESTINATION + filepath.Base(timetablePathXlsx)
+// Download a timetable from the PK website, convert it to .xlsx and move to the current timetable destination
+// Returns the path global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx)
 func DownloadAndProcessTimetable(url string) (string, error) {
+	logger := slog.With(slog.String("operation", "download_and_process_timetable"))
+
 	// Get the current timetable that will be removed after a successfull download
-	currentTimetablePathXls, err := extractor.GetCurrentTimetablePath()
+	currentTimetablePathXls, err := GetCurrentTimetablePath()
 	if err != nil {
-		slog.Error("Failed to get current timetable path", slog.Any("error", err))
+		logger.Error("Failed to get current timetable path", slog.Any("error", err))
 		return "", fmt.Errorf("failed to get current timetable path: %w", err)
 	}
 
@@ -165,38 +173,16 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 
 	// Move the timetable to the current timetable destination
 	newTimetablePathXls := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXls)
-	err = os.Rename(timetablePathXls, newTimetablePathXls)
-	if err != nil {
-		slog.Error("Failed to move the new .xls timetable.",
-			slog.String("source", timetablePathXls),
-			slog.String("destination", newTimetablePathXls),
-			slog.Any("error", err))
-	}
+	moveFileOrWarn(timetablePathXls, newTimetablePathXls, "new_xls")
 
 	newTimetablePathXlsx := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx)
-	err = os.Rename(timetablePathXlsx, newTimetablePathXlsx)
-	if err != nil {
-		slog.Error("Failed to move the new .xlsx timetable.",
-			slog.String("source", timetablePathXlsx),
-			slog.String("destination", newTimetablePathXlsx),
-			slog.Any("error", err))
-	}
+	moveFileOrWarn(timetablePathXlsx, newTimetablePathXlsx, "new_xlsx")
 
 	// Delete the old timetable
-	err = os.Remove(currentTimetablePathXls)
-	if err != nil {
-		slog.Error("Failed to delete the old .xls timetable.",
-			slog.String("file", currentTimetablePathXls),
-			slog.Any("error", err))
-	}
+	removeFileOrWarn(currentTimetablePathXls, "old_xls")
 
 	currentTimetablePathXlsx := currentTimetablePathXls + "x"
-	err = os.Remove(currentTimetablePathXlsx)
-	if err != nil {
-		slog.Error("Failed to delete the old .xlsx timetable.",
-			slog.String("file", currentTimetablePathXlsx),
-			slog.Any("error", err))
-	}
+	removeFileOrWarn(currentTimetablePathXlsx, "old_xlsx")
 
 	return newTimetablePathXlsx, nil
 }
@@ -204,43 +190,45 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 // Updates the timetable if it changed, using FetchTimetableUrl, DidChange and DownloadAndProcessTimetable
 // Returns (didChange bool, timetablePath string, err error)
 func UpdateTimetable() (didChange bool, path string, err error) {
+	logger := slog.With(slog.String("operation", "update_timetable"))
+
 	timetableUrl, err := FetchTimetableUrl()
 	if err != nil {
-		slog.Error("Failed to fetch timetable URL", slog.Any("error", err))
+		logger.Error("Failed to fetch timetable URL", slog.Any("error", err))
 		return false, "", err
 	}
 
-	slog.Debug("Fetched timetable URL", slog.String("url", timetableUrl))
+	logger.Debug("Fetched timetable URL", slog.String("url", timetableUrl))
 
-	timetablePath, err := extractor.GetCurrentTimetablePath()
+	timetablePath, err := GetCurrentTimetablePath()
 	if err != nil {
-		slog.Info("No timetable present, downloading new one")
+		logger.Info("No timetable present, downloading new one")
 
 		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
 		if err != nil {
-			slog.Error("Failed to download and process timetable", slog.Any("error", err))
+			logger.Error("Failed to download and process timetable", slog.Any("error", err))
 			return false, "", err
 		}
-		slog.Info("Downloaded initial timetable", slog.String("path", timetablePath))
+		logger.Info("Downloaded initial timetable", slog.String("path", timetablePath))
 		return true, timetablePath, nil
 	}
 
 	didChange, err = DidChange(timetablePath, timetableUrl)
 	if err != nil {
-		slog.Error("Failed to check if timetable changed", slog.Any("error", err))
+		logger.Error("Failed to check if timetable changed", slog.Any("error", err))
 		return didChange, timetablePath, err
 	}
 
 	if didChange {
-		slog.Info("Timetable changed, downloading new version")
+		logger.Info("Timetable changed, downloading new version")
 		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
 		if err != nil {
-			slog.Error("Failed to download and process timetable", slog.Any("error", err))
+			logger.Error("Failed to download and process timetable", slog.Any("error", err))
 			return didChange, timetablePath, err
 		}
-		slog.Info("Downloaded updated timetable", slog.String("path", timetablePath))
+		logger.Info("Downloaded updated timetable", slog.String("path", timetablePath))
 		return didChange, timetablePath, nil
 	}
-	slog.Info("No timetable changes detected")
+	logger.Info("No timetable changes detected")
 	return didChange, timetablePath + "x", nil
 }

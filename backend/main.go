@@ -8,7 +8,7 @@ import (
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/downloader"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/utils"
@@ -25,7 +25,7 @@ func main() {
 	slog.Info("Environment variables loaded")
 
 	// Fetch the timetable url
-	_, _, err := downloader.UpdateTimetable()
+	_, _, err := extractor.UpdateTimetable()
 	if err != nil {
 		slog.Error("Failed to update timetable", slog.Any("error", err))
 	}
@@ -74,7 +74,7 @@ func updateAllTimetables(queries *database.Queries) {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
 	}
-	didChange, _, err := downloader.UpdateTimetable()
+	didChange, _, err := extractor.UpdateTimetable()
 	if err != nil {
 		slog.Error("Failed to update timetable", slog.Any("error", err))
 		return
