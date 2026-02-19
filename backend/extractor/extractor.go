@@ -155,13 +155,20 @@ func toCharStr(i int) string {
 	return name
 }
 
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day Day) Class {
-	var class Class
+func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day Day) (class Class) {
+	class.Day = day.WeekDay
+	class.StartTime = classStartTime
+	class.EndTime = classEndTime
+
 	regex := regexp.MustCompile(`(  |\n)+`)
 	parts := regex.Split(text, -1)
 	parts = removeEmptyStrings(parts)
 	parts = fixClassParts(parts)
 	class.Name = strings.TrimSpace(parts[0])
+
+	if len(parts) < 2 {
+		return class
+	}
 
 	if slices.Contains(ClassTypes, strings.TrimSpace(parts[1])) {
 		class.Type = strings.TrimSpace(parts[1])
@@ -175,10 +182,6 @@ func parseClassText(text string, classStartTime time.Time, classEndTime time.Tim
 	if len(parts) > 4 {
 		class.AdditionalInfo = strings.TrimSpace(parts[4])
 	}
-
-	class.Day = day.WeekDay
-	class.StartTime = classStartTime
-	class.EndTime = classEndTime
 
 	return class
 }

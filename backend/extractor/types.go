@@ -55,8 +55,20 @@ func (c Class) Id() string {
 }
 
 func (c Class) Summary() string {
-	summary := fmt.Sprintf("%s (%s) - %s | %s", c.Name, c.Type, c.Teacher, c.Location)
-	if c.AdditionalInfo != "" {
+	summary := ""
+	if len(c.Name) > 0 {
+		summary += c.Name
+	}
+	if len(c.Type) > 0 {
+		summary += fmt.Sprintf(" (%s)", c.Type)
+	}
+	if len(c.Teacher) > 0 {
+		summary += fmt.Sprintf(" - %s", c.Teacher)
+	}
+	if len(c.Location) > 0 {
+		summary += fmt.Sprintf(" | %s", c.Location)
+	}
+	if len(c.AdditionalInfo) > 0 {
 		summary += fmt.Sprintf(" | %s", c.AdditionalInfo)
 	}
 	return summary
