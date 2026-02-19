@@ -15,7 +15,7 @@ var (
 	TIMETABLE_CURRENT_DESTINATION  = "../data/current_timetable/"
 	TIMETABLE_URL                  = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
 	TIMETABLE_DOWNLOAD_DESTINATION = "../data/downloads/"
-	CALENDAR_CREDENTIALS_PATH      = "../credentials.json"
+	CALENDAR_CREDENTIALS_PATH      = "../data/credentials.json"
 	LOGS_PATH                      = "../data/logs"
 	TIME_BETWEEN_SYNC_HOURS        = 72
 )
