@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -17,7 +18,7 @@ type mergeRange struct {
 }
 
 // GetAvailableGroups parses the Excel header rows and returns available column groups.
-func GetAvailableGroups() ([]ColumnGroup, error) {
+func GetAvailableGroups() ([]types.ColumnGroup, error) {
 	timetablePath, err := GetCurrentXlsxTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
@@ -170,8 +171,8 @@ func grupaYearDigit(value string) byte {
 //  4. Reset the GK counter when the year digit changes (e.g. grupa 1x → 2x).
 //  5. Resolve categories from the row above, inheriting leftward when the
 //     direct value is empty or "Godziny".
-func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup map[[2]int]*mergeRange) []ColumnGroup {
-	var groups []ColumnGroup
+func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup map[[2]int]*mergeRange) []types.ColumnGroup {
+	var groups []types.ColumnGroup
 	gkCounter := 1
 	prevYearDigit := byte(0) // first digit of last "grupa XY" — reset GK when it changes
 
@@ -232,7 +233,7 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 				slog.String("label", label),
 				slog.String("category", category))
 
-			groups = append(groups, ColumnGroup{
+			groups = append(groups, types.ColumnGroup{
 				Column:   c,
 				Label:    label,
 				Category: category,

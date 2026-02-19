@@ -48,7 +48,7 @@ func main() {
 		panic("Failed to initialize logger: " + err.Error())
 	}
 
-	utils.LoadEnvVariables()
+	global.LoadEnvVariables()
 	slog.Info("Environment variables loaded")
 
 	// Fetch the timetable url

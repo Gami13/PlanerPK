@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
@@ -138,7 +139,7 @@ func DownloadTimetable(url string) (string, error) {
 // Returns the path to the .xlsx file
 func Xls2Xlsx(src string, dest string) (string, error) {
 	// Windows
-	if os.PathSeparator == '\\' {
+	if runtime.GOOS == "windows" {
 		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
 		return dest + filepath.Base(src) + "x", cmd.Run()
 	}

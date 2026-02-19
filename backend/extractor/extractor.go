@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -59,7 +60,7 @@ func getCurrentTimetablePath() (string, error) {
 	return "", fmt.Errorf("no .xls file found in %s", global.TIMETABLE_CURRENT_DESTINATION)
 }
 
-func GetTimetable(groupColumn int64) (Timetable, error) {
+func GetTimetable(groupColumn int64) (types.Timetable, error) {
 	timetablePath, err := GetCurrentXlsxTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
@@ -82,8 +83,9 @@ func GetTimetable(groupColumn int64) (Timetable, error) {
 		}
 	}()
 
-	timetable := make(Timetable)
+	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
+
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
@@ -97,9 +99,9 @@ func GetTimetable(groupColumn int64) (Timetable, error) {
 	return timetable, nil
 }
 
-func getDaysStartEnd(file *excelize.File) []Day {
+func getDaysStartEnd(file *excelize.File) []types.Day {
 	// Find starting rows for each day
-	var days []Day
+	var days []types.Day
 	rows, err := file.GetRows(global.SHEET_NAME)
 	if err != nil {
 		slog.Error("Failed to get rows from timetable", slog.Any("error", err))
@@ -109,7 +111,7 @@ func getDaysStartEnd(file *excelize.File) []Day {
 		if len(row) > 1 {
 
 			if row[global.HOUR_COLUMN] == global.DAY_START {
-				day := Day{
+				day := types.Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7),
 				}
@@ -124,16 +126,18 @@ func getDaysStartEnd(file *excelize.File) []Day {
 	return days
 }
 
-func traverseDay(file *excelize.File, day Day, groupColumn int64) []Class {
-	var classes []Class
+const slotDuration = 15 * time.Minute
 
-	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
+func traverseDay(file *excelize.File, day types.Day, groupColumn int64) []types.Class {
+	var classes []types.Class
+
+	currentTime := global.DAY_START_TIME
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
 		classText := getCell(file, global.SHEET_NAME, i, int(groupColumn))
 		if classText != "" {
 
-			classEndTime := currentTime.Add(15 * time.Minute)
+			classEndTime := currentTime.Add(slotDuration)
 
 			class := parseClassText(classText, currentTime, classEndTime, day)
 
@@ -143,23 +147,13 @@ func traverseDay(file *excelize.File, day Day, groupColumn int64) []Class {
 				classes[len(classes)-1].EndTime = classEndTime
 			}
 		}
-		currentTime = currentTime.Add(15 * time.Minute)
+		currentTime = currentTime.Add(slotDuration)
 
 	}
 	return classes
 }
 
-// toCharStr converts a 1-based column number to an Excel column letter (A, B, ... Z, AA, AB, ...).
-func toCharStr(i int) string {
-	name, err := excelize.ColumnNumberToName(i)
-	if err != nil {
-		slog.Error("Failed to convert column number to name", slog.Int("col", i), slog.Any("error", err))
-		return ""
-	}
-	return name
-}
-
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day Day) (class Class) {
+func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day) (class types.Class) {
 	class.Day = day.WeekDay
 	class.StartTime = classStartTime
 	class.EndTime = classEndTime
@@ -208,7 +202,7 @@ func parseClassText(text string, classStartTime time.Time, classEndTime time.Tim
 }
 
 func isClassType(value string) bool {
-	for _, classType := range ClassTypes {
+	for _, classType := range types.ClassTypes {
 		if strings.EqualFold(strings.TrimSpace(value), strings.TrimSpace(classType)) {
 			return true
 		}
@@ -237,7 +231,13 @@ func fixClassParts(parts []string) []string {
 }
 
 func getCell(file *excelize.File, sheet string, row int, col int) string {
-	cell, err := file.GetCellValue(sheet, fmt.Sprintf("%s%d", toCharStr(col+1), row+1))
+	column, err := excelize.ColumnNumberToName(col + 1)
+	if err != nil {
+		slog.Error("Failed to convert column number to name", slog.Int("col", col), slog.Any("error", err))
+		return ""
+	}
+
+	cell, err := file.GetCellValue(sheet, fmt.Sprintf("%s%d", column, row+1))
 	if err != nil {
 		slog.Error("Failed to get cell value",
 			slog.String("sheet", sheet),

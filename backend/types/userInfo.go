@@ -1,4 +1,4 @@
-package calendar
+package types
 
 import "fmt"
 

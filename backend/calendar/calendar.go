@@ -11,6 +11,7 @@ import (
 	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -161,7 +162,7 @@ func AuthorizeFromCode(code string) (*oauth2.Token, error) {
 	return tok, nil
 }
 
-func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
+func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
 	config, err := createConfig()
 	if err != nil {
 		slog.Error("Failed to create config for user info", slog.Any("error", err))
@@ -184,7 +185,7 @@ func GetUserInfo(token *oauth2.Token) (*UserInfo, error) {
 		slog.Error("Failed to read user info response", slog.Any("error", err))
 		return nil, err
 	}
-	var result UserInfo
+	var result types.UserInfo
 	if err := json.Unmarshal(data, &result); err != nil {
 		slog.Error("Failed to unmarshal user info", slog.Any("error", err))
 		return nil, err
@@ -210,7 +211,7 @@ func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
 	filteredEvents := make([]*calendar.Event, 0)
 	for _, event := range events.Items {
 		if event.ExtendedProperties != nil && event.ExtendedProperties.Private != nil {
-			if event.ExtendedProperties.Private["added_by"] == extractor.ADDED_BY {
+			if event.ExtendedProperties.Private["added_by"] == types.ADDED_BY {
 				filteredEvents = append(filteredEvents, event)
 			}
 		}
