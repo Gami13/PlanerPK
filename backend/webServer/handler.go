@@ -141,7 +141,7 @@ func (h *PKPlanerHandler) Authorize(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get user info: %w", err))
 	}
 
-	user := database.User{
+	user := db.UpsertUserParams{
 		Email:        &userInfo.Email,
 		Name:         &userInfo.Name,
 		GivenName:    &userInfo.GivenName,
@@ -152,17 +152,7 @@ func (h *PKPlanerHandler) Authorize(
 		Expiry:       tok.Expiry,
 		ExpiresIn:    tok.ExpiresIn,
 	}
-	newUser, err := h.Query.UpsertUser(ctx, db.UpsertUserParams{
-		Email:        user.Email,
-		Name:         user.Name,
-		GivenName:    user.GivenName,
-		Picture:      user.Picture,
-		AccessToken:  user.AccessToken,
-		TokenType:    user.TokenType,
-		RefreshToken: user.RefreshToken,
-		Expiry:       user.Expiry,
-		ExpiresIn:    user.ExpiresIn,
-	})
+	newUser, err := h.Query.UpsertUser(ctx, user)
 	if err != nil {
 		slog.Error("Failed to save user",
 			slog.String("email", userInfo.Email),

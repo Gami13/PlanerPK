@@ -9,8 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/lmittmann/tint"
+	"golang.org/x/oauth2"
 )
 
 func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
@@ -18,6 +20,16 @@ func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
 	daysUntil := (int(weekday) - int(today.Weekday()) + 7) % 7
 	next := today.AddDate(0, 0, daysUntil)
 	return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func GetToken(u *db.User) *oauth2.Token {
+	return &oauth2.Token{
+		AccessToken:  u.AccessToken,
+		TokenType:    u.TokenType,
+		RefreshToken: u.RefreshToken,
+		Expiry:       u.Expiry,
+		ExpiresIn:    u.ExpiresIn,
+	}
 }
 
 // JiPP - Języki i paradygmaty programowania

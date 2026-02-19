@@ -99,6 +99,6 @@ func updateAllTimetables(queries *database.Queries) {
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
-		calendar.ImportTimetable(*user.ChosenColumn, database.GetToken(&user), queries)
+		calendar.ImportTimetable(*user.ChosenColumn, utils.GetToken(&user), queries)
 	}
 }
