@@ -26,11 +26,6 @@ func initializeDatabase() *db.Queries {
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		if err := database.Close(); err != nil {
-			slog.Error("Failed to close database", slog.Any("error", err))
-		}
-	}()
 
 	_, err = database.Exec(ddl)
 	// we can panic here
