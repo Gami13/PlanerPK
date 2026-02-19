@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
-	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -15,8 +14,16 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+func GetCurrentXlsxTimetablePath() (string, error) {
+	timetablePath, err := getCurrentTimetablePath()
+	if err != nil {
+		return "", err
+	}
+	return timetablePath + "x", nil
+}
+
 // Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
-func GetCurrentTimetablePath() (string, error) {
+func getCurrentTimetablePath() (string, error) {
 	entries, err := os.ReadDir(global.TIMETABLE_CURRENT_DESTINATION)
 	if err != nil {
 		return "", err
@@ -53,11 +60,11 @@ func GetCurrentTimetablePath() (string, error) {
 }
 
 func GetTimetable(groupColumn int64) (Timetable, error) {
-	timetablePath, err := GetCurrentTimetablePath()
+	timetablePath, err := GetCurrentXlsxTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
 	}
-	timetablePath = timetablePath + "x" // excelize requires .xlsx extension
+
 	slog.Debug("Opening timetable file",
 		slog.String("path", timetablePath),
 		slog.Int("column", int(groupColumn)))
@@ -109,10 +116,7 @@ func getDaysStartEnd(file *excelize.File) []Day {
 				days = append(days, day)
 			}
 			if row[global.HOUR_COLUMN] == global.DAY_END {
-				day := Day{
-					EndingRow: number,
-				}
-				days[len(days)-1].EndingRow = day.EndingRow
+				days[len(days)-1].EndingRow = number
 			}
 
 		}
@@ -126,16 +130,16 @@ func traverseDay(file *excelize.File, day Day, groupColumn int64) []Class {
 	currentTime := time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		cell := getCell(file, global.SHEET_NAME, i, int(groupColumn))
-		classText := cell
+		classText := getCell(file, global.SHEET_NAME, i, int(groupColumn))
 		if classText != "" {
 
 			classEndTime := currentTime.Add(15 * time.Minute)
 
 			class := parseClassText(classText, currentTime, classEndTime, day)
+
 			if len(classes) == 0 || class.Name != classes[len(classes)-1].Name {
 				classes = append(classes, class)
-			} else if len(classes) != 0 && class.Name == classes[len(classes)-1].Name {
+			} else {
 				classes[len(classes)-1].EndTime = classEndTime
 			}
 		}
@@ -164,26 +168,52 @@ func parseClassText(text string, classStartTime time.Time, classEndTime time.Tim
 	parts := regex.Split(text, -1)
 	parts = removeEmptyStrings(parts)
 	parts = fixClassParts(parts)
+	if len(parts) == 0 {
+		return class
+	}
 	class.Name = strings.TrimSpace(parts[0])
 
-	if len(parts) < 2 {
+	if len(parts) == 1 {
 		return class
 	}
 
-	if slices.Contains(ClassTypes, strings.TrimSpace(parts[1])) {
+	if len(parts) == 2 {
+		if isClassType(parts[1]) {
+			class.Type = strings.TrimSpace(parts[1])
+		} else {
+			class.Teacher = strings.TrimSpace(parts[1])
+		}
+		return class
+	}
+
+	if isClassType(parts[1]) {
 		class.Type = strings.TrimSpace(parts[1])
 		class.Teacher = strings.TrimSpace(parts[2])
-	} else {
-
-		class.Type = strings.TrimSpace(parts[2])
+	} else if isClassType(parts[2]) {
 		class.Teacher = strings.TrimSpace(parts[1])
+		class.Type = strings.TrimSpace(parts[2])
+	} else {
+		class.Teacher = strings.TrimSpace(parts[1])
+		class.Location = strings.TrimSpace(parts[2])
 	}
-	class.Location = strings.TrimSpace(parts[3])
+
+	if len(parts) > 3 && class.Location == "" {
+		class.Location = strings.TrimSpace(parts[3])
+	}
 	if len(parts) > 4 {
 		class.AdditionalInfo = strings.TrimSpace(parts[4])
 	}
 
 	return class
+}
+
+func isClassType(value string) bool {
+	for _, classType := range ClassTypes {
+		if strings.EqualFold(strings.TrimSpace(value), strings.TrimSpace(classType)) {
+			return true
+		}
+	}
+	return false
 }
 
 // Removes empty strings from a slice

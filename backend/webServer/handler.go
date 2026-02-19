@@ -13,7 +13,6 @@ import (
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 )
@@ -21,10 +20,10 @@ import (
 // PKPlanerHandler implements pkplanerv1connect.PKPlanerServiceHandler.
 type PKPlanerHandler struct {
 	pkplanerv1connect.UnimplementedPKPlanerServiceHandler
-	Query *database.Queries
+	Query *db.Queries
 }
 
-func NewPKPlanerHandler(query *database.Queries) *PKPlanerHandler {
+func NewPKPlanerHandler(query *db.Queries) *PKPlanerHandler {
 	if query == nil {
 		panic("Query is nil!")
 	}

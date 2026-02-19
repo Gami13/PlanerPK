@@ -50,6 +50,7 @@ func (c Class) String() string {
 	return text
 }
 
+// Collisions between same-name classes are intentional — they allow the calendar syncer to detect time changes
 func (c Class) Id() string {
 	return fmt.Sprintf("%s_%s", c.Type, c.Name)
 }
@@ -74,17 +75,17 @@ func (c Class) Summary() string {
 	return summary
 }
 
-func (c Class) StartTimeRFC3339() string {
+func (c Class) timeOnDay(t time.Time) time.Time {
 	dayDate := utils.GetDateOfNextWeekday(c.Day)
+	return time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), t.Hour(), t.Minute(), 0, 0, time.Now().Local().Location())
+}
 
-	startTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), c.StartTime.Hour(), c.StartTime.Minute(), 0, 0, time.Now().Local().Location())
-	return startTime.Format(time.RFC3339)
+func (c Class) StartTimeRFC3339() string {
+	return c.timeOnDay(c.StartTime).Format(time.RFC3339)
 }
 
 func (c Class) EndTimeRFC3339() string {
-	dayDate := utils.GetDateOfNextWeekday(c.Day)
-	endTime := time.Date(dayDate.Year(), dayDate.Month(), dayDate.Day(), c.EndTime.Hour(), c.EndTime.Minute(), 0, 0, time.Now().Local().Location())
-	return endTime.Format(time.RFC3339)
+	return c.timeOnDay(c.EndTime).Format(time.RFC3339)
 }
 
 func (c Class) ToEvent() calendar.Event {

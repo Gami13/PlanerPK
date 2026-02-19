@@ -3,17 +3,44 @@ package main
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"log/slog"
 	"time"
 
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
+
 	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/utils"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/webServer"
 )
+
+//go:embed schema.sql
+var ddl string
+
+// initializeDatabase creates tables if they don't exist.
+func initializeDatabase() *db.Queries {
+	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := database.Close(); err != nil {
+			slog.Error("Failed to close database", slog.Any("error", err))
+		}
+	}()
+
+	_, err = database.Exec(ddl)
+	// we can panic here
+	if err != nil {
+		slog.Error("Failed to execute DDL statements", slog.Any("error", err))
+		panic(err)
+	}
+
+	return db.New(database)
+}
 
 func main() {
 	// Initialize logger first
@@ -30,29 +57,17 @@ func main() {
 		slog.Error("Failed to update timetable", slog.Any("error", err))
 	}
 
-	db, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			slog.Error("Failed to close database", slog.Any("error", err))
-		}
-	}()
+	queries := initializeDatabase()
 
-	err = database.InitializeDatabase(db)
-	if err != nil {
-		slog.Error("Failed to initialize database", slog.Any("error", err))
-		panic(err)
-	}
 	slog.Info("Database initialized successfully")
-
-	queries := database.New(db)
 
 	ticker := time.NewTicker(time.Duration(global.MINUTES_BETWEEN) * time.Minute)
 	done := make(chan bool)
+
 	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
-	go webServer.Start(db)
+
+	go webServer.Start(queries)
+
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
 	func() {
@@ -68,7 +83,7 @@ func main() {
 	}()
 }
 
-func updateAllTimetables(queries *database.Queries) {
+func updateAllTimetables(queries *db.Queries) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))

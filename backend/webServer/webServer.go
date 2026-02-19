@@ -1,7 +1,6 @@
 package webServer
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -9,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
@@ -81,8 +80,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db *sql.DB) {
-	query := database.New(db)
+func Start(db *db.Queries) {
+	query := db
 	handler := NewPKPlanerHandler(query)
 
 	mux := http.NewServeMux()

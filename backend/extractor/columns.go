@@ -18,11 +18,10 @@ type mergeRange struct {
 
 // GetAvailableGroups parses the Excel header rows and returns available column groups.
 func GetAvailableGroups() ([]ColumnGroup, error) {
-	timetablePath, err := GetCurrentTimetablePath()
+	timetablePath, err := GetCurrentXlsxTimetablePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current timetable: %v", err)
 	}
-	timetablePath += "x"
 
 	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {

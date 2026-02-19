@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -44,7 +44,7 @@ func GenerateAuthURL() (string, error) {
 	return authURL, nil
 }
 
-func ImportTimetable(groupColumn int64, token *oauth2.Token, queries *database.Queries) {
+func ImportTimetable(groupColumn int64, token *oauth2.Token, queries *db.Queries) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))

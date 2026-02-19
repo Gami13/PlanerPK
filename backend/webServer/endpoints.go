@@ -6,13 +6,13 @@ import (
 	"path"
 	"strings"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/database"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 )
 
 // EndpointContext holds shared dependencies for HTTP handlers that are not
 // part of the ConnectRPC service (e.g. the static frontend server).
 type EndpointContext struct {
-	Query *database.Queries
+	Query *db.Queries
 }
 
 var fs = http.FileServer(http.Dir("./static/"))

@@ -137,12 +137,12 @@ func DownloadTimetable(url string) (string, error) {
 // Convert an .xls file to an .xlsx file
 // Returns the path to the .xlsx file
 func Xls2Xlsx(src string, dest string) (string, error) {
+	// Windows
 	if os.PathSeparator == '\\' {
-
 		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
 		return dest + filepath.Base(src) + "x", cmd.Run()
 	}
-
+	// Linux
 	cmd := exec.Command("libreoffice", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
 	return dest + filepath.Base(src) + "x", cmd.Run()
 }
@@ -153,7 +153,7 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	logger := slog.With(slog.String("operation", "download_and_process_timetable"))
 
 	// Get the current timetable that will be removed after a successfull download
-	currentTimetablePathXls, err := GetCurrentTimetablePath()
+	currentTimetablePathXls, err := getCurrentTimetablePath()
 	if err != nil {
 		logger.Error("Failed to get current timetable path", slog.Any("error", err))
 		return "", fmt.Errorf("failed to get current timetable path: %w", err)
@@ -200,7 +200,7 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 
 	logger.Debug("Fetched timetable URL", slog.String("url", timetableUrl))
 
-	timetablePath, err := GetCurrentTimetablePath()
+	timetablePath, err := getCurrentTimetablePath()
 	if err != nil {
 		logger.Info("No timetable present, downloading new one")
 
