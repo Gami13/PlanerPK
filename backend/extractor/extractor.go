@@ -2,12 +2,7 @@ package extractor
 
 import (
 	"fmt"
-	"io/fs"
 	"log/slog"
-	"os"
-	"regexp"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
@@ -15,73 +10,12 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func GetCurrentXlsxTimetablePath() (string, error) {
-	timetablePath, err := getCurrentTimetablePath()
-	if err != nil {
-		return "", err
-	}
-	return timetablePath + "x", nil
-}
-
-// Get the currently used .xls timetable (under the CURRENT_TIMETABLE_DESTINATION folder)
-func getCurrentTimetablePath() (string, error) {
-	entries, err := os.ReadDir(global.TIMETABLE_CURRENT_DESTINATION)
-	if err != nil {
-		return "", err
-	}
-
-	// If there are multiple .xls files then get the newest one by date and warn about it
-	var xlsFiles []fs.FileInfo
-
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xls") {
-			fileInfo, err := entry.Info()
-			if err != nil {
-				slog.Error("Skipping possible current timetable file.")
-			}
-
-			xlsFiles = append(xlsFiles, fileInfo)
-		}
-	}
-
-	if len(xlsFiles) == 1 {
-		return global.TIMETABLE_CURRENT_DESTINATION + xlsFiles[0].Name(), nil
-	} else if len(xlsFiles) > 1 {
-		slog.Warn("Multiple current timetable files. Getting the newest one by modification date.",
-			slog.String("timetable_current_destination", global.TIMETABLE_CURRENT_DESTINATION))
-
-		sort.Slice(xlsFiles, func(i, j int) bool {
-			return xlsFiles[i].ModTime().After(xlsFiles[j].ModTime())
-		})
-
-		return global.TIMETABLE_CURRENT_DESTINATION + xlsFiles[0].Name(), nil
-	}
-
-	return "", fmt.Errorf("no .xls file found in %s", global.TIMETABLE_CURRENT_DESTINATION)
-}
-
 func GetTimetable(groupColumn int64) (types.Timetable, error) {
-	timetablePath, err := GetCurrentXlsxTimetablePath()
+	file, err := openCurrentTimetableFile()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current timetable: %v", err)
+		return nil, fmt.Errorf("failed to open timetable file: %w", err)
 	}
-
-	slog.Debug("Opening timetable file",
-		slog.String("path", timetablePath),
-		slog.Int("column", int(groupColumn)))
-
-	file, err := excelize.OpenFile(timetablePath)
-	if err != nil {
-		slog.Error("Failed to open timetable file", slog.Any("error", err))
-		return nil, err
-	}
-	defer func() {
-		// Close the spreadsheet.
-		if err := file.Close(); err != nil {
-			slog.Error("Failed to close timetable file", slog.Any("error", err))
-			return
-		}
-	}()
+	defer closeFile(file)
 
 	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
@@ -151,83 +85,6 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64) []types.
 
 	}
 	return classes
-}
-
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day) (class types.Class) {
-	class.Day = day.WeekDay
-	class.StartTime = classStartTime
-	class.EndTime = classEndTime
-
-	regex := regexp.MustCompile(`(  |\n)+`)
-	parts := regex.Split(text, -1)
-	parts = removeEmptyStrings(parts)
-	parts = fixClassParts(parts)
-	if len(parts) == 0 {
-		return class
-	}
-	class.Name = strings.TrimSpace(parts[0])
-
-	if len(parts) == 1 {
-		return class
-	}
-
-	if len(parts) == 2 {
-		if isClassType(parts[1]) {
-			class.Type = strings.TrimSpace(parts[1])
-		} else {
-			class.Teacher = strings.TrimSpace(parts[1])
-		}
-		return class
-	}
-
-	if isClassType(parts[1]) {
-		class.Type = strings.TrimSpace(parts[1])
-		class.Teacher = strings.TrimSpace(parts[2])
-	} else if isClassType(parts[2]) {
-		class.Teacher = strings.TrimSpace(parts[1])
-		class.Type = strings.TrimSpace(parts[2])
-	} else {
-		class.Teacher = strings.TrimSpace(parts[1])
-		class.Location = strings.TrimSpace(parts[2])
-	}
-
-	if len(parts) > 3 && class.Location == "" {
-		class.Location = strings.TrimSpace(parts[3])
-	}
-	if len(parts) > 4 {
-		class.AdditionalInfo = strings.TrimSpace(parts[4])
-	}
-
-	return class
-}
-
-func isClassType(value string) bool {
-	for _, classType := range types.ClassTypes {
-		if strings.EqualFold(strings.TrimSpace(value), strings.TrimSpace(classType)) {
-			return true
-		}
-	}
-	return false
-}
-
-// Removes empty strings from a slice
-func removeEmptyStrings(slice []string) []string {
-	var result []string
-	for _, str := range slice {
-		if strings.TrimSpace(str) != "" {
-			result = append(result, str)
-		}
-	}
-	return result
-}
-
-// Fixes it so that the last part (the one that contains additional info) is merged into one string
-func fixClassParts(parts []string) []string {
-	if len(parts) > 4 {
-		merged := strings.Join(parts[4:], " ")
-		return append(parts[:4], merged)
-	}
-	return parts
 }
 
 func getCell(file *excelize.File, sheet string, row int, col int) string {

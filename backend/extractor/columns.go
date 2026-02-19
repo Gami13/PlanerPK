@@ -19,21 +19,11 @@ type mergeRange struct {
 
 // GetAvailableGroups parses the Excel header rows and returns available column groups.
 func GetAvailableGroups() ([]types.ColumnGroup, error) {
-	timetablePath, err := GetCurrentXlsxTimetablePath()
+	file, err := openCurrentTimetableFile()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current timetable: %v", err)
+		return nil, fmt.Errorf("failed to open timetable file: %w", err)
 	}
-
-	file, err := excelize.OpenFile(timetablePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open timetable file: %v", err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			slog.Error("Failed to close timetable file", slog.Any("error", err))
-		}
-	}()
-
+	defer closeFile(file)
 	dataStartRow, err := findDataStartRow(file)
 	if err != nil {
 		return nil, err
@@ -54,7 +44,7 @@ func GetAvailableGroups() ([]types.ColumnGroup, error) {
 func findDataStartRow(file *excelize.File) (int, error) {
 	rows, err := file.GetRows(global.SHEET_NAME)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get rows: %v", err)
+		return 0, fmt.Errorf("failed to get rows: %w", err)
 	}
 
 	for i, row := range rows {
@@ -142,25 +132,6 @@ func effectiveGroupValue(file *excelize.File, row, col int, lookup map[[2]int]*m
 	return strings.TrimSpace(getCell(file, global.SHEET_NAME, row, col))
 }
 
-// isHourLabel returns true for values that represent hour/time columns (e.g. "Godziny").
-func isHourLabel(v string) bool {
-	return strings.EqualFold(strings.TrimSpace(v), "Godziny")
-}
-
-// grupaYearDigit extracts the first digit after "grupa " (e.g. "grupa 11" → '1',
-// "grupa 21" → '2'). Returns 0 if the value doesn't match the pattern.
-func grupaYearDigit(value string) byte {
-	rest, found := strings.CutPrefix(strings.ToLower(value), "grupa ")
-	if !found {
-		return 0
-	}
-	rest = strings.TrimSpace(rest)
-	if len(rest) > 0 && rest[0] >= '0' && rest[0] <= '9' {
-		return rest[0]
-	}
-	return 0
-}
-
 // buildColumnGroups iterates data columns and builds ColumnGroup entries.
 //
 // Logic:
@@ -203,7 +174,7 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 		isMultiColMerge := inMerge && mr.EndCol > mr.StartCol
 
 		// Reset GK counter when the "year digit" changes (e.g. grupa 1x → grupa 2x).
-		if yd := grupaYearDigit(value); yd != 0 && yd != prevYearDigit {
+		if yd := groupYearDigit(value); yd != 0 && yd != prevYearDigit {
 			if prevYearDigit != 0 {
 				slog.Debug("Year digit changed, resetting GK counter",
 					slog.String("from", string(prevYearDigit)),
@@ -250,7 +221,7 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 // effectiveCategory returns the category for a column. When the direct value
 // is empty or an hour label ("Godziny"), it inherits from the nearest
 // meaningful category to the left.
-func effectiveCategory(file *excelize.File, categoryRow, col int, lookup map[[2]int]*mergeRange) string {
+func effectiveCategory(file *excelize.File, categoryRow int, col int, lookup map[[2]int]*mergeRange) string {
 	for c := col; c >= 0; c-- {
 		var v string
 		if mr, ok := lookup[[2]int{categoryRow, c}]; ok && strings.TrimSpace(mr.Value) != "" {

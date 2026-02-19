@@ -15,33 +15,6 @@ import (
 	"github.com/antchfx/htmlquery"
 )
 
-func logCloseWarn(resource string, err error) {
-	if err != nil {
-		slog.Warn("Failed to close resource",
-			slog.String("resource", resource),
-			slog.Any("error", err))
-	}
-}
-
-func moveFileOrWarn(src, dst, label string) {
-	if err := os.Rename(src, dst); err != nil {
-		slog.Warn("Failed to move file",
-			slog.String("label", label),
-			slog.String("source", src),
-			slog.String("destination", dst),
-			slog.Any("error", err))
-	}
-}
-
-func removeFileOrWarn(path, label string) {
-	if err := os.Remove(path); err != nil {
-		slog.Warn("Failed to remove file",
-			slog.String("label", label),
-			slog.String("path", path),
-			slog.Any("error", err))
-	}
-}
-
 // Get the url of the timetable from the PKs website
 func FetchTimetableUrl() (string, error) {
 	doc, err := htmlquery.LoadURL(global.TIMETABLE_URL)
@@ -141,11 +114,12 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 	// Windows
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
-		return dest + filepath.Base(src) + "x", cmd.Run()
+
+		return filepath.Join(dest, filepath.Base(src)+"x"), cmd.Run()
 	}
 	// Linux
 	cmd := exec.Command("libreoffice", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
-	return dest + filepath.Base(src) + "x", cmd.Run()
+	return filepath.Join(dest, filepath.Base(src)+"x"), cmd.Run()
 }
 
 // Download a timetable from the PK website, convert it to .xlsx and move to the current timetable destination
@@ -173,10 +147,10 @@ func DownloadAndProcessTimetable(url string) (string, error) {
 	}
 
 	// Move the timetable to the current timetable destination
-	newTimetablePathXls := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXls)
+	newTimetablePathXls := filepath.Join(global.TIMETABLE_CURRENT_DESTINATION, filepath.Base(timetablePathXls))
 	moveFileOrWarn(timetablePathXls, newTimetablePathXls, "new_xls")
 
-	newTimetablePathXlsx := global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx)
+	newTimetablePathXlsx := filepath.Join(global.TIMETABLE_CURRENT_DESTINATION, filepath.Base(timetablePathXlsx))
 	moveFileOrWarn(timetablePathXlsx, newTimetablePathXlsx, "new_xlsx")
 
 	// Delete the old timetable
