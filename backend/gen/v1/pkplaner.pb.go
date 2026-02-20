@@ -252,6 +252,95 @@ func (*SetChosenColumnResponse) Descriptor() ([]byte, []int) {
 	return file_v1_pkplaner_proto_rawDescGZIP(), []int{4}
 }
 
+// SetUserActiveRequest carries account activity status and the user's access token.
+type SetUserActiveRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsActive      bool                   `protobuf:"varint,1,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserActiveRequest) Reset() {
+	*x = SetUserActiveRequest{}
+	mi := &file_v1_pkplaner_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserActiveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserActiveRequest) ProtoMessage() {}
+
+func (x *SetUserActiveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_pkplaner_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserActiveRequest.ProtoReflect.Descriptor instead.
+func (*SetUserActiveRequest) Descriptor() ([]byte, []int) {
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SetUserActiveRequest) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *SetUserActiveRequest) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+type SetUserActiveResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserActiveResponse) Reset() {
+	*x = SetUserActiveResponse{}
+	mi := &file_v1_pkplaner_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserActiveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserActiveResponse) ProtoMessage() {}
+
+func (x *SetUserActiveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_pkplaner_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserActiveResponse.ProtoReflect.Descriptor instead.
+func (*SetUserActiveResponse) Descriptor() ([]byte, []int) {
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{6}
+}
+
 // AuthorizeRequest carries the OAuth authorization code.
 type AuthorizeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -262,7 +351,7 @@ type AuthorizeRequest struct {
 
 func (x *AuthorizeRequest) Reset() {
 	*x = AuthorizeRequest{}
-	mi := &file_v1_pkplaner_proto_msgTypes[5]
+	mi := &file_v1_pkplaner_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -274,7 +363,7 @@ func (x *AuthorizeRequest) String() string {
 func (*AuthorizeRequest) ProtoMessage() {}
 
 func (x *AuthorizeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[5]
+	mi := &file_v1_pkplaner_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -287,7 +376,7 @@ func (x *AuthorizeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorizeRequest.ProtoReflect.Descriptor instead.
 func (*AuthorizeRequest) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{5}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AuthorizeRequest) GetCode() string {
@@ -310,7 +399,7 @@ type AuthorizeResponse struct {
 
 func (x *AuthorizeResponse) Reset() {
 	*x = AuthorizeResponse{}
-	mi := &file_v1_pkplaner_proto_msgTypes[6]
+	mi := &file_v1_pkplaner_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +411,7 @@ func (x *AuthorizeResponse) String() string {
 func (*AuthorizeResponse) ProtoMessage() {}
 
 func (x *AuthorizeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[6]
+	mi := &file_v1_pkplaner_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +424,7 @@ func (x *AuthorizeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorizeResponse.ProtoReflect.Descriptor instead.
 func (*AuthorizeResponse) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{6}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AuthorizeResponse) GetAccessToken() string {
@@ -382,7 +471,7 @@ type GetAuthURLRequest struct {
 
 func (x *GetAuthURLRequest) Reset() {
 	*x = GetAuthURLRequest{}
-	mi := &file_v1_pkplaner_proto_msgTypes[7]
+	mi := &file_v1_pkplaner_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +483,7 @@ func (x *GetAuthURLRequest) String() string {
 func (*GetAuthURLRequest) ProtoMessage() {}
 
 func (x *GetAuthURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[7]
+	mi := &file_v1_pkplaner_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +496,7 @@ func (x *GetAuthURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthURLRequest.ProtoReflect.Descriptor instead.
 func (*GetAuthURLRequest) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{7}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{9}
 }
 
 type GetAuthURLResponse struct {
@@ -419,7 +508,7 @@ type GetAuthURLResponse struct {
 
 func (x *GetAuthURLResponse) Reset() {
 	*x = GetAuthURLResponse{}
-	mi := &file_v1_pkplaner_proto_msgTypes[8]
+	mi := &file_v1_pkplaner_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -431,7 +520,7 @@ func (x *GetAuthURLResponse) String() string {
 func (*GetAuthURLResponse) ProtoMessage() {}
 
 func (x *GetAuthURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[8]
+	mi := &file_v1_pkplaner_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -444,7 +533,7 @@ func (x *GetAuthURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAuthURLResponse.ProtoReflect.Descriptor instead.
 func (*GetAuthURLResponse) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{8}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetAuthURLResponse) GetUrl() string {
@@ -464,7 +553,7 @@ type GetUserInfoRequest struct {
 
 func (x *GetUserInfoRequest) Reset() {
 	*x = GetUserInfoRequest{}
-	mi := &file_v1_pkplaner_proto_msgTypes[9]
+	mi := &file_v1_pkplaner_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +565,7 @@ func (x *GetUserInfoRequest) String() string {
 func (*GetUserInfoRequest) ProtoMessage() {}
 
 func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[9]
+	mi := &file_v1_pkplaner_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,7 +578,7 @@ func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{9}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetUserInfoRequest) GetAccessToken() string {
@@ -513,7 +602,7 @@ type GetUserInfoResponse struct {
 
 func (x *GetUserInfoResponse) Reset() {
 	*x = GetUserInfoResponse{}
-	mi := &file_v1_pkplaner_proto_msgTypes[10]
+	mi := &file_v1_pkplaner_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -525,7 +614,7 @@ func (x *GetUserInfoResponse) String() string {
 func (*GetUserInfoResponse) ProtoMessage() {}
 
 func (x *GetUserInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_pkplaner_proto_msgTypes[10]
+	mi := &file_v1_pkplaner_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -538,7 +627,7 @@ func (x *GetUserInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetUserInfoResponse) Descriptor() ([]byte, []int) {
-	return file_v1_pkplaner_proto_rawDescGZIP(), []int{10}
+	return file_v1_pkplaner_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetUserInfoResponse) GetEmail() string {
@@ -598,7 +687,11 @@ const file_v1_pkplaner_proto_rawDesc = "" +
 	"\x16SetChosenColumnRequest\x12#\n" +
 	"\rchosen_column\x18\x01 \x01(\x05R\fchosenColumn\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\"\x19\n" +
-	"\x17SetChosenColumnResponse\"&\n" +
+	"\x17SetChosenColumnResponse\"V\n" +
+	"\x14SetUserActiveRequest\x12\x1b\n" +
+	"\tis_active\x18\x01 \x01(\bR\bisActive\x12!\n" +
+	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\"\x17\n" +
+	"\x15SetUserActiveResponse\"&\n" +
 	"\x10AuthorizeRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\"\x9f\x01\n" +
 	"\x11AuthorizeResponse\x12!\n" +
@@ -619,11 +712,12 @@ const file_v1_pkplaner_proto_rawDesc = "" +
 	"given_name\x18\x03 \x01(\tR\tgivenName\x12\x18\n" +
 	"\apicture\x18\x04 \x01(\tR\apicture\x12\x1b\n" +
 	"\tis_active\x18\x05 \x01(\bR\bisActive\x12#\n" +
-	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn2\xab\x03\n" +
+	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn2\x83\x04\n" +
 	"\x0fPKPlanerService\x12M\n" +
 	"\n" +
 	"GetColumns\x12\x1e.pkplaner.v1.GetColumnsRequest\x1a\x1f.pkplaner.v1.GetColumnsResponse\x12\\\n" +
-	"\x0fSetChosenColumn\x12#.pkplaner.v1.SetChosenColumnRequest\x1a$.pkplaner.v1.SetChosenColumnResponse\x12J\n" +
+	"\x0fSetChosenColumn\x12#.pkplaner.v1.SetChosenColumnRequest\x1a$.pkplaner.v1.SetChosenColumnResponse\x12V\n" +
+	"\rSetUserActive\x12!.pkplaner.v1.SetUserActiveRequest\x1a\".pkplaner.v1.SetUserActiveResponse\x12J\n" +
 	"\tAuthorize\x12\x1d.pkplaner.v1.AuthorizeRequest\x1a\x1e.pkplaner.v1.AuthorizeResponse\x12M\n" +
 	"\n" +
 	"GetAuthURL\x12\x1e.pkplaner.v1.GetAuthURLRequest\x1a\x1f.pkplaner.v1.GetAuthURLResponse\x12P\n" +
@@ -641,34 +735,38 @@ func file_v1_pkplaner_proto_rawDescGZIP() []byte {
 	return file_v1_pkplaner_proto_rawDescData
 }
 
-var file_v1_pkplaner_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_v1_pkplaner_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_v1_pkplaner_proto_goTypes = []any{
 	(*ColumnGroup)(nil),             // 0: pkplaner.v1.ColumnGroup
 	(*GetColumnsRequest)(nil),       // 1: pkplaner.v1.GetColumnsRequest
 	(*GetColumnsResponse)(nil),      // 2: pkplaner.v1.GetColumnsResponse
 	(*SetChosenColumnRequest)(nil),  // 3: pkplaner.v1.SetChosenColumnRequest
 	(*SetChosenColumnResponse)(nil), // 4: pkplaner.v1.SetChosenColumnResponse
-	(*AuthorizeRequest)(nil),        // 5: pkplaner.v1.AuthorizeRequest
-	(*AuthorizeResponse)(nil),       // 6: pkplaner.v1.AuthorizeResponse
-	(*GetAuthURLRequest)(nil),       // 7: pkplaner.v1.GetAuthURLRequest
-	(*GetAuthURLResponse)(nil),      // 8: pkplaner.v1.GetAuthURLResponse
-	(*GetUserInfoRequest)(nil),      // 9: pkplaner.v1.GetUserInfoRequest
-	(*GetUserInfoResponse)(nil),     // 10: pkplaner.v1.GetUserInfoResponse
+	(*SetUserActiveRequest)(nil),    // 5: pkplaner.v1.SetUserActiveRequest
+	(*SetUserActiveResponse)(nil),   // 6: pkplaner.v1.SetUserActiveResponse
+	(*AuthorizeRequest)(nil),        // 7: pkplaner.v1.AuthorizeRequest
+	(*AuthorizeResponse)(nil),       // 8: pkplaner.v1.AuthorizeResponse
+	(*GetAuthURLRequest)(nil),       // 9: pkplaner.v1.GetAuthURLRequest
+	(*GetAuthURLResponse)(nil),      // 10: pkplaner.v1.GetAuthURLResponse
+	(*GetUserInfoRequest)(nil),      // 11: pkplaner.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),     // 12: pkplaner.v1.GetUserInfoResponse
 }
 var file_v1_pkplaner_proto_depIdxs = []int32{
 	0,  // 0: pkplaner.v1.GetColumnsResponse.columns:type_name -> pkplaner.v1.ColumnGroup
 	1,  // 1: pkplaner.v1.PKPlanerService.GetColumns:input_type -> pkplaner.v1.GetColumnsRequest
 	3,  // 2: pkplaner.v1.PKPlanerService.SetChosenColumn:input_type -> pkplaner.v1.SetChosenColumnRequest
-	5,  // 3: pkplaner.v1.PKPlanerService.Authorize:input_type -> pkplaner.v1.AuthorizeRequest
-	7,  // 4: pkplaner.v1.PKPlanerService.GetAuthURL:input_type -> pkplaner.v1.GetAuthURLRequest
-	9,  // 5: pkplaner.v1.PKPlanerService.GetUserInfo:input_type -> pkplaner.v1.GetUserInfoRequest
-	2,  // 6: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
-	4,  // 7: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
-	6,  // 8: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
-	8,  // 9: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
-	10, // 10: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
+	5,  // 3: pkplaner.v1.PKPlanerService.SetUserActive:input_type -> pkplaner.v1.SetUserActiveRequest
+	7,  // 4: pkplaner.v1.PKPlanerService.Authorize:input_type -> pkplaner.v1.AuthorizeRequest
+	9,  // 5: pkplaner.v1.PKPlanerService.GetAuthURL:input_type -> pkplaner.v1.GetAuthURLRequest
+	11, // 6: pkplaner.v1.PKPlanerService.GetUserInfo:input_type -> pkplaner.v1.GetUserInfoRequest
+	2,  // 7: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
+	4,  // 8: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
+	6,  // 9: pkplaner.v1.PKPlanerService.SetUserActive:output_type -> pkplaner.v1.SetUserActiveResponse
+	8,  // 10: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
+	10, // 11: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
+	12, // 12: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
+	7,  // [7:13] is the sub-list for method output_type
+	1,  // [1:7] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -685,7 +783,7 @@ func file_v1_pkplaner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_pkplaner_proto_rawDesc), len(file_v1_pkplaner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

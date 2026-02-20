@@ -149,6 +149,22 @@ func (q *Queries) UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumn
 	return err
 }
 
+const updateUserActive = `-- name: UpdateUserActive :exec
+UPDATE users
+SET is_active = ?1
+WHERE access_token = ?2
+`
+
+type UpdateUserActiveParams struct {
+	IsActive    *bool  `json:"is_active"`
+	AccessToken string `json:"access_token"`
+}
+
+func (q *Queries) UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserActive, arg.IsActive, arg.AccessToken)
+	return err
+}
+
 const updateUserSyncTime = `-- name: UpdateUserSyncTime :exec
 UPDATE users
 SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))

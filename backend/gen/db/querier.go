@@ -14,6 +14,7 @@ type Querier interface {
 	GetUserByAccessToken(ctx context.Context, accessToken string) (User, error)
 	GetUserByEmail(ctx context.Context, email *string) (User, error)
 	UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumnParams) error
+	UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
 	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }

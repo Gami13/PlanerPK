@@ -27,6 +27,11 @@ UPDATE users
 SET chosen_column = sqlc.arg(chosen_column)
 WHERE access_token = sqlc.arg(access_token);
 
+-- name: UpdateUserActive :exec
+UPDATE users
+SET is_active = sqlc.arg(is_active)
+WHERE access_token = sqlc.arg(access_token);
+
 -- name: GetTokenByAccessToken :one
 SELECT access_token, token_type, refresh_token, expiry, expires_in
 FROM users

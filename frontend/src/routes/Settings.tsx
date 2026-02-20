@@ -86,6 +86,23 @@ async function changeChosenColumn(newColumn: number): Promise<boolean> {
 	}
 }
 
+async function changeUserActive(isActive: boolean): Promise<boolean> {
+	const accessToken = getAccessToken();
+	if (!accessToken) {
+		return false;
+	}
+
+	try {
+		await rpc.setUserActive({
+			accessToken,
+			isActive,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 async function fetchColumns(): Promise<ColumnGroup[]> {
 	const res = await rpc.getColumns({});
 	return res.columns;
@@ -116,12 +133,33 @@ export function Settings() {
 					<p>Tu możesz zmienić ustawienia swojego konta.</p>
 				</div>
 
-				{/* <article {...attrs(stylex.props(styles.setting))}>
-          			<h2 {...attrs(stylex.props(styles.settingHeader))}>Status aktywności</h2>
-         			 	<p {...attrs(stylex.props(styles.settingDescription))}>Obecny status: {AppState.store.userInfo?.isActive ? 'Aktywny' : 'Nieaktywny'}</p>
-          				<Button isPrimary={true}>Zmień status</Button>
-        			</article> 
-					*/}
+				<article {...attrs(stylex.props(styles.setting))}>
+					<h2 {...attrs(stylex.props(styles.settingHeader))}>Status aktywności</h2>
+					<p {...attrs(stylex.props(styles.settingDescription))}>
+						Obecny status: {AppState.store.userInfo?.isActive ? "Aktywny" : "Nieaktywny"}
+					</p>
+					<Button
+						isPrimary={true}
+						onClick={async () => {
+							if (!AppState.store.userInfo) {
+								return;
+							}
+
+							const newStatus = !AppState.store.userInfo.isActive;
+							const success = await changeUserActive(newStatus);
+
+							if (!success) {
+								alert("Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.");
+								return;
+							}
+
+							AppState.setStore("userInfo", "isActive", newStatus);
+							alert(`Konto oznaczono jako ${newStatus ? "aktywne" : "nieaktywne"}.`);
+						}}
+					>
+						{AppState.store.userInfo?.isActive ? "Oznacz konto jako nieaktywne" : "Oznacz konto jako aktywne"}
+					</Button>
+				</article>
 				<form
 					{...attrs(stylex.props(styles.setting))}
 					method="post"

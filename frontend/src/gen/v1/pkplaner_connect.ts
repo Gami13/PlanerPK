@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetColumnsRequest, GetColumnsResponse, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse } from "./pkplaner_pb.js";
+import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetColumnsRequest, GetColumnsResponse, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse, SetUserActiveRequest, SetUserActiveResponse } from "./pkplaner_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -34,6 +34,17 @@ export const PKPlanerService = {
       name: "SetChosenColumn",
       I: SetChosenColumnRequest,
       O: SetChosenColumnResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * SetUserActive sets whether the authenticated account is active.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.SetUserActive
+     */
+    setUserActive: {
+      name: "SetUserActive",
+      I: SetUserActiveRequest,
+      O: SetUserActiveResponse,
       kind: MethodKind.Unary,
     },
     /**

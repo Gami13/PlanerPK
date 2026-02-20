@@ -116,6 +116,32 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }
 
+// SetUserActive sets whether the authenticated account is active.
+func (h *PKPlanerHandler) SetUserActive(
+	ctx context.Context,
+	req *connect.Request[pkplanerv1.SetUserActiveRequest],
+) (*connect.Response[pkplanerv1.SetUserActiveResponse], error) {
+	accessToken := req.Msg.AccessToken
+	if accessToken == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
+	}
+
+	isActive := req.Msg.IsActive
+	slog.Info("Setting user active status", slog.Bool("is_active", isActive))
+
+	if err := h.Query.UpdateUserActive(ctx, db.UpdateUserActiveParams{
+		AccessToken: accessToken,
+		IsActive:    &isActive,
+	}); err != nil {
+		slog.Error("Failed to update user active status",
+			slog.Bool("is_active", isActive),
+			slog.Any("error", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update user active status: %w", err))
+	}
+
+	return connect.NewResponse(&pkplanerv1.SetUserActiveResponse{}), nil
+}
+
 // Authorize exchanges an OAuth code for user credentials and returns user info.
 func (h *PKPlanerHandler) Authorize(
 	ctx context.Context,

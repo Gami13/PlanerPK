@@ -39,6 +39,9 @@ const (
 	// PKPlanerServiceSetChosenColumnProcedure is the fully-qualified name of the PKPlanerService's
 	// SetChosenColumn RPC.
 	PKPlanerServiceSetChosenColumnProcedure = "/pkplaner.v1.PKPlanerService/SetChosenColumn"
+	// PKPlanerServiceSetUserActiveProcedure is the fully-qualified name of the PKPlanerService's
+	// SetUserActive RPC.
+	PKPlanerServiceSetUserActiveProcedure = "/pkplaner.v1.PKPlanerService/SetUserActive"
 	// PKPlanerServiceAuthorizeProcedure is the fully-qualified name of the PKPlanerService's Authorize
 	// RPC.
 	PKPlanerServiceAuthorizeProcedure = "/pkplaner.v1.PKPlanerService/Authorize"
@@ -56,6 +59,8 @@ type PKPlanerServiceClient interface {
 	GetColumns(context.Context, *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error)
 	// SetChosenColumn sets the chosen column for the authenticated user.
 	SetChosenColumn(context.Context, *connect.Request[v1.SetChosenColumnRequest]) (*connect.Response[v1.SetChosenColumnResponse], error)
+	// SetUserActive sets whether the authenticated account is active.
+	SetUserActive(context.Context, *connect.Request[v1.SetUserActiveRequest]) (*connect.Response[v1.SetUserActiveResponse], error)
 	// Authorize exchanges an OAuth code for user credentials and returns user info.
 	Authorize(context.Context, *connect.Request[v1.AuthorizeRequest]) (*connect.Response[v1.AuthorizeResponse], error)
 	// GetAuthURL generates a Google OAuth authorization URL.
@@ -87,6 +92,12 @@ func NewPKPlanerServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(pKPlanerServiceMethods.ByName("SetChosenColumn")),
 			connect.WithClientOptions(opts...),
 		),
+		setUserActive: connect.NewClient[v1.SetUserActiveRequest, v1.SetUserActiveResponse](
+			httpClient,
+			baseURL+PKPlanerServiceSetUserActiveProcedure,
+			connect.WithSchema(pKPlanerServiceMethods.ByName("SetUserActive")),
+			connect.WithClientOptions(opts...),
+		),
 		authorize: connect.NewClient[v1.AuthorizeRequest, v1.AuthorizeResponse](
 			httpClient,
 			baseURL+PKPlanerServiceAuthorizeProcedure,
@@ -112,6 +123,7 @@ func NewPKPlanerServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 type pKPlanerServiceClient struct {
 	getColumns      *connect.Client[v1.GetColumnsRequest, v1.GetColumnsResponse]
 	setChosenColumn *connect.Client[v1.SetChosenColumnRequest, v1.SetChosenColumnResponse]
+	setUserActive   *connect.Client[v1.SetUserActiveRequest, v1.SetUserActiveResponse]
 	authorize       *connect.Client[v1.AuthorizeRequest, v1.AuthorizeResponse]
 	getAuthURL      *connect.Client[v1.GetAuthURLRequest, v1.GetAuthURLResponse]
 	getUserInfo     *connect.Client[v1.GetUserInfoRequest, v1.GetUserInfoResponse]
@@ -125,6 +137,11 @@ func (c *pKPlanerServiceClient) GetColumns(ctx context.Context, req *connect.Req
 // SetChosenColumn calls pkplaner.v1.PKPlanerService.SetChosenColumn.
 func (c *pKPlanerServiceClient) SetChosenColumn(ctx context.Context, req *connect.Request[v1.SetChosenColumnRequest]) (*connect.Response[v1.SetChosenColumnResponse], error) {
 	return c.setChosenColumn.CallUnary(ctx, req)
+}
+
+// SetUserActive calls pkplaner.v1.PKPlanerService.SetUserActive.
+func (c *pKPlanerServiceClient) SetUserActive(ctx context.Context, req *connect.Request[v1.SetUserActiveRequest]) (*connect.Response[v1.SetUserActiveResponse], error) {
+	return c.setUserActive.CallUnary(ctx, req)
 }
 
 // Authorize calls pkplaner.v1.PKPlanerService.Authorize.
@@ -148,6 +165,8 @@ type PKPlanerServiceHandler interface {
 	GetColumns(context.Context, *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error)
 	// SetChosenColumn sets the chosen column for the authenticated user.
 	SetChosenColumn(context.Context, *connect.Request[v1.SetChosenColumnRequest]) (*connect.Response[v1.SetChosenColumnResponse], error)
+	// SetUserActive sets whether the authenticated account is active.
+	SetUserActive(context.Context, *connect.Request[v1.SetUserActiveRequest]) (*connect.Response[v1.SetUserActiveResponse], error)
 	// Authorize exchanges an OAuth code for user credentials and returns user info.
 	Authorize(context.Context, *connect.Request[v1.AuthorizeRequest]) (*connect.Response[v1.AuthorizeResponse], error)
 	// GetAuthURL generates a Google OAuth authorization URL.
@@ -175,6 +194,12 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 		connect.WithSchema(pKPlanerServiceMethods.ByName("SetChosenColumn")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pKPlanerServiceSetUserActiveHandler := connect.NewUnaryHandler(
+		PKPlanerServiceSetUserActiveProcedure,
+		svc.SetUserActive,
+		connect.WithSchema(pKPlanerServiceMethods.ByName("SetUserActive")),
+		connect.WithHandlerOptions(opts...),
+	)
 	pKPlanerServiceAuthorizeHandler := connect.NewUnaryHandler(
 		PKPlanerServiceAuthorizeProcedure,
 		svc.Authorize,
@@ -199,6 +224,8 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 			pKPlanerServiceGetColumnsHandler.ServeHTTP(w, r)
 		case PKPlanerServiceSetChosenColumnProcedure:
 			pKPlanerServiceSetChosenColumnHandler.ServeHTTP(w, r)
+		case PKPlanerServiceSetUserActiveProcedure:
+			pKPlanerServiceSetUserActiveHandler.ServeHTTP(w, r)
 		case PKPlanerServiceAuthorizeProcedure:
 			pKPlanerServiceAuthorizeHandler.ServeHTTP(w, r)
 		case PKPlanerServiceGetAuthURLProcedure:
@@ -220,6 +247,10 @@ func (UnimplementedPKPlanerServiceHandler) GetColumns(context.Context, *connect.
 
 func (UnimplementedPKPlanerServiceHandler) SetChosenColumn(context.Context, *connect.Request[v1.SetChosenColumnRequest]) (*connect.Response[v1.SetChosenColumnResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.SetChosenColumn is not implemented"))
+}
+
+func (UnimplementedPKPlanerServiceHandler) SetUserActive(context.Context, *connect.Request[v1.SetUserActiveRequest]) (*connect.Response[v1.SetUserActiveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.SetUserActive is not implemented"))
 }
 
 func (UnimplementedPKPlanerServiceHandler) Authorize(context.Context, *connect.Request[v1.AuthorizeRequest]) (*connect.Response[v1.AuthorizeResponse], error) {

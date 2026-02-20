@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/pkplaner.proto.
  */
 export const file_v1_pkplaner: GenFile = /*@__PURE__*/
-  fileDesc("ChF2MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiRQoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFEhQKDGFjY2Vzc190b2tlbhgCIAEoCSIZChdTZXRDaG9zZW5Db2x1bW5SZXNwb25zZSIgChBBdXRob3JpemVSZXF1ZXN0EgwKBGNvZGUYASABKAkibgoRQXV0aG9yaXplUmVzcG9uc2USFAoMYWNjZXNzX3Rva2VuGAEgASgJEg0KBWVtYWlsGAIgASgJEhUKDWNob3Nlbl9jb2x1bW4YAyABKAMSDAoEbmFtZRgEIAEoCRIPCgdwaWN0dXJlGAUgASgJIhMKEUdldEF1dGhVUkxSZXF1ZXN0IiEKEkdldEF1dGhVUkxSZXNwb25zZRILCgN1cmwYASABKAkiKgoSR2V0VXNlckluZm9SZXF1ZXN0EhQKDGFjY2Vzc190b2tlbhgBIAEoCSKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAzKrAwoPUEtQbGFuZXJTZXJ2aWNlEk0KCkdldENvbHVtbnMSHi5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXNwb25zZRJcCg9TZXRDaG9zZW5Db2x1bW4SIy5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXF1ZXN0GiQucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVzcG9uc2USSgoJQXV0aG9yaXplEh0ucGtwbGFuZXIudjEuQXV0aG9yaXplUmVxdWVzdBoeLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlc3BvbnNlEk0KCkdldEF1dGhVUkwSHi5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldEF1dGhVUkxSZXNwb25zZRJQCgtHZXRVc2VySW5mbxIfLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVxdWVzdBogLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVzcG9uc2VCP1o9Z2l0aHViLmNvbS9Xb29kUEtycy9Hb29nbGVDYWxlbmRhclRpbWV0YWJsZS9nZW4vdjE7cGtwbGFuZXJ2MWIGcHJvdG8z");
+  fileDesc("ChF2MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiRQoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFEhQKDGFjY2Vzc190b2tlbhgCIAEoCSIZChdTZXRDaG9zZW5Db2x1bW5SZXNwb25zZSI/ChRTZXRVc2VyQWN0aXZlUmVxdWVzdBIRCglpc19hY3RpdmUYASABKAgSFAoMYWNjZXNzX3Rva2VuGAIgASgJIhcKFVNldFVzZXJBY3RpdmVSZXNwb25zZSIgChBBdXRob3JpemVSZXF1ZXN0EgwKBGNvZGUYASABKAkibgoRQXV0aG9yaXplUmVzcG9uc2USFAoMYWNjZXNzX3Rva2VuGAEgASgJEg0KBWVtYWlsGAIgASgJEhUKDWNob3Nlbl9jb2x1bW4YAyABKAMSDAoEbmFtZRgEIAEoCRIPCgdwaWN0dXJlGAUgASgJIhMKEUdldEF1dGhVUkxSZXF1ZXN0IiEKEkdldEF1dGhVUkxSZXNwb25zZRILCgN1cmwYASABKAkiKgoSR2V0VXNlckluZm9SZXF1ZXN0EhQKDGFjY2Vzc190b2tlbhgBIAEoCSKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAzKDBAoPUEtQbGFuZXJTZXJ2aWNlEk0KCkdldENvbHVtbnMSHi5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXNwb25zZRJcCg9TZXRDaG9zZW5Db2x1bW4SIy5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXF1ZXN0GiQucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVzcG9uc2USVgoNU2V0VXNlckFjdGl2ZRIhLnBrcGxhbmVyLnYxLlNldFVzZXJBY3RpdmVSZXF1ZXN0GiIucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlc3BvbnNlEkoKCUF1dGhvcml6ZRIdLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlcXVlc3QaHi5wa3BsYW5lci52MS5BdXRob3JpemVSZXNwb25zZRJNCgpHZXRBdXRoVVJMEh4ucGtwbGFuZXIudjEuR2V0QXV0aFVSTFJlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVzcG9uc2USUAoLR2V0VXNlckluZm8SHy5wa3BsYW5lci52MS5HZXRVc2VySW5mb1JlcXVlc3QaIC5wa3BsYW5lci52MS5HZXRVc2VySW5mb1Jlc3BvbnNlQj9aPWdpdGh1Yi5jb20vV29vZFBLcnMvR29vZ2xlQ2FsZW5kYXJUaW1ldGFibGUvZ2VuL3YxO3BrcGxhbmVydjFiBnByb3RvMw");
 
 /**
  * ColumnGroup represents an available column/group option parsed from the Excel header rows.
@@ -111,6 +111,43 @@ export const SetChosenColumnResponseSchema: GenMessage<SetChosenColumnResponse> 
   messageDesc(file_v1_pkplaner, 4);
 
 /**
+ * SetUserActiveRequest carries account activity status and the user's access token.
+ *
+ * @generated from message pkplaner.v1.SetUserActiveRequest
+ */
+export type SetUserActiveRequest = Message<"pkplaner.v1.SetUserActiveRequest"> & {
+  /**
+   * @generated from field: bool is_active = 1;
+   */
+  isActive: boolean;
+
+  /**
+   * @generated from field: string access_token = 2;
+   */
+  accessToken: string;
+};
+
+/**
+ * Describes the message pkplaner.v1.SetUserActiveRequest.
+ * Use `create(SetUserActiveRequestSchema)` to create a new message.
+ */
+export const SetUserActiveRequestSchema: GenMessage<SetUserActiveRequest> = /*@__PURE__*/
+  messageDesc(file_v1_pkplaner, 5);
+
+/**
+ * @generated from message pkplaner.v1.SetUserActiveResponse
+ */
+export type SetUserActiveResponse = Message<"pkplaner.v1.SetUserActiveResponse"> & {
+};
+
+/**
+ * Describes the message pkplaner.v1.SetUserActiveResponse.
+ * Use `create(SetUserActiveResponseSchema)` to create a new message.
+ */
+export const SetUserActiveResponseSchema: GenMessage<SetUserActiveResponse> = /*@__PURE__*/
+  messageDesc(file_v1_pkplaner, 6);
+
+/**
  * AuthorizeRequest carries the OAuth authorization code.
  *
  * @generated from message pkplaner.v1.AuthorizeRequest
@@ -127,7 +164,7 @@ export type AuthorizeRequest = Message<"pkplaner.v1.AuthorizeRequest"> & {
  * Use `create(AuthorizeRequestSchema)` to create a new message.
  */
 export const AuthorizeRequestSchema: GenMessage<AuthorizeRequest> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 5);
+  messageDesc(file_v1_pkplaner, 7);
 
 /**
  * @generated from message pkplaner.v1.AuthorizeResponse
@@ -164,7 +201,7 @@ export type AuthorizeResponse = Message<"pkplaner.v1.AuthorizeResponse"> & {
  * Use `create(AuthorizeResponseSchema)` to create a new message.
  */
 export const AuthorizeResponseSchema: GenMessage<AuthorizeResponse> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 6);
+  messageDesc(file_v1_pkplaner, 8);
 
 /**
  * GetAuthURLRequest is empty.
@@ -179,7 +216,7 @@ export type GetAuthURLRequest = Message<"pkplaner.v1.GetAuthURLRequest"> & {
  * Use `create(GetAuthURLRequestSchema)` to create a new message.
  */
 export const GetAuthURLRequestSchema: GenMessage<GetAuthURLRequest> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 7);
+  messageDesc(file_v1_pkplaner, 9);
 
 /**
  * @generated from message pkplaner.v1.GetAuthURLResponse
@@ -196,7 +233,7 @@ export type GetAuthURLResponse = Message<"pkplaner.v1.GetAuthURLResponse"> & {
  * Use `create(GetAuthURLResponseSchema)` to create a new message.
  */
 export const GetAuthURLResponseSchema: GenMessage<GetAuthURLResponse> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 8);
+  messageDesc(file_v1_pkplaner, 10);
 
 /**
  * GetUserInfoRequest carries the access token for authentication.
@@ -215,7 +252,7 @@ export type GetUserInfoRequest = Message<"pkplaner.v1.GetUserInfoRequest"> & {
  * Use `create(GetUserInfoRequestSchema)` to create a new message.
  */
 export const GetUserInfoRequestSchema: GenMessage<GetUserInfoRequest> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 9);
+  messageDesc(file_v1_pkplaner, 11);
 
 /**
  * @generated from message pkplaner.v1.GetUserInfoResponse
@@ -257,7 +294,7 @@ export type GetUserInfoResponse = Message<"pkplaner.v1.GetUserInfoResponse"> & {
  * Use `create(GetUserInfoResponseSchema)` to create a new message.
  */
 export const GetUserInfoResponseSchema: GenMessage<GetUserInfoResponse> = /*@__PURE__*/
-  messageDesc(file_v1_pkplaner, 10);
+  messageDesc(file_v1_pkplaner, 12);
 
 /**
  * PKPlanerService provides RPCs for managing timetable calendar integration.
@@ -284,6 +321,16 @@ export const PKPlanerService: GenService<{
     methodKind: "unary";
     input: typeof SetChosenColumnRequestSchema;
     output: typeof SetChosenColumnResponseSchema;
+  },
+  /**
+   * SetUserActive sets whether the authenticated account is active.
+   *
+   * @generated from rpc pkplaner.v1.PKPlanerService.SetUserActive
+   */
+  setUserActive: {
+    methodKind: "unary";
+    input: typeof SetUserActiveRequestSchema;
+    output: typeof SetUserActiveResponseSchema;
   },
   /**
    * Authorize exchanges an OAuth code for user credentials and returns user info.

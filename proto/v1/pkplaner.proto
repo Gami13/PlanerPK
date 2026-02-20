@@ -12,6 +12,9 @@ service PKPlanerService {
   // SetChosenColumn sets the chosen column for the authenticated user.
   rpc SetChosenColumn(SetChosenColumnRequest) returns (SetChosenColumnResponse);
 
+  // SetUserActive sets whether the authenticated account is active.
+  rpc SetUserActive(SetUserActiveRequest) returns (SetUserActiveResponse);
+
   // Authorize exchanges an OAuth code for user credentials and returns user info.
   rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
 
@@ -43,6 +46,14 @@ message SetChosenColumnRequest {
 }
 
 message SetChosenColumnResponse {}
+
+// SetUserActiveRequest carries account activity status and the user's access token.
+message SetUserActiveRequest {
+  bool is_active = 1;
+  string access_token = 2;
+}
+
+message SetUserActiveResponse {}
 
 // AuthorizeRequest carries the OAuth authorization code.
 message AuthorizeRequest {
