@@ -5,19 +5,11 @@ import (
 	"os"
 	"path"
 	"strings"
-
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 )
-
-// EndpointContext holds shared dependencies for HTTP handlers that are not
-// part of the ConnectRPC service (e.g. the static frontend server).
-type EndpointContext struct {
-	Query *db.Queries
-}
 
 var fs = http.FileServer(http.Dir("./static/"))
 
-func (ec *EndpointContext) ServeFrontend(w http.ResponseWriter, r *http.Request) {
+func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	// Prevent caching of env.js since it's dynamically generated at runtime
 	if r.URL.Path == "/env.js" {
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")

@@ -80,7 +80,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db *db.Queries) {
+func Start(db db.Querier) {
 	query := db
 	handler := NewPKPlanerHandler(query)
 
@@ -111,8 +111,8 @@ func Start(db *db.Queries) {
 	})))
 
 	// Frontend static files (catch-all).
-	ec := &EndpointContext{Query: query}
-	mux.Handle("/", rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(ec.ServeFrontend)))
+
+	mux.Handle("/", rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(ServeFrontend)))
 
 	// CORS + h2c for HTTP/2 cleartext (Connect protocol).
 	corsHandler := corsMiddleware(mux)

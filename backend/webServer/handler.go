@@ -20,10 +20,10 @@ import (
 // PKPlanerHandler implements pkplanerv1connect.PKPlanerServiceHandler.
 type PKPlanerHandler struct {
 	pkplanerv1connect.UnimplementedPKPlanerServiceHandler
-	Query *db.Queries
+	Query db.Querier
 }
 
-func NewPKPlanerHandler(query *db.Queries) *PKPlanerHandler {
+func NewPKPlanerHandler(query db.Querier) *PKPlanerHandler {
 	if query == nil {
 		panic("Query is nil!")
 	}

@@ -21,7 +21,7 @@ import (
 var ddl string
 
 // initializeDatabase creates tables if they don't exist.
-func initializeDatabase() *db.Queries {
+func initializeDatabase() db.Querier {
 	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
 	if err != nil {
 		panic(err)
@@ -78,7 +78,7 @@ func main() {
 	}()
 }
 
-func updateAllTimetables(queries *db.Queries) {
+func updateAllTimetables(queries db.Querier) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
