@@ -135,3 +135,24 @@ func LoadEnvVariables() {
 		LOGS_PATH = logsPath
 	}
 }
+
+func PrintEnvVariables() {
+	slog.Info("Current configuration",
+		slog.String("SHEET_NAME", SHEET_NAME),
+		slog.Int("LAST_ROW", LAST_ROW),
+		slog.Int("HOUR_COLUMN", HOUR_COLUMN),
+		slog.String("DAY_START", DAY_START),
+		slog.String("DAY_END", DAY_END),
+		slog.String("DATABASE_SOURCE", DATABASE_SOURCE),
+		slog.String("DATABASE_DRIVER", DATABASE_DRIVER),
+		slog.Int("MINUTES_BETWEEN", MINUTES_BETWEEN),
+		slog.String("SERVER_PORT", SERVER_PORT),
+		slog.String("TIMETABLE_CURRENT_DESTINATION", TIMETABLE_CURRENT_DESTINATION),
+		slog.String("TIMETABLE_URL", TIMETABLE_URL),
+		slog.String("TIMETABLE_DOWNLOAD_DESTINATION", TIMETABLE_DOWNLOAD_DESTINATION),
+		slog.String("CALENDAR_CREDENTIALS_PATH", CALENDAR_CREDENTIALS_PATH),
+		slog.Int("TIME_BETWEEN_SYNC_HOURS", TIME_BETWEEN_SYNC_HOURS),
+		slog.Int("LAST_COLUMN", LAST_COLUMN),
+		slog.String("LOGS_PATH", LOGS_PATH),
+	)
+}

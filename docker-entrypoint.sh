@@ -17,8 +17,8 @@ echo "Using API_BASE_URL: ${API_BASE_URL}"
 
 for js_file in /app/static/assets/*.js; do
   if [ -f "$js_file" ]; then
-    content=$(envsubst '$API_BASE_URL' < "$js_file")
-    echo "$content" > "$js_file"
+    envsubst '$API_BASE_URL' < "$js_file" > "${js_file}.tmp"
+    mv "${js_file}.tmp" "$js_file"
   fi
 done
 

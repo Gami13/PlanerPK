@@ -38,14 +38,15 @@ func initializeDatabase() db.Querier {
 }
 
 func main() {
+	global.LoadEnvVariables()
+	slog.Info("Environment variables loaded")
+
 	// Initialize logger first
 	if err := utils.InitializeLogging(global.LOGS_PATH); err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}
 
-	global.LoadEnvVariables()
-	slog.Info("Environment variables loaded")
-
+	global.PrintEnvVariables()
 	// Fetch the timetable url
 	_, _, err := extractor.UpdateTimetable()
 	if err != nil {
