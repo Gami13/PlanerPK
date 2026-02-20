@@ -3,6 +3,7 @@ package extractor
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
@@ -10,7 +11,69 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+type timetableCacheState struct {
+	mu      sync.RWMutex
+	data    map[int64]types.Timetable
+	isStale bool
+}
+
+func cloneTimetable(timetable types.Timetable) types.Timetable {
+	cloned := make(types.Timetable, len(timetable))
+	for weekDay, classes := range timetable {
+		clonedClasses := make([]types.Class, len(classes))
+		copy(clonedClasses, classes)
+		cloned[weekDay] = clonedClasses
+	}
+	return cloned
+}
+
+func (c *timetableCacheState) getIfFresh(groupColumn int64) (types.Timetable, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.isStale {
+		return nil, false
+	}
+
+	timetable, ok := c.data[groupColumn]
+	if !ok {
+		return nil, false
+	}
+
+	return cloneTimetable(timetable), true
+}
+
+func (c *timetableCacheState) setFresh(groupColumn int64, timetable types.Timetable) {
+	c.mu.Lock()
+	if c.data == nil {
+		c.data = make(map[int64]types.Timetable)
+	}
+	c.data[groupColumn] = cloneTimetable(timetable)
+	c.isStale = false
+	c.mu.Unlock()
+}
+
+func (c *timetableCacheState) markStale() {
+	c.mu.Lock()
+	c.isStale = true
+	c.mu.Unlock()
+}
+
+var timetableCache = &timetableCacheState{
+	data:    make(map[int64]types.Timetable),
+	isStale: true,
+}
+
+func markTimetableCacheStale() {
+	timetableCache.markStale()
+}
+
 func GetTimetable(groupColumn int64) (types.Timetable, error) {
+	if timetable, ok := timetableCache.getIfFresh(groupColumn); ok {
+		slog.Info("Using cached timetable", slog.Int64("group_column", groupColumn))
+		return timetable, nil
+	}
+
 	file, err := openCurrentTimetableFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open timetable file: %w", err)
@@ -29,6 +92,8 @@ func GetTimetable(groupColumn int64) (types.Timetable, error) {
 			slog.String("day", day.WeekDay.String()),
 			slog.Int("classes", len(classes)))
 	}
+
+	timetableCache.setFresh(groupColumn, timetable)
 
 	return timetable, nil
 }

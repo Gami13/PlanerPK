@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
@@ -17,8 +18,55 @@ type mergeRange struct {
 	Value              string
 }
 
+type availableGroupsCacheState struct {
+	mu      sync.RWMutex
+	groups  []types.ColumnGroup
+	isStale bool
+}
+
+func copyAvailableGroups(groups []types.ColumnGroup) []types.ColumnGroup {
+	out := make([]types.ColumnGroup, len(groups))
+	copy(out, groups)
+	return out
+}
+
+func (c *availableGroupsCacheState) getIfFresh() ([]types.ColumnGroup, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.isStale {
+		return nil, false
+	}
+
+	return copyAvailableGroups(c.groups), true
+}
+
+func (c *availableGroupsCacheState) setFresh(groups []types.ColumnGroup) {
+	c.mu.Lock()
+	c.groups = copyAvailableGroups(groups)
+	c.isStale = false
+	c.mu.Unlock()
+}
+
+func (c *availableGroupsCacheState) markStale() {
+	c.mu.Lock()
+	c.isStale = true
+	c.mu.Unlock()
+}
+
+var availableGroupsCache = &availableGroupsCacheState{isStale: true}
+
+func markAvailableGroupsStale() {
+	availableGroupsCache.markStale()
+}
+
 // GetAvailableGroups parses the Excel header rows and returns available column groups.
 func GetAvailableGroups() ([]types.ColumnGroup, error) {
+	if groups, ok := availableGroupsCache.getIfFresh(); ok {
+		slog.Info("Using cached available groups", slog.Int("count", len(groups)))
+		return groups, nil
+	}
+
 	file, err := openCurrentTimetableFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open timetable file: %w", err)
@@ -36,8 +84,11 @@ func GetAvailableGroups() ([]types.ColumnGroup, error) {
 		slog.Int("dataStartRow", dataStartRow))
 
 	mergeLookup := buildMergeLookup(file)
+	groups := buildColumnGroups(file, groupRow, categoryRow, mergeLookup)
 
-	return buildColumnGroups(file, groupRow, categoryRow, mergeLookup), nil
+	availableGroupsCache.setFresh(groups)
+
+	return groups, nil
 }
 
 // findDataStartRow finds the first row containing DAY_START in HOUR_COLUMN.

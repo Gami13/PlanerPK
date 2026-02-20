@@ -184,6 +184,8 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 			logger.Error("Failed to download and process timetable", slog.Any("error", err))
 			return false, "", err
 		}
+		markAvailableGroupsStale()
+		markTimetableCacheStale()
 		logger.Info("Downloaded initial timetable", slog.String("path", timetablePath))
 		return true, timetablePath, nil
 	}
@@ -201,6 +203,8 @@ func UpdateTimetable() (didChange bool, path string, err error) {
 			logger.Error("Failed to download and process timetable", slog.Any("error", err))
 			return didChange, timetablePath, err
 		}
+		markAvailableGroupsStale()
+		markTimetableCacheStale()
 		logger.Info("Downloaded updated timetable", slog.String("path", timetablePath))
 		return didChange, timetablePath, nil
 	}
