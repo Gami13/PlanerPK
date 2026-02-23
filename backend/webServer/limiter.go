@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"strconv"
 	"sync"
@@ -40,7 +39,7 @@ func NewRateLimiter() *RateLimiter {
 }
 
 func (rl *RateLimiter) Evaluate(key string, policy RateLimitPolicy, now time.Time) RateLimitDecision {
-	if policy.Requests <= 0 {
+	if key == "" || policy.Requests <= 0 {
 		return RateLimitDecision{Allowed: true}
 	}
 
@@ -129,11 +128,9 @@ func composeRateLimitKey(r *http.Request, policyName string) string {
 		return fmt.Sprintf("%s|policy:%s", baseRateLimitKey(r, "token:"+token), policyName)
 	}
 
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	return fmt.Sprintf("%s|policy:%s", baseRateLimitKey(r, "ip:"+host), policyName)
+	// No IP-based rate limiting: behind Cloudflare all requests share the
+	// same remote address, so per-IP limits would throttle every user.
+	return ""
 }
 
 func baseRateLimitKey(r *http.Request, identifier string) string {
