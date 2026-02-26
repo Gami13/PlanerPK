@@ -9,3 +9,4 @@
 ✔ Cache timetable data in memory @done(26-02-20 01:31)
 ☐ Create deployment guide
 ☐ Write user guide
+☐ HIGH PRIORITY: fix parseClassText in extractor/parser.go currently sometimes swaps random properties, needs tests to verify correctness
