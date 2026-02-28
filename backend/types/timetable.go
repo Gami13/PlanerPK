@@ -15,6 +15,7 @@ var ClassTypes = []string{
 	"wykład",
 	"lab.",
 	"ćwiczenia",
+	"P", // project
 }
 
 // ColumnGroup represents an available column/group option parsed from the Excel header rows.

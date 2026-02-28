@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"sync"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
@@ -18,51 +17,15 @@ type mergeRange struct {
 	Value              string
 }
 
-type availableGroupsCacheState struct {
-	mu      sync.RWMutex
-	groups  []types.ColumnGroup
-	isStale bool
-}
-
-func copyAvailableGroups(groups []types.ColumnGroup) []types.ColumnGroup {
-	out := make([]types.ColumnGroup, len(groups))
-	copy(out, groups)
-	return out
-}
-
-func (c *availableGroupsCacheState) getIfFresh() ([]types.ColumnGroup, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	if c.isStale {
-		return nil, false
-	}
-
-	return copyAvailableGroups(c.groups), true
-}
-
-func (c *availableGroupsCacheState) setFresh(groups []types.ColumnGroup) {
-	c.mu.Lock()
-	c.groups = copyAvailableGroups(groups)
-	c.isStale = false
-	c.mu.Unlock()
-}
-
-func (c *availableGroupsCacheState) markStale() {
-	c.mu.Lock()
-	c.isStale = true
-	c.mu.Unlock()
-}
-
-var availableGroupsCache = &availableGroupsCacheState{isStale: true}
+var availableGroupsCache = types.NewAvailableGroupsCache()
 
 func markAvailableGroupsStale() {
-	availableGroupsCache.markStale()
+	availableGroupsCache.MarkStale()
 }
 
 // GetAvailableGroups parses the Excel header rows and returns available column groups.
 func GetAvailableGroups() ([]types.ColumnGroup, error) {
-	if groups, ok := availableGroupsCache.getIfFresh(); ok {
+	if groups, ok := availableGroupsCache.GetIfFresh(); ok {
 		slog.Info("Using cached available groups", slog.Int("count", len(groups)))
 		return groups, nil
 	}
@@ -86,7 +49,7 @@ func GetAvailableGroups() ([]types.ColumnGroup, error) {
 	mergeLookup := buildMergeLookup(file)
 	groups := buildColumnGroups(file, groupRow, categoryRow, mergeLookup)
 
-	availableGroupsCache.setFresh(groups)
+	availableGroupsCache.SetFresh(groups)
 
 	return groups, nil
 }
