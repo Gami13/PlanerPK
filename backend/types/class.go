@@ -17,10 +17,19 @@ type Class struct {
 	Location       string
 	Teacher        string
 	AdditionalInfo string
+	Level          string
+	TotalHours     string
 }
 
+// TODO: Change the formatting a bit
 func (c Class) String() string {
 	text := fmt.Sprintf("%s (%s) %s-%s | %s | %s", c.Name, c.Type, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Teacher, c.Location)
+	if c.Level != "" {
+		text += fmt.Sprintf(" | Level: %s", c.Level)
+	}
+	if c.TotalHours != "" {
+		text += fmt.Sprintf(" | %s", c.TotalHours)
+	}
 	if c.AdditionalInfo != "" {
 		text += fmt.Sprintf(" | %s", c.AdditionalInfo)
 	}
@@ -37,6 +46,9 @@ func (c Class) Summary() string {
 	if len(c.Name) > 0 {
 		summary += c.Name
 	}
+	if len(c.Level) > 0 {
+		summary += fmt.Sprintf(" %s", c.Level)
+	}
 	if len(c.Type) > 0 {
 		summary += fmt.Sprintf(" (%s)", c.Type)
 	}
@@ -45,6 +57,9 @@ func (c Class) Summary() string {
 	}
 	if len(c.Location) > 0 {
 		summary += fmt.Sprintf(" | %s", c.Location)
+	}
+	if len(c.TotalHours) > 0 {
+		summary += fmt.Sprintf(" | %s", c.TotalHours)
 	}
 	if len(c.AdditionalInfo) > 0 {
 		summary += fmt.Sprintf(" | %s", c.AdditionalInfo)

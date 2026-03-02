@@ -15,8 +15,15 @@ var ClassTypes = []string{
 	"wykład",
 	"lab.",
 	"ćwiczenia",
+	"ćwiczenia/lab.",
+	"ćw./lab.",
+	"ćw.",
 	"P", // project
 }
+
+var AcademicTitles = []string{"dr hab. inż.", "dr hab.", "dr inż.", "dr", "mgr inż.", "mgr", "prof."}
+
+var AdditionalInfoKeywords = []string{"UWAGA", "tydzień", "semestr", "wymiennie", "co 2"}
 
 // ColumnGroup represents an available column/group option parsed from the Excel header rows.
 type ColumnGroup struct {

@@ -29,13 +29,15 @@ func GetTimetable(groupColumn int64) (types.Timetable, error) {
 	}
 	defer closeFile(file)
 
+	legend := extractLegend(file)
+
 	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := traverseDay(file, day, groupColumn)
+		classes := traverseDay(file, day, groupColumn, legend)
 		timetable[day.WeekDay] = classes
 		slog.Debug("Processed day",
 			slog.String("day", day.WeekDay.String()),
@@ -76,7 +78,7 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 
 const slotDuration = 15 * time.Minute
 
-func traverseDay(file *excelize.File, day types.Day, groupColumn int64) []types.Class {
+func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend) []types.Class {
 	var classes []types.Class
 
 	currentTime := global.DAY_START_TIME
@@ -87,7 +89,7 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64) []types.
 
 			classEndTime := currentTime.Add(slotDuration)
 
-			class := parseClassText(classText, currentTime, classEndTime, day)
+			class := parseClassText(classText, currentTime, classEndTime, day, legend)
 
 			if len(classes) == 0 || class.Name != classes[len(classes)-1].Name {
 				classes = append(classes, class)
