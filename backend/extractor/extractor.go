@@ -87,20 +87,47 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 		classText := getCell(file, global.SHEET_NAME, i, int(groupColumn))
 		if classText != "" {
 
+			// if strings.Contains(classText, "angielski") {
+			// 	slog.Debug("Found English class", slog.String("class_text", classText))
+			// }
 			classEndTime := currentTime.Add(slotDuration)
 
 			class := parseClassText(classText, currentTime, classEndTime, day, legend)
 
-			if len(classes) == 0 || class.Name != classes[len(classes)-1].Name {
+			isNewClass := len(classes) == 0 || class.Name != classes[len(classes)-1].Name || class.Level != classes[len(classes)-1].Level || class.Teacher != classes[len(classes)-1].Teacher || class.Location != classes[len(classes)-1].Location
+
+			if isNewClass {
+				// slog.Debug("Adding new class", slog.String("class_name", class.Name))
 				classes = append(classes, class)
 			} else {
+				// slog.Debug("Extending existing class", slog.String("class_name", class.Name))
 				classes[len(classes)-1].EndTime = classEndTime
 			}
 		}
 		currentTime = currentTime.Add(slotDuration)
 
 	}
-	return classes
+
+	// Post-process: split any slash-delimited class names into separate classes
+	var result []types.Class
+	for _, class := range classes {
+		result = append(result, splitSlashClasses(class)...)
+	}
+
+	// Log the final classes for the day
+	for _, class := range result {
+		slog.Debug("Final class for day",
+			slog.String("name", class.Name),
+			slog.String("type", class.Type),
+			slog.String("teacher", class.Teacher),
+			slog.String("location", class.Location),
+			slog.String("additional_info", class.AdditionalInfo),
+			slog.String("level", class.Level),
+			slog.String("total_hours", class.TotalHours),
+			slog.String("start_time", class.StartTime.Format("15:04")),
+			slog.String("end_time", class.EndTime.Format("15:04")))
+	}
+	return result
 }
 
 func getCell(file *excelize.File, sheet string, row int, col int) string {

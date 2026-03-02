@@ -253,6 +253,53 @@ func TestParseClassText(t *testing.T) {
 	}
 }
 
+func TestSplitSlashClasses(t *testing.T) {
+	legend := mockLegend()
+
+	tests := []struct {
+		name  string
+		input string
+		want  []types.Class
+	}{
+		{
+			name:  "LanguageSplitWithLevel",
+			input: "J. niemiecki/J.angielski C1\nćw.\nmgr D. Guzik/mgr E. Szabat     s. SJO/s. N     ",
+			want: []types.Class{
+				{Name: "J. niemiecki", Type: "ćw.", Teacher: "mgr D. Guzik", Location: "s. SJO"},
+				{Name: "J.angielski", Type: "ćw.", Level: "C1", Teacher: "mgr E. Szabat", Location: "s. N"},
+			},
+		},
+		{
+			name:  "NoSlashInNameNoSplit",
+			input: "AiSD     lab.     JD/MD     s. 131",
+			want: []types.Class{
+				{Name: "AiSD", Type: "lab.", Teacher: "JD/MD", Location: "s. 131"},
+			},
+		},
+		{
+			name:  "SlashNameMismatchedFieldCounts",
+			input: "Subject A/Subject B\nlab.     JD     s. 131",
+			want: []types.Class{
+				{Name: "Subject A", Type: "lab.", Teacher: "JD", Location: "s. 131"},
+				{Name: "Subject B", Type: "lab.", Teacher: "JD", Location: "s. 131"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsed := parseClassText(tt.input, testStartTime, testEndTime, testDay, legend)
+			got := splitSlashClasses(parsed)
+			if len(got) != len(tt.want) {
+				t.Fatalf("got %d classes, want %d", len(got), len(tt.want))
+			}
+			for i := range tt.want {
+				assertStructContains(t, got[i], tt.want[i])
+			}
+		})
+	}
+}
+
 // --- helpers ---
 
 func assertStructContains(t *testing.T, got, want types.Class) {

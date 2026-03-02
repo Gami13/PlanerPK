@@ -274,6 +274,57 @@ func isBareAcademicTitle(s string) bool {
 	return false
 }
 
+// splitSlashClasses splits a class with a slash-delimited Name into separate classes.
+// Fields like Teacher and Location are distributed by position when their segment
+// count matches the name count; otherwise the whole field is shared.
+// Level is assigned only to the last name (where it was originally extracted from).
+func splitSlashClasses(class types.Class) []types.Class {
+	if !strings.Contains(class.Name, "/") {
+		return []types.Class{class}
+	}
+
+	names := strings.Split(class.Name, "/")
+	teachers := splitOrRepeat(class.Teacher, len(names))
+	locations := splitOrRepeat(class.Location, len(names))
+
+	classes := make([]types.Class, 0, len(names))
+	for i, name := range names {
+		c := types.Class{
+			Name:           strings.TrimSpace(name),
+			Type:           class.Type,
+			Day:            class.Day,
+			StartTime:      class.StartTime,
+			EndTime:        class.EndTime,
+			Teacher:        strings.TrimSpace(teachers[i]),
+			Location:       strings.TrimSpace(locations[i]),
+			AdditionalInfo: class.AdditionalInfo,
+			TotalHours:     class.TotalHours,
+		}
+		if i == len(names)-1 {
+			c.Level = class.Level
+		}
+		classes = append(classes, c)
+	}
+	return classes
+}
+
+// splitOrRepeat splits a field by "/" if the segment count matches expected;
+// otherwise repeats the whole field for each slot.
+func splitOrRepeat(field string, count int) []string {
+	if field == "" {
+		return make([]string, count)
+	}
+	parts := strings.Split(field, "/")
+	if len(parts) == count {
+		return parts
+	}
+	result := make([]string, count)
+	for i := range result {
+		result[i] = field
+	}
+	return result
+}
+
 // Removes empty strings from a slice
 func removeEmptyStrings(slice []string) []string {
 	var result []string

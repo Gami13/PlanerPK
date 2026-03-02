@@ -21,24 +21,26 @@ type Class struct {
 	TotalHours     string
 }
 
-// TODO: Change the formatting a bit
 func (c Class) String() string {
-	text := fmt.Sprintf("%s (%s) %s-%s | %s | %s", c.Name, c.Type, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Teacher, c.Location)
+	text := fmt.Sprintf("%s (%s)  %s – %s  %s @ %s",
+		c.Name, c.Type,
+		c.StartTime.Format("15:04"), c.EndTime.Format("15:04"),
+		c.Teacher, c.Location)
 	if c.Level != "" {
-		text += fmt.Sprintf(" | Level: %s", c.Level)
+		text += fmt.Sprintf("  [%s]", c.Level)
 	}
 	if c.TotalHours != "" {
-		text += fmt.Sprintf(" | %s", c.TotalHours)
+		text += fmt.Sprintf("  (%s)", c.TotalHours)
 	}
 	if c.AdditionalInfo != "" {
-		text += fmt.Sprintf(" | %s", c.AdditionalInfo)
+		text += fmt.Sprintf(" — %s", c.AdditionalInfo)
 	}
 	return text
 }
 
-// Collisions between same-name classes are intentional — they allow the calendar syncer to detect time changes
+// Collisions between same-name classes on the same day are intentional — they allow the calendar syncer to detect time changes
 func (c Class) Id() string {
-	return fmt.Sprintf("%s_%s", c.Type, c.Name)
+	return fmt.Sprintf("%s_%s_%s_%s", c.Type, c.Name, c.Day, c.Level)
 }
 
 func (c Class) Summary() string {
@@ -55,9 +57,9 @@ func (c Class) Summary() string {
 	if len(c.Teacher) > 0 {
 		summary += fmt.Sprintf(" - %s", c.Teacher)
 	}
-	if len(c.Location) > 0 {
-		summary += fmt.Sprintf(" | %s", c.Location)
-	}
+	// if len(c.Location) > 0 {
+	// 	summary += fmt.Sprintf(" | %s", c.Location)
+	// }
 	if len(c.TotalHours) > 0 {
 		summary += fmt.Sprintf(" | %s", c.TotalHours)
 	}
@@ -89,6 +91,7 @@ func (c Class) ToEvent() calendar.Event {
 		End: &calendar.EventDateTime{
 			DateTime: c.EndTimeRFC3339(),
 		},
+		Location: c.Location,
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{
 				"added_by": ADDED_BY,
