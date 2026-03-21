@@ -43,9 +43,9 @@ const defaultContext: AppContextValue = {
 
 export const AppContext = createContext<AppContextValue>(defaultContext);
 
-async function fetchUserInfo(accessToken: string): Promise<GetUserInfoResponse | undefined> {
+async function fetchUserInfo(): Promise<GetUserInfoResponse | undefined> {
 	try {
-		return await rpc.getUserInfo({ accessToken });
+		return await rpc.getUserInfo({});
 	} catch {
 		return undefined;
 	}
@@ -54,7 +54,7 @@ async function fetchUserInfo(accessToken: string): Promise<GetUserInfoResponse |
 export async function updateLoggedInUser(store: AppStore, setStore: SetStoreFunction<AppStore>) {
 	const userToken = getAccessToken();
 	if (userToken) {
-		fetchUserInfo(userToken).then((userInfo) => {
+		fetchUserInfo().then((userInfo) => {
 			setStore({ userInfo });
 			console.log("Fetched user info on update:", userInfo);
 		});

@@ -12,6 +12,7 @@ import (
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
+	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
@@ -99,7 +100,8 @@ func Start(db db.Querier) {
 	}
 
 	// Mount ConnectRPC service behind rate limiting.
-	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler)
+	interceptors := connect.WithInterceptors(AuthInterceptor())
+	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler, interceptors)
 
 	// Wrap the SetChosenColumn endpoint with the strict policy.
 	mux.Handle(rpcPath, rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

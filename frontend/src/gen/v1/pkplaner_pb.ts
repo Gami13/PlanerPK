@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/pkplaner.proto.
  */
 export const file_v1_pkplaner: GenFile = /*@__PURE__*/
-  fileDesc("ChF2MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiRQoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFEhQKDGFjY2Vzc190b2tlbhgCIAEoCSIZChdTZXRDaG9zZW5Db2x1bW5SZXNwb25zZSI/ChRTZXRVc2VyQWN0aXZlUmVxdWVzdBIRCglpc19hY3RpdmUYASABKAgSFAoMYWNjZXNzX3Rva2VuGAIgASgJIhcKFVNldFVzZXJBY3RpdmVSZXNwb25zZSIgChBBdXRob3JpemVSZXF1ZXN0EgwKBGNvZGUYASABKAkibgoRQXV0aG9yaXplUmVzcG9uc2USFAoMYWNjZXNzX3Rva2VuGAEgASgJEg0KBWVtYWlsGAIgASgJEhUKDWNob3Nlbl9jb2x1bW4YAyABKAMSDAoEbmFtZRgEIAEoCRIPCgdwaWN0dXJlGAUgASgJIhMKEUdldEF1dGhVUkxSZXF1ZXN0IiEKEkdldEF1dGhVUkxSZXNwb25zZRILCgN1cmwYASABKAkiKgoSR2V0VXNlckluZm9SZXF1ZXN0EhQKDGFjY2Vzc190b2tlbhgBIAEoCSKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAzKDBAoPUEtQbGFuZXJTZXJ2aWNlEk0KCkdldENvbHVtbnMSHi5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXNwb25zZRJcCg9TZXRDaG9zZW5Db2x1bW4SIy5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXF1ZXN0GiQucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVzcG9uc2USVgoNU2V0VXNlckFjdGl2ZRIhLnBrcGxhbmVyLnYxLlNldFVzZXJBY3RpdmVSZXF1ZXN0GiIucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlc3BvbnNlEkoKCUF1dGhvcml6ZRIdLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlcXVlc3QaHi5wa3BsYW5lci52MS5BdXRob3JpemVSZXNwb25zZRJNCgpHZXRBdXRoVVJMEh4ucGtwbGFuZXIudjEuR2V0QXV0aFVSTFJlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVzcG9uc2USUAoLR2V0VXNlckluZm8SHy5wa3BsYW5lci52MS5HZXRVc2VySW5mb1JlcXVlc3QaIC5wa3BsYW5lci52MS5HZXRVc2VySW5mb1Jlc3BvbnNlQj9aPWdpdGh1Yi5jb20vV29vZFBLcnMvR29vZ2xlQ2FsZW5kYXJUaW1ldGFibGUvZ2VuL3YxO3BrcGxhbmVydjFiBnByb3RvMw");
+  fileDesc("ChF2MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiLwoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFIhkKF1NldENob3NlbkNvbHVtblJlc3BvbnNlIikKFFNldFVzZXJBY3RpdmVSZXF1ZXN0EhEKCWlzX2FjdGl2ZRgBIAEoCCIXChVTZXRVc2VyQWN0aXZlUmVzcG9uc2UiIAoQQXV0aG9yaXplUmVxdWVzdBIMCgRjb2RlGAEgASgJIm4KEUF1dGhvcml6ZVJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRINCgVlbWFpbBgCIAEoCRIVCg1jaG9zZW5fY29sdW1uGAMgASgDEgwKBG5hbWUYBCABKAkSDwoHcGljdHVyZRgFIAEoCSITChFHZXRBdXRoVVJMUmVxdWVzdCIhChJHZXRBdXRoVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJIhQKEkdldFVzZXJJbmZvUmVxdWVzdCKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAzKDBAoPUEtQbGFuZXJTZXJ2aWNlEk0KCkdldENvbHVtbnMSHi5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXNwb25zZRJcCg9TZXRDaG9zZW5Db2x1bW4SIy5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXF1ZXN0GiQucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVzcG9uc2USVgoNU2V0VXNlckFjdGl2ZRIhLnBrcGxhbmVyLnYxLlNldFVzZXJBY3RpdmVSZXF1ZXN0GiIucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlc3BvbnNlEkoKCUF1dGhvcml6ZRIdLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlcXVlc3QaHi5wa3BsYW5lci52MS5BdXRob3JpemVSZXNwb25zZRJNCgpHZXRBdXRoVVJMEh4ucGtwbGFuZXIudjEuR2V0QXV0aFVSTFJlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVzcG9uc2USUAoLR2V0VXNlckluZm8SHy5wa3BsYW5lci52MS5HZXRVc2VySW5mb1JlcXVlc3QaIC5wa3BsYW5lci52MS5HZXRVc2VySW5mb1Jlc3BvbnNlQj9aPWdpdGh1Yi5jb20vV29vZFBLcnMvR29vZ2xlQ2FsZW5kYXJUaW1ldGFibGUvZ2VuL3YxO3BrcGxhbmVydjFiBnByb3RvMw");
 
 /**
  * ColumnGroup represents an available column/group option parsed from the Excel header rows.
@@ -74,7 +74,7 @@ export const GetColumnsResponseSchema: GenMessage<GetColumnsResponse> = /*@__PUR
   messageDesc(file_v1_pkplaner, 2);
 
 /**
- * SetChosenColumnRequest carries the column to select and the user's access token.
+ * SetChosenColumnRequest carries the column to select.
  *
  * @generated from message pkplaner.v1.SetChosenColumnRequest
  */
@@ -83,11 +83,6 @@ export type SetChosenColumnRequest = Message<"pkplaner.v1.SetChosenColumnRequest
    * @generated from field: int32 chosen_column = 1;
    */
   chosenColumn: number;
-
-  /**
-   * @generated from field: string access_token = 2;
-   */
-  accessToken: string;
 };
 
 /**
@@ -111,7 +106,7 @@ export const SetChosenColumnResponseSchema: GenMessage<SetChosenColumnResponse> 
   messageDesc(file_v1_pkplaner, 4);
 
 /**
- * SetUserActiveRequest carries account activity status and the user's access token.
+ * SetUserActiveRequest carries account activity status.
  *
  * @generated from message pkplaner.v1.SetUserActiveRequest
  */
@@ -120,11 +115,6 @@ export type SetUserActiveRequest = Message<"pkplaner.v1.SetUserActiveRequest"> &
    * @generated from field: bool is_active = 1;
    */
   isActive: boolean;
-
-  /**
-   * @generated from field: string access_token = 2;
-   */
-  accessToken: string;
 };
 
 /**
@@ -236,15 +226,11 @@ export const GetAuthURLResponseSchema: GenMessage<GetAuthURLResponse> = /*@__PUR
   messageDesc(file_v1_pkplaner, 10);
 
 /**
- * GetUserInfoRequest carries the access token for authentication.
+ * GetUserInfoRequest is empty, authentication is handled via headers.
  *
  * @generated from message pkplaner.v1.GetUserInfoRequest
  */
 export type GetUserInfoRequest = Message<"pkplaner.v1.GetUserInfoRequest"> & {
-  /**
-   * @generated from field: string access_token = 1;
-   */
-  accessToken: string;
 };
 
 /**

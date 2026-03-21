@@ -6,7 +6,7 @@ import { rpc } from "../api_client";
 import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
 import type { ColumnGroup } from "../gen/v1/pkplaner_pb.js";
-import { attrs, getAccessToken, getGroupByColumnIndex } from "../utils";
+import { attrs, getGroupByColumnIndex } from "../utils";
 
 const MEDIUM_SCREEN = "@media (min-width: 48em)" as const;
 const styles = stylex.create({
@@ -78,7 +78,6 @@ async function changeChosenColumn(newColumn: number): Promise<boolean> {
 	try {
 		await rpc.setChosenColumn({
 			chosenColumn: newColumn,
-			accessToken: getAccessToken() || "",
 		});
 		return true;
 	} catch {
@@ -87,14 +86,8 @@ async function changeChosenColumn(newColumn: number): Promise<boolean> {
 }
 
 async function changeUserActive(isActive: boolean): Promise<boolean> {
-	const accessToken = getAccessToken();
-	if (!accessToken) {
-		return false;
-	}
-
 	try {
 		await rpc.setUserActive({
-			accessToken,
 			isActive,
 		});
 		return true;
@@ -140,21 +133,21 @@ export function Settings() {
 					</p>
 					<Button
 						isPrimary={true}
-						onClick={async () => {
+						onClick={() => {
 							if (!AppState.store.userInfo) {
 								return;
 							}
 
 							const newStatus = !AppState.store.userInfo.isActive;
-							const success = await changeUserActive(newStatus);
+							changeUserActive(newStatus).then((success) => {
+								if (!success) {
+									alert("Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.");
+									return;
+								}
 
-							if (!success) {
-								alert("Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.");
-								return;
-							}
-
-							AppState.setStore("userInfo", "isActive", newStatus);
-							alert(`Konto oznaczono jako ${newStatus ? "aktywne" : "nieaktywne"}.`);
+								AppState.setStore("userInfo", "isActive", newStatus);
+								alert(`Konto oznaczono jako ${newStatus ? "aktywne" : "nieaktywne"}.`);
+							});
 						}}
 					>
 						{AppState.store.userInfo?.isActive ? "Oznacz konto jako nieaktywne" : "Oznacz konto jako aktywne"}

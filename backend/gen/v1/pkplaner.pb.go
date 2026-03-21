@@ -163,11 +163,10 @@ func (x *GetColumnsResponse) GetColumns() []*ColumnGroup {
 	return nil
 }
 
-// SetChosenColumnRequest carries the column to select and the user's access token.
+// SetChosenColumnRequest carries the column to select.
 type SetChosenColumnRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChosenColumn  int32                  `protobuf:"varint,1,opt,name=chosen_column,json=chosenColumn,proto3" json:"chosen_column,omitempty"`
-	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -209,13 +208,6 @@ func (x *SetChosenColumnRequest) GetChosenColumn() int32 {
 	return 0
 }
 
-func (x *SetChosenColumnRequest) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
 type SetChosenColumnResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -252,11 +244,10 @@ func (*SetChosenColumnResponse) Descriptor() ([]byte, []int) {
 	return file_v1_pkplaner_proto_rawDescGZIP(), []int{4}
 }
 
-// SetUserActiveRequest carries account activity status and the user's access token.
+// SetUserActiveRequest carries account activity status.
 type SetUserActiveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	IsActive      bool                   `protobuf:"varint,1,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
-	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -296,13 +287,6 @@ func (x *SetUserActiveRequest) GetIsActive() bool {
 		return x.IsActive
 	}
 	return false
-}
-
-func (x *SetUserActiveRequest) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
 }
 
 type SetUserActiveResponse struct {
@@ -543,10 +527,9 @@ func (x *GetAuthURLResponse) GetUrl() string {
 	return ""
 }
 
-// GetUserInfoRequest carries the access token for authentication.
+// GetUserInfoRequest is empty, authentication is handled via headers.
 type GetUserInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -579,13 +562,6 @@ func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetUserInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
 	return file_v1_pkplaner_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *GetUserInfoRequest) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
 }
 
 type GetUserInfoResponse struct {
@@ -683,14 +659,12 @@ const file_v1_pkplaner_proto_rawDesc = "" +
 	"\bcategory\x18\x03 \x01(\tR\bcategory\"\x13\n" +
 	"\x11GetColumnsRequest\"H\n" +
 	"\x12GetColumnsResponse\x122\n" +
-	"\acolumns\x18\x01 \x03(\v2\x18.pkplaner.v1.ColumnGroupR\acolumns\"`\n" +
+	"\acolumns\x18\x01 \x03(\v2\x18.pkplaner.v1.ColumnGroupR\acolumns\"=\n" +
 	"\x16SetChosenColumnRequest\x12#\n" +
-	"\rchosen_column\x18\x01 \x01(\x05R\fchosenColumn\x12!\n" +
-	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\"\x19\n" +
-	"\x17SetChosenColumnResponse\"V\n" +
+	"\rchosen_column\x18\x01 \x01(\x05R\fchosenColumn\"\x19\n" +
+	"\x17SetChosenColumnResponse\"3\n" +
 	"\x14SetUserActiveRequest\x12\x1b\n" +
-	"\tis_active\x18\x01 \x01(\bR\bisActive\x12!\n" +
-	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\"\x17\n" +
+	"\tis_active\x18\x01 \x01(\bR\bisActive\"\x17\n" +
 	"\x15SetUserActiveResponse\"&\n" +
 	"\x10AuthorizeRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\"\x9f\x01\n" +
@@ -702,9 +676,8 @@ const file_v1_pkplaner_proto_rawDesc = "" +
 	"\apicture\x18\x05 \x01(\tR\apicture\"\x13\n" +
 	"\x11GetAuthURLRequest\"&\n" +
 	"\x12GetAuthURLResponse\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\"7\n" +
-	"\x12GetUserInfoRequest\x12!\n" +
-	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"\xba\x01\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\x14\n" +
+	"\x12GetUserInfoRequest\"\xba\x01\n" +
 	"\x13GetUserInfoResponse\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +

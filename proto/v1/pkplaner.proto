@@ -39,18 +39,16 @@ message GetColumnsResponse {
   repeated ColumnGroup columns = 1;
 }
 
-// SetChosenColumnRequest carries the column to select and the user's access token.
+// SetChosenColumnRequest carries the column to select.
 message SetChosenColumnRequest {
   int32 chosen_column = 1;
-  string access_token = 2;
 }
 
 message SetChosenColumnResponse {}
 
-// SetUserActiveRequest carries account activity status and the user's access token.
+// SetUserActiveRequest carries account activity status.
 message SetUserActiveRequest {
   bool is_active = 1;
-  string access_token = 2;
 }
 
 message SetUserActiveResponse {}
@@ -75,10 +73,8 @@ message GetAuthURLResponse {
   string url = 1;
 }
 
-// GetUserInfoRequest carries the access token for authentication.
-message GetUserInfoRequest {
-  string access_token = 1;
-}
+// GetUserInfoRequest is empty, authentication is handled via headers.
+message GetUserInfoRequest {}
 
 message GetUserInfoResponse {
   string email = 1;

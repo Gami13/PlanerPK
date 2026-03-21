@@ -75,10 +75,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.SetChosenColumnRequest],
 ) (*connect.Response[pkplanerv1.SetChosenColumnResponse], error) {
-	accessToken := req.Msg.AccessToken
-	if accessToken == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
-	}
+	accessToken := ctx.Value(authTokenKey).(string)
 
 	chosenColumn := int64(req.Msg.ChosenColumn)
 	slog.Info("Setting chosen column", slog.Int64("column", chosenColumn))
@@ -121,10 +118,7 @@ func (h *PKPlanerHandler) SetUserActive(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.SetUserActiveRequest],
 ) (*connect.Response[pkplanerv1.SetUserActiveResponse], error) {
-	accessToken := req.Msg.AccessToken
-	if accessToken == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
-	}
+	accessToken := ctx.Value(authTokenKey).(string)
 
 	isActive := req.Msg.IsActive
 	slog.Info("Setting user active status", slog.Bool("is_active", isActive))
@@ -218,10 +212,7 @@ func (h *PKPlanerHandler) GetUserInfo(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.GetUserInfoRequest],
 ) (*connect.Response[pkplanerv1.GetUserInfoResponse], error) {
-	accessToken := req.Msg.AccessToken
-	if accessToken == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("missing access token"))
-	}
+	accessToken := ctx.Value(authTokenKey).(string)
 
 	user, err := h.Query.GetUserByAccessToken(ctx, accessToken)
 	if err != nil {
