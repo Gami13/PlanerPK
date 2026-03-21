@@ -38,9 +38,8 @@ func (c Class) String() string {
 	return text
 }
 
-// Collisions between same-name classes on the same day are intentional — they allow the calendar syncer to detect time changes
-func (c Class) Id() string {
-	return fmt.Sprintf("%s_%s_%s_%s", c.Type, c.Name, c.Day, c.Level)
+func (c Class) Hash() string {
+	return fmt.Sprintf("%s|%s|%s|%s", c.Summary(), c.StartTimeRFC3339(), c.EndTimeRFC3339(), c.Location)
 }
 
 func (c Class) Summary() string {
@@ -95,14 +94,9 @@ func (c Class) ToEvent() calendar.Event {
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{
 				"added_by": ADDED_BY,
-				"event_id": c.Id(),
 				"hash":     c.Hash(),
 			},
 		},
 	}
 	return *event
-}
-
-func (c Class) Hash() string {
-	return fmt.Sprintf("%s|%s|%s|%s", c.Summary(), c.StartTimeRFC3339(), c.EndTimeRFC3339(), c.Location)
 }

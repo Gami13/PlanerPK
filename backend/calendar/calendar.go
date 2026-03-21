@@ -36,10 +36,10 @@ func ImportTimetable(groupColumn int64, token *oauth2.Token, queries db.Querier)
 	}
 
 	newEvents := buildNewEventsMap(timetable)
-	eventsToDelete, eventsToUpdate, eventsToAdd, unchangedEvents := calculateEventDiffs(currentEvents, newEvents)
+	eventsToDelete, eventsToAdd, unchangedEvents := calculateEventDiffs(currentEvents, newEvents)
 
-	createdCount, updatedCount, deletedCount := applyEventChanges(srv, eventsToDelete, eventsToUpdate, eventsToAdd)
-	skippedCount := len(unchangedEvents) + len(eventsToUpdate)
+	createdCount, deletedCount := applyEventChanges(srv, eventsToDelete, eventsToAdd)
+	skippedCount := len(unchangedEvents)
 
 	err = queries.UpdateUserSyncTime(ctx, token.AccessToken)
 	if err != nil {
@@ -48,31 +48,12 @@ func ImportTimetable(groupColumn int64, token *oauth2.Token, queries db.Querier)
 
 	slog.Info("Timetable import completed",
 		slog.Int("created", createdCount),
-		slog.Int("updated", updatedCount),
 		slog.Int("deleted", deletedCount),
 		slog.Int("skipped", skippedCount))
 }
 
-type eventUpdate struct {
-	existingEvent *calendar.Event
-	newEvent      *calendar.Event
-}
-
-func applyEventChanges(srv *calendar.Service, eventsToDelete []*calendar.Event, eventsToUpdate []eventUpdate, eventsToAdd []*calendar.Event) (int, int, int) {
-	var deletedCount, updatedCount, createdCount int
-
-	for _, update := range eventsToUpdate {
-		slog.Info("Updating event",
-			slog.String("summary", update.newEvent.Summary))
-		_, err := srv.Events.Update("primary", update.existingEvent.Id, update.newEvent).Do()
-		if err != nil {
-			slog.Error("Failed to update event",
-				slog.String("summary", update.newEvent.Summary),
-				slog.Any("error", err))
-			continue
-		}
-		updatedCount++
-	}
+func applyEventChanges(srv *calendar.Service, eventsToDelete []*calendar.Event, eventsToAdd []*calendar.Event) (int, int) {
+	var deletedCount, createdCount int
 
 	for _, event := range eventsToAdd {
 		slog.Info("Creating event", slog.String("summary", event.Summary))
@@ -98,7 +79,7 @@ func applyEventChanges(srv *calendar.Service, eventsToDelete []*calendar.Event, 
 		deletedCount++
 	}
 
-	return createdCount, updatedCount, deletedCount
+	return createdCount, deletedCount
 }
 
 func getCurrentEvents(srv *calendar.Service) ([]*calendar.Event, error) {
