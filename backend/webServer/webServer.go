@@ -100,7 +100,7 @@ func Start(db db.Querier) {
 	}
 
 	// Mount ConnectRPC service behind rate limiting.
-	interceptors := connect.WithInterceptors(AuthInterceptor())
+	interceptors := connect.WithInterceptors(AuthInterceptor(query))
 	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler, interceptors)
 
 	// Wrap the SetChosenColumn endpoint with the strict policy.

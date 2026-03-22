@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
 )
 
 type contextKey string
 
-const authTokenKey contextKey = "AuthorizationToken"
+const authUserKey contextKey = "AuthenticatedUser"
 
-func AuthInterceptor() connect.UnaryInterceptorFunc {
+func AuthInterceptor(query db.Querier) connect.UnaryInterceptorFunc {
 	// Procedures that require authentication
 	authRequired := map[string]bool{
 		"/pkplaner.v1.PKPlanerService/SetChosenColumn": true,
@@ -40,8 +41,14 @@ func AuthInterceptor() connect.UnaryInterceptorFunc {
 			if token == "" {
 				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("token is empty"))
 			}
-			// Add the token to the context
-			ctx = context.WithValue(ctx, authTokenKey, token)
+
+			user, err := query.GetUserByAccessToken(ctx, token)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid authorization token"))
+			}
+
+			// Add the user to the context
+			ctx = context.WithValue(ctx, authUserKey, user)
 
 			return next(ctx, req)
 		})

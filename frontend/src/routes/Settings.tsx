@@ -116,6 +116,8 @@ export function Settings() {
 	const AppState = useContext(AppContext);
 	const [columns] = createResource(fetchColumns);
 
+	const chosenColumn = () => Number(AppState.store.userInfo?.chosenColumn ?? 0n);
+
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
 			<PageTitle title="Ustawienia" />
@@ -176,9 +178,9 @@ export function Settings() {
 					<p>Zmianę kolumny wykonuj wyłącznie w uzasadnionych przypadkach, aby uniknąć ograniczeń konta.</p>
 					<p {...attrs(stylex.props(styles.settingDescription))}>
 						Obecna kolumna:{" "}
-						{AppState.store.userInfo?.chosenColumn === 0n
+						{chosenColumn() === 0
 							? "Nie wybrano kolumny"
-							: `${AppState.store.userInfo?.chosenColumn ? getGroupByColumnIndex(columns(), Number(AppState.store.userInfo.chosenColumn))?.label : "Ładowanie..."}`}
+							: `${chosenColumn() ? getGroupByColumnIndex(columns(), chosenColumn())?.label : "Ładowanie..."}`}
 					</p>
 					<select {...attrs(stylex.props(styles.columnSelect))} name="chosen_column" id="chosen_column">
 						<Show when={columns.error}>
@@ -195,7 +197,7 @@ export function Settings() {
 											{(option) => (
 												<option
 													value={option.column}
-													selected={Number(AppState.store.userInfo?.chosenColumn ?? 0n) === option.column}
+													selected={chosenColumn() === option.column}
 												>
 													{option.label}
 												</option>

@@ -75,7 +75,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.SetChosenColumnRequest],
 ) (*connect.Response[pkplanerv1.SetChosenColumnResponse], error) {
-	accessToken := ctx.Value(authTokenKey).(string)
+	user := ctx.Value(authUserKey).(db.User)
 
 	chosenColumn := int64(req.Msg.ChosenColumn)
 	slog.Info("Setting chosen column", slog.Int64("column", chosenColumn))
@@ -87,7 +87,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 
 	if err := h.Query.UpdateChosenColumn(ctx, db.UpdateChosenColumnParams{
 		ChosenColumn: &chosenColumn,
-		AccessToken:  accessToken,
+		AccessToken:  user.AccessToken,
 	}); err != nil {
 		slog.Error("Failed to update chosen column",
 			slog.Int64("column", chosenColumn),
@@ -95,19 +95,13 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update chosen column: %w", err))
 	}
 
-	token, err := h.Query.GetTokenByAccessToken(ctx, accessToken)
-	if err != nil {
-		slog.Error("Failed to get token", slog.Any("error", err))
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get token: %w", err))
-	}
-
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
 	go calendar.ImportTimetable(chosenColumn, &oauth2.Token{
-		AccessToken:  token.AccessToken,
-		TokenType:    token.TokenType,
-		RefreshToken: token.RefreshToken,
-		Expiry:       token.Expiry,
-		ExpiresIn:    token.ExpiresIn,
+		AccessToken:  user.AccessToken,
+		TokenType:    user.TokenType,
+		RefreshToken: user.RefreshToken,
+		Expiry:       user.Expiry,
+		ExpiresIn:    user.ExpiresIn,
 	}, h.Query)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
@@ -118,13 +112,13 @@ func (h *PKPlanerHandler) SetUserActive(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.SetUserActiveRequest],
 ) (*connect.Response[pkplanerv1.SetUserActiveResponse], error) {
-	accessToken := ctx.Value(authTokenKey).(string)
+	user := ctx.Value(authUserKey).(db.User)
 
 	isActive := req.Msg.IsActive
 	slog.Info("Setting user active status", slog.Bool("is_active", isActive))
 
 	if err := h.Query.UpdateUserActive(ctx, db.UpdateUserActiveParams{
-		AccessToken: accessToken,
+		AccessToken: user.AccessToken,
 		IsActive:    &isActive,
 	}); err != nil {
 		slog.Error("Failed to update user active status",
@@ -212,13 +206,7 @@ func (h *PKPlanerHandler) GetUserInfo(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.GetUserInfoRequest],
 ) (*connect.Response[pkplanerv1.GetUserInfoResponse], error) {
-	accessToken := ctx.Value(authTokenKey).(string)
-
-	user, err := h.Query.GetUserByAccessToken(ctx, accessToken)
-	if err != nil {
-		slog.Warn("Invalid access token or user not found", slog.Any("error", err))
-		return nil, connect.NewError(connect.CodeUnauthenticated, fmt.Errorf("unauthorized: invalid or expired access token"))
-	}
+	user := ctx.Value(authUserKey).(db.User)
 
 	slog.Debug("Retrieved user info", slog.String("email", *user.Email))
 
