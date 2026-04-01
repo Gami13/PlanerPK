@@ -9,8 +9,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
-	pkplanerv1 "github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
+	pkplanerv1 "github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1/pkplanerv1connect"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"

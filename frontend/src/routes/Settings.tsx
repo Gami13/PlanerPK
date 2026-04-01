@@ -5,7 +5,7 @@ import { AppContext } from "..";
 import { rpc } from "../api_client";
 import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
-import type { ColumnGroup } from "../gen/v1/pkplaner_pb.js";
+import type { ColumnGroup } from "../gen/pkplaner/v1/pkplaner_pb.js";
 import { attrs, getGroupByColumnIndex } from "../utils";
 
 const MEDIUM_SCREEN = "@media (min-width: 48em)" as const;
@@ -195,10 +195,7 @@ export function Settings() {
 									<optgroup label={category || "Inne"}>
 										<For each={options}>
 											{(option) => (
-												<option
-													value={option.column}
-													selected={chosenColumn() === option.column}
-												>
+												<option value={option.column} selected={chosenColumn() === option.column}>
 													{option.label}
 												</option>
 											)}

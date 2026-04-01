@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1/pkplanerv1connect"
+	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1/pkplanerv1connect"
 	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 
 	"connectrpc.com/connect"

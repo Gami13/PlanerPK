@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pkplaner.v1;
 
-option go_package = "github.com/WoodPKrs/GoogleCalendarTimetable/gen/v1;pkplanerv1";
+option go_package = "github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1;pkplanerv1";
 
 // PKPlanerService provides RPCs for managing timetable calendar integration.
 service PKPlanerService {
@@ -27,8 +27,8 @@ service PKPlanerService {
 
 // ColumnGroup represents an available column/group option parsed from the Excel header rows.
 message ColumnGroup {
-  int32 column = 1;
-  string label = 2;
+  int32  column   = 1;
+  string label    = 2;
   string category = 3;
 }
 
@@ -59,11 +59,11 @@ message AuthorizeRequest {
 }
 
 message AuthorizeResponse {
-  string access_token = 1;
-  string email = 2;
-  int64 chosen_column = 3;
-  string name = 4;
-  string picture = 5;
+  string access_token  = 1;
+  string email         = 2;
+  int64  chosen_column = 3;
+  string name          = 4;
+  string picture       = 5;
 }
 
 // GetAuthURLRequest is empty.
@@ -77,10 +77,10 @@ message GetAuthURLResponse {
 message GetUserInfoRequest {}
 
 message GetUserInfoResponse {
-  string email = 1;
-  string name = 2;
-  string given_name = 3;
-  string picture = 4;
-  bool is_active = 5;
-  int64 chosen_column = 6;
+  string email         = 1;
+  string name          = 2;
+  string given_name    = 3;
+  string picture       = 4;
+  bool   is_active     = 5;
+  int64  chosen_column = 6;
 }

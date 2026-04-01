@@ -1,9 +1,9 @@
+import type { Interceptor } from "@connectrpc/connect";
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { ENV } from "./env";
-import { PKPlanerService } from "./gen/v1/pkplaner_pb.js";
+import { PKPlanerService } from "./gen/pkplaner/v1/pkplaner_pb.js";
 import { getAccessToken } from "./utils";
-import type { Interceptor } from "@connectrpc/connect";
 
 const authInterceptor: Interceptor = (next) => async (req) => {
 	const token = getAccessToken();

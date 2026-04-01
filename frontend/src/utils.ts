@@ -1,4 +1,4 @@
-import type { ColumnGroup } from "./gen/v1/pkplaner_pb.js";
+import type { ColumnGroup } from "./gen/pkplaner/v1/pkplaner_pb.js";
 
 export function setAccessToken(token: string) {
 	document.cookie = `access_token=${token}; path=/; max-age=604800; samesite=strict`;

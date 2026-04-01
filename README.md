@@ -8,6 +8,7 @@ The repository now ships with a multi-stage `Dockerfile` that mirrors the native
 
 - Docker Engine or Docker Desktop 4.27+
 - The OAuth `credentials.json` file present at the project root (it is bind-mounted at runtime, so it never becomes part of the image).
+- Protobuf generation is run from repo root with `buf generate --template buf.gen.yaml` and writes to `backend/gen` and `frontend/src/gen`.
 
 ### Build the Image
 
@@ -69,3 +70,6 @@ Key mounts defined in the Compose file:
 During startup the entrypoint writes `/app/static/env.js` with the value of `API_BASE_URL` (defaulting to `http://localhost:8080/api`), so you can point the compiled frontend at different backend URLs without rebuilding the image.
 
 Customize runtime settings by exporting environment variables (for example `SERVER_PORT`, `MINUTES_BETWEEN`, etc.) before running `docker compose` or by editing the `environment` block inside `docker-compose.yml`. Any variable supported by `src/global/global.go` can be overridden this way.
+
+
+

@@ -6,7 +6,7 @@ import { Button } from "../Components/Button";
 import { PageTitle } from "../Components/PageTitle";
 import { UserCard } from "../Components/UserCard";
 import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
-import type { GetUserInfoResponse } from "../gen/v1/pkplaner_pb.js";
+import type { GetUserInfoResponse } from "../gen/pkplaner/v1/pkplaner_pb.js";
 import { attrs, setAccessToken } from "../utils";
 
 const MOBILE_MAX = "@media (max-width: 33.75em)" as const;

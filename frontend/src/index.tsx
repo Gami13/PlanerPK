@@ -11,7 +11,7 @@ import { MetaProvider } from "@solidjs/meta";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { rpc } from "./api_client";
 import { ENV } from "./env";
-import type { GetUserInfoResponse } from "./gen/v1/pkplaner_pb.js";
+import type { GetUserInfoResponse } from "./gen/pkplaner/v1/pkplaner_pb.js";
 import { Authorize } from "./routes/Authorize";
 import { Home } from "./routes/Home";
 import { NotFound } from "./routes/NotFound";
