@@ -9,4 +9,7 @@
 ✔ Cache timetable data in memory @done(26-02-20 01:31)
 ☐ Create deployment guide
 ☐ Write user guide
-☐ HIGH PRIORITY: fix parseClassText in extractor/parser.go currently sometimes swaps random properties, needs tests to verify correctness
+✔ HIGH PRIORITY: fix parseClassText in extractor/parser.go currently sometimes swaps random properties, needs tests to verify correctness @done(26-03-02 19:44)
+☐ Make the app build the whole timetable on start and when cache gets stale
+☐ Add option to select your language class (options should show all languages available for your WHOLE class, basically includes all groups that are in your semester)
+☐ Add option to override the time of the class (for groups that rescheduled their classes)
