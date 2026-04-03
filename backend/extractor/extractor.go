@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/global"
+	"github.com/gami13/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 

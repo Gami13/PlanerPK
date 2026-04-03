@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/gami13/PlanerPK/global"
 	"github.com/xuri/excelize/v2"
 )
 

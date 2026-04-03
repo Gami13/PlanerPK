@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/extractor"
+	"github.com/gami13/PlanerPK/gen/db"
+	"github.com/gami13/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )

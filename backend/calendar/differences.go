@@ -3,7 +3,7 @@ package calendar
 import (
 	"log/slog"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/types"
 	"google.golang.org/api/calendar/v3"
 )
 

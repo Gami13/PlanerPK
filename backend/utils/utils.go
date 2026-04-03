@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
+	"github.com/gami13/PlanerPK/gen/db"
 	"github.com/lmittmann/tint"
 	"golang.org/x/oauth2"
 )

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/types"
 )
 
 // mockLegend returns a Legend populated with sample teachers and locations

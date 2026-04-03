@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/gami13/PlanerPK/extractor"
+	"github.com/gami13/PlanerPK/global"
 )
 
 func main() {

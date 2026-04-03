@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1/pkplanerv1connect"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/gami13/PlanerPK/gen/db"
+	"github.com/gami13/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
+	"github.com/gami13/PlanerPK/global"
 
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"

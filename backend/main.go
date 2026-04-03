@@ -7,14 +7,14 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
+	"github.com/gami13/PlanerPK/gen/db"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/calendar"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/extractor"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
+	"github.com/gami13/PlanerPK/calendar"
+	"github.com/gami13/PlanerPK/extractor"
+	"github.com/gami13/PlanerPK/global"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/utils"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/webServer"
+	"github.com/gami13/PlanerPK/utils"
+	"github.com/gami13/PlanerPK/webServer"
 )
 
 //go:embed schema.sql

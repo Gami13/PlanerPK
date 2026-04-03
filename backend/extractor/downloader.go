@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
 	"github.com/antchfx/htmlquery"
+	"github.com/gami13/PlanerPK/global"
 )
 
 // Get the url of the timetable from the PKs website

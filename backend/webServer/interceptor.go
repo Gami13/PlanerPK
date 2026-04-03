@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/gen/db"
+	"github.com/gami13/PlanerPK/gen/db"
 )
 
 type contextKey string

@@ -7,12 +7,11 @@
 package pkplanerv1
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -695,7 +694,7 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\tAuthorize\x12\x1d.pkplaner.v1.AuthorizeRequest\x1a\x1e.pkplaner.v1.AuthorizeResponse\x12M\n" +
 	"\n" +
 	"GetAuthURL\x12\x1e.pkplaner.v1.GetAuthURLRequest\x1a\x1f.pkplaner.v1.GetAuthURLResponse\x12P\n" +
-	"\vGetUserInfo\x12\x1f.pkplaner.v1.GetUserInfoRequest\x1a .pkplaner.v1.GetUserInfoResponseB?Z=github.com/WoodPKrs/GoogleCalendarTimetable/gen/pkplaner/v1;pkplanerv1b\x06proto3"
+	"\vGetUserInfo\x12\x1f.pkplaner.v1.GetUserInfoRequest\x1a .pkplaner.v1.GetUserInfoResponseB7Z5github.com/gami13/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
 
 var (
 	file_pkplaner_v1_pkplaner_proto_rawDescOnce sync.Once

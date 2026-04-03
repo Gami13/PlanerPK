@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/types"
 )
 
 // Global so it's not recompiled every time the function is called

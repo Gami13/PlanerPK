@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/WoodPKrs/GoogleCalendarTimetable/global"
-	"github.com/WoodPKrs/GoogleCalendarTimetable/types"
+	"github.com/gami13/PlanerPK/global"
+	"github.com/gami13/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
