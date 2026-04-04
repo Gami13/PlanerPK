@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 
 	"connectrpc.com/connect"
 	"golang.org/x/oauth2"
@@ -11,23 +12,25 @@ import (
 	"github.com/gami13/PlanerPK/gen/db"
 	pkplanerv1 "github.com/gami13/PlanerPK/gen/pkplaner/v1"
 	"github.com/gami13/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
+	"github.com/gami13/PlanerPK/types"
 
 	"github.com/gami13/PlanerPK/calendar"
-	"github.com/gami13/PlanerPK/extractor"
-	"github.com/gami13/PlanerPK/global"
 )
 
 // PKPlanerHandler implements pkplanerv1connect.PKPlanerServiceHandler.
 type PKPlanerHandler struct {
 	pkplanerv1connect.UnimplementedPKPlanerServiceHandler
-	Query db.Querier
+	Query           db.Querier
+	AvailableGroups *atomic.Value
+	Timetable       *atomic.Value
+	Legend          *atomic.Value
 }
 
-func NewPKPlanerHandler(query db.Querier) *PKPlanerHandler {
+func NewPKPlanerHandler(query db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) *PKPlanerHandler {
 	if query == nil {
 		panic("Query is nil!")
 	}
-	return &PKPlanerHandler{Query: query}
+	return &PKPlanerHandler{Query: query, AvailableGroups: availableGroups, Timetable: timetable, Legend: legend}
 }
 
 // GetColumns returns available column groups parsed from the Excel header rows.
@@ -35,11 +38,7 @@ func (h *PKPlanerHandler) GetColumns(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.GetColumnsRequest],
 ) (*connect.Response[pkplanerv1.GetColumnsResponse], error) {
-	groups, err := extractor.GetAvailableGroups()
-	if err != nil {
-		slog.Error("Failed to get available groups", slog.Any("error", err))
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get available groups: %w", err))
-	}
+	groups := h.AvailableGroups.Load().([]types.ColumnGroup)
 
 	pbGroups := make([]*pkplanerv1.ColumnGroup, len(groups))
 	for i, g := range groups {
@@ -56,12 +55,7 @@ func (h *PKPlanerHandler) GetColumns(
 }
 
 // isValidColumn checks whether the given column index is present in the available groups.
-func isValidColumn(column int64) bool {
-	groups, err := extractor.GetAvailableGroups()
-	if err != nil {
-		slog.Warn("Column validation falling back to range check", slog.Any("error", err))
-		return column >= 0 && column <= int64(global.LAST_COLUMN)
-	}
+func isValidColumn(column int64, groups []types.ColumnGroup) bool {
 	for _, g := range groups {
 		if int64(g.Column) == column {
 			return true
@@ -80,7 +74,9 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	chosenColumn := int64(req.Msg.ChosenColumn)
 	slog.Info("Setting chosen column", slog.Int64("column", chosenColumn))
 
-	if !isValidColumn(chosenColumn) {
+	groups := h.AvailableGroups.Load().([]types.ColumnGroup)
+
+	if !isValidColumn(chosenColumn, groups) {
 		slog.Warn("Invalid chosen column value", slog.Int64("column", chosenColumn))
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid chosen column value"))
 	}
@@ -96,7 +92,8 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	}
 
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
-	go calendar.ImportTimetable(chosenColumn, &oauth2.Token{
+	allTimetables := h.Timetable.Load().(types.Timetable)
+	go calendar.ImportTimetable(allTimetables, chosenColumn, &oauth2.Token{
 		AccessToken:  user.AccessToken,
 		TokenType:    user.TokenType,
 		RefreshToken: user.RefreshToken,

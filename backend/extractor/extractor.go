@@ -10,28 +10,18 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-var timetableCache = types.NewTimetableCache()
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend) types.Timetable {
+	timetable := make(types.Timetable)
+	for _, group := range groups {
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend)
+		timetable[int64(group.Column)] = groupTimetable
 
-func markTimetableCacheStale() {
-	timetableCache.MarkStale()
-	markLegendCacheStale()
+	}
+	return timetable
 }
 
-func GetTimetable(groupColumn int64) (types.Timetable, error) {
-	if timetable, ok := timetableCache.GetIfFresh(groupColumn); ok {
-		slog.Info("Using cached timetable", slog.Int64("group_column", groupColumn))
-		return timetable, nil
-	}
-
-	file, err := openCurrentTimetableFile()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open timetable file: %w", err)
-	}
-	defer closeFile(file)
-
-	legend := extractLegend(file)
-
-	timetable := make(types.Timetable)
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend) types.GroupTimetable {
+	timetable := make(types.GroupTimetable)
 	days := getDaysStartEnd(file)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
@@ -44,9 +34,7 @@ func GetTimetable(groupColumn int64) (types.Timetable, error) {
 			slog.Int("classes", len(classes)))
 	}
 
-	timetableCache.SetFresh(groupColumn, timetable)
-
-	return timetable, nil
+	return timetable
 }
 
 func getDaysStartEnd(file *excelize.File) []types.Day {
@@ -87,9 +75,6 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 		classText := getCell(file, global.SHEET_NAME, i, int(groupColumn))
 		if classText != "" {
 
-			// if strings.Contains(classText, "angielski") {
-			// 	slog.Debug("Found English class", slog.String("class_text", classText))
-			// }
 			classEndTime := currentTime.Add(slotDuration)
 
 			class := parseClassText(classText, currentTime, classEndTime, day, legend)

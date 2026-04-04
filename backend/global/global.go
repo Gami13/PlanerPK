@@ -26,6 +26,8 @@ var (
 	CALENDAR_CREDENTIALS_PATH      = "../data/credentials.json"
 	LOGS_PATH                      = "../data/logs"
 	TIME_BETWEEN_SYNC_HOURS        = 72
+	TIMETABLE_CURRENT_STATS_NAME   = "current_timetable_stats.json"
+	JSON_INFO_LOCATION             = "../data"
 )
 
 // var LAST_ROW = 365

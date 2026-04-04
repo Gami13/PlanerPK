@@ -72,4 +72,3 @@ During startup the entrypoint writes `/app/static/env.js` with the value of `API
 Customize runtime settings by exporting environment variables (for example `SERVER_PORT`, `MINUTES_BETWEEN`, etc.) before running `docker compose` or by editing the `environment` block inside `docker-compose.yml`. Any variable supported by `src/global/global.go` can be overridden this way.
 
 
-

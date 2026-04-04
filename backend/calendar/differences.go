@@ -35,7 +35,7 @@ func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*
 	return eventsToDelete, eventsToAdd, unchangedEvents
 }
 
-func buildNewEventsMap(timetable types.Timetable) map[string]*calendar.Event {
+func buildNewEventsMap(timetable types.GroupTimetable) map[string]*calendar.Event {
 	newEvents := make(map[string]*calendar.Event)
 	for day, entry := range timetable {
 		slog.Debug("Processing day", slog.String("day", day.String()))

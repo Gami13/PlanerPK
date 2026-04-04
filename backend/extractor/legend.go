@@ -1,7 +1,6 @@
 package extractor
 
 import (
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -10,41 +9,11 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-var legendCache = types.NewLegendCache()
-
-func markLegendCacheStale() {
-	legendCache.MarkStale()
-}
-
-// GetLegend returns the parsed legend from the current timetable, using
-// the cache when available.
-func GetLegend() (*types.Legend, error) {
-	if legend, ok := legendCache.GetIfFresh(); ok {
-		slog.Info("Using cached legend")
-		return legend, nil
-	}
-
-	file, err := openCurrentTimetableFile()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open timetable file: %w", err)
-	}
-	defer closeFile(file)
-
-	legend := extractLegend(file)
-	legendCache.SetFresh(legend)
-
-	slog.Info("Extracted legend",
-		slog.Int("teachers", len(legend.Teachers)),
-		slog.Int("locations", len(legend.Locations)))
-
-	return legend, nil
-}
-
-// extractLegend scans the sheet for the row containing "Legenda" and "Sale"
+// ExtractLegend scans the sheet for the row containing "Legenda" and "Sale"
 // column headers, then parses teacher and location entries from the rows below.
 // Both sections share the same rows — teachers on the left, locations in the
 // Sale column.
-func extractLegend(file *excelize.File) *types.Legend {
+func ExtractLegend(file *excelize.File) *types.Legend {
 	rows, err := file.GetRows(global.SHEET_NAME)
 	if err != nil {
 		slog.Error("Failed to get rows for legend extraction", slog.Any("error", err))

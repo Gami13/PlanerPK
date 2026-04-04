@@ -11,7 +11,8 @@ import (
 func main() {
 	global.LoadEnvVariables()
 
-	legend, err := extractor.GetLegend()
+	file, err := extractor.OpenCurrentTimetableFile()
+	legend := extractor.ExtractLegend(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

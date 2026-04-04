@@ -1,6 +1,8 @@
 package extractor
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -9,14 +11,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"time"
+	"strings"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/gami13/PlanerPK/global"
+	"github.com/gami13/PlanerPK/types"
+	"github.com/xuri/excelize/v2"
 )
 
-// Get the url of the timetable from the PKs website
-func FetchTimetableUrl() (string, error) {
+func fetchTimetableUrl() (string, error) {
 	doc, err := htmlquery.LoadURL(global.TIMETABLE_URL)
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
@@ -26,91 +29,183 @@ func FetchTimetableUrl() (string, error) {
 	return link, nil
 }
 
-// Check if the timetable changed compared to the PKs timetable
-func DidChange(timetablePath string, url string) (bool, error) {
-	resp, err := http.Head(url)
+var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
+
+func getCurrentXlsxPath() (filePath string, err error) {
+	absoluteDestination, err := filepath.Abs(global.TIMETABLE_CURRENT_DESTINATION)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	defer func() {
-		logCloseWarn("response body", resp.Body.Close())
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	entries, err := os.ReadDir(absoluteDestination)
+	if err != nil {
+		return "", err
 	}
-
-	remoteLastModified := resp.Header.Get("Last-Modified")
-	remoteContentLength := resp.Header.Get("Content-Length")
-
-	localFileInfo, err := os.Stat(timetablePath)
-	if os.IsNotExist(err) {
-		return true, nil
-	} else if err != nil {
-		return false, err
+	if len(entries) < 1 {
+		return "", ErrNoXlsxFile
 	}
 
-	localLastModified := localFileInfo.ModTime().UTC().Format(http.TimeFormat)
-	localContentLength := fmt.Sprintf("%d", localFileInfo.Size())
-
-	if localLastModified != remoteLastModified || localContentLength != remoteContentLength {
-		return true, nil
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xlsx") {
+			return filepath.Join(absoluteDestination, entry.Name()), nil
+		}
 	}
 
-	return false, nil
+	return "", ErrNoXlsxFile
+}
+
+func setLatestTimetableInfo(lastModified string, contentLength string, filePath string) (stats types.TimetableFileStats, err error) {
+	stats = types.TimetableFileStats{
+		LastModified:  lastModified,
+		ContentLength: contentLength,
+		Path:          filePath,
+	}
+
+	jsonString, err := json.Marshal(stats)
+	if err != nil {
+		return stats, err
+	}
+
+	absoluteDestination, err := filepath.Abs(global.JSON_INFO_LOCATION)
+	if err != nil {
+		return stats, err
+	}
+	destination := filepath.Join(absoluteDestination, global.TIMETABLE_CURRENT_STATS_NAME)
+	err = os.WriteFile(destination, jsonString, 0644)
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
+func getLatestTimetableInfo() (stats types.TimetableFileStats, err error) {
+	absoluteDestination, err := filepath.Abs(global.JSON_INFO_LOCATION)
+	if err != nil {
+		return types.TimetableFileStats{}, err
+	}
+
+	destination := filepath.Join(absoluteDestination, global.TIMETABLE_CURRENT_STATS_NAME)
+	jsonBytes, err := os.ReadFile(destination)
+	if err != nil {
+		return types.TimetableFileStats{}, err
+	}
+
+	err = json.Unmarshal(jsonBytes, &stats)
+	if err != nil {
+		return types.TimetableFileStats{}, err
+	}
+	return stats, nil
+}
+
+func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
+	remoteTimetableUrl, err := fetchTimetableUrl()
+	if err != nil {
+		return false, "", err
+	}
+
+	response, err := http.Head(remoteTimetableUrl)
+	if err != nil {
+		return false, "", err
+	}
+	defer logCloseWarn("response body", response.Body.Close())
+
+	if response.StatusCode != http.StatusOK {
+		return false, "", fmt.Errorf("HTTP %d: %s", response.StatusCode, response.Status)
+	}
+
+	localFileInfo, err := getLatestTimetableInfo()
+	if err != nil {
+		return false, "", err
+	}
+
+	remoteLastModified := response.Header.Get("Last-Modified")
+	remoteContentLength := response.Header.Get("Content-Length")
+
+	if localFileInfo.LastModified != remoteLastModified || localFileInfo.ContentLength != remoteContentLength {
+		slog.Info("Last modified", "local", localFileInfo.LastModified, "remote", remoteLastModified)
+		slog.Info("Content length", "local", localFileInfo.ContentLength, "remote", remoteContentLength)
+		return true, remoteTimetableUrl, nil
+	}
+
+	return false, localFileInfo.Path, nil
 }
 
 // Downloads the timetable from PKs website
-// Returns filepath.Abs(TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
-func DownloadTimetable(url string) (string, error) {
-	// Get the absolute path to the destination
+// Returns types.TimetableFileStats
+func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 	destination, err := filepath.Abs(global.TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
 	if err != nil {
-		return destination, err
+		return types.TimetableFileStats{}, err
 	}
 
-	resp, err := http.Get(url)
+	response, err := http.Get(url)
 	if err != nil {
-		return destination, fmt.Errorf("failed to download the timetable: %w", err)
+		return types.TimetableFileStats{}, fmt.Errorf("failed to download the timetable: %w", err)
 	}
-	defer func() {
-		logCloseWarn("response body", resp.Body.Close())
-	}()
+	defer logCloseWarn("response body", response.Body.Close())
 
-	if resp.StatusCode != http.StatusOK {
-		return destination, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
-	lastModified := resp.Header.Get("Last-Modified")
-	lastModifiedTime, err := time.Parse(time.RFC1123, lastModified)
-	if err != nil {
-		return destination, fmt.Errorf("failed to parse the last modified time: %w", err)
+	if response.StatusCode != http.StatusOK {
+		return types.TimetableFileStats{}, fmt.Errorf("HTTP %d: %s", response.StatusCode, response.Status)
 	}
 
 	file, err := os.Create(destination)
 	if err != nil {
-		return destination, fmt.Errorf("failed to create the timetable file: %w", err)
+		return types.TimetableFileStats{}, fmt.Errorf("failed to create the timetable file: %w", err)
 	}
 	defer func() {
 		logCloseWarn("timetable file", file.Close())
 	}()
-	_, err = io.Copy(file, resp.Body)
+
+	_, err = io.Copy(file, response.Body)
 	if err != nil {
-		return destination, fmt.Errorf("failed to save the timetable file: %w", err)
+		return types.TimetableFileStats{}, fmt.Errorf("failed to save the timetable file: %w", err)
 	}
 
-	// Set properties so they are the same as the one from the download link for later comparison of possible changes
-	err = os.Chtimes(destination, lastModifiedTime, lastModifiedTime)
-	if err != nil {
-		return destination, fmt.Errorf("failed to set file times: %w", err)
-	}
+	lastModified := response.Header.Get("Last-Modified")
+	contentLength := response.Header.Get("Content-Length")
 
-	return destination, err
+	stats, err = setLatestTimetableInfo(lastModified, contentLength, destination)
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
+func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err error) {
+	origin := stats.Path
+
+	timetableDestination, err := filepath.Abs(global.TIMETABLE_CURRENT_DESTINATION)
+	if err != nil {
+		return "", err
+	}
+	doesExist := true
+	currentXlsxPath, err := getCurrentXlsxPath()
+	if err != nil {
+		if errors.Is(err, ErrNoXlsxFile) {
+			doesExist = false
+		} else {
+			return "", err
+		}
+	}
+	newXlsxPath, err := xls2xlsx(origin, timetableDestination)
+	if err != nil {
+		return "", err
+	}
+	if doesExist {
+
+		err = os.Remove(currentXlsxPath)
+		if err != nil {
+			// !Hopefully neva eva happens
+			// TODO: figure out how to handle not removing the old file if the new one was also created
+			slog.Error("Failed to remove old timetable file", "error", err)
+			return newXlsxPath, err
+		}
+	}
+	return newXlsxPath, nil
 }
 
 // Convert an .xls file to an .xlsx file
 // Returns the path to the .xlsx file
-func Xls2Xlsx(src string, dest string) (string, error) {
+func xls2xlsx(src string, dest string) (string, error) {
 	// Windows
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
@@ -122,92 +217,16 @@ func Xls2Xlsx(src string, dest string) (string, error) {
 	return filepath.Join(dest, filepath.Base(src)+"x"), cmd.Run()
 }
 
-// Download a timetable from the PK website, convert it to .xlsx and move to the current timetable destination
-// Returns the path global.TIMETABLE_CURRENT_DESTINATION + filepath.Base(timetablePathXlsx)
-func DownloadAndProcessTimetable(url string) (string, error) {
-	logger := slog.With(slog.String("operation", "download_and_process_timetable"))
-
-	// Get the current timetable that will be removed after a successfull download
-	currentTimetablePathXls, err := getCurrentTimetablePath()
+func OpenCurrentTimetableFile() (*excelize.File, error) {
+	timetablePath, err := getCurrentXlsxPath()
 	if err != nil {
-		logger.Error("Failed to get current timetable path", slog.Any("error", err))
-		return "", fmt.Errorf("failed to get current timetable path: %w", err)
+		return nil, fmt.Errorf("failed to get current timetable: %w", err)
 	}
 
-	// Download the new timetable
-	timetablePathXls, err := DownloadTimetable(url)
+	file, err := excelize.OpenFile(timetablePath)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to open timetable file: %w", err)
 	}
 
-	// Convert .xls to .xlsx
-	timetablePathXlsx, err := Xls2Xlsx(timetablePathXls, global.TIMETABLE_DOWNLOAD_DESTINATION)
-	if err != nil {
-		return "", err
-	}
-
-	// Move the timetable to the current timetable destination
-	newTimetablePathXls := filepath.Join(global.TIMETABLE_CURRENT_DESTINATION, filepath.Base(timetablePathXls))
-	moveFileOrWarn(timetablePathXls, newTimetablePathXls, "new_xls")
-
-	newTimetablePathXlsx := filepath.Join(global.TIMETABLE_CURRENT_DESTINATION, filepath.Base(timetablePathXlsx))
-	moveFileOrWarn(timetablePathXlsx, newTimetablePathXlsx, "new_xlsx")
-
-	// Delete the old timetable
-	removeFileOrWarn(currentTimetablePathXls, "old_xls")
-
-	currentTimetablePathXlsx := currentTimetablePathXls + "x"
-	removeFileOrWarn(currentTimetablePathXlsx, "old_xlsx")
-
-	return newTimetablePathXlsx, nil
-}
-
-// Updates the timetable if it changed, using FetchTimetableUrl, DidChange and DownloadAndProcessTimetable
-// Returns (didChange bool, timetablePath string, err error)
-func UpdateTimetable() (didChange bool, path string, err error) {
-	logger := slog.With(slog.String("operation", "update_timetable"))
-
-	timetableUrl, err := FetchTimetableUrl()
-	if err != nil {
-		logger.Error("Failed to fetch timetable URL", slog.Any("error", err))
-		return false, "", err
-	}
-
-	logger.Debug("Fetched timetable URL", slog.String("url", timetableUrl))
-
-	timetablePath, err := getCurrentTimetablePath()
-	if err != nil {
-		logger.Info("No timetable present, downloading new one")
-
-		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
-		if err != nil {
-			logger.Error("Failed to download and process timetable", slog.Any("error", err))
-			return false, "", err
-		}
-		markAvailableGroupsStale()
-		markTimetableCacheStale()
-		logger.Info("Downloaded initial timetable", slog.String("path", timetablePath))
-		return true, timetablePath, nil
-	}
-
-	didChange, err = DidChange(timetablePath, timetableUrl)
-	if err != nil {
-		logger.Error("Failed to check if timetable changed", slog.Any("error", err))
-		return didChange, timetablePath, err
-	}
-
-	if didChange {
-		logger.Info("Timetable changed, downloading new version")
-		timetablePath, err = DownloadAndProcessTimetable(timetableUrl)
-		if err != nil {
-			logger.Error("Failed to download and process timetable", slog.Any("error", err))
-			return didChange, timetablePath, err
-		}
-		markAvailableGroupsStale()
-		markTimetableCacheStale()
-		logger.Info("Downloaded updated timetable", slog.String("path", timetablePath))
-		return didChange, timetablePath, nil
-	}
-	logger.Info("No timetable changes detected")
-	return didChange, timetablePath + "x", nil
+	return file, nil
 }

@@ -17,24 +17,8 @@ type mergeRange struct {
 	Value              string
 }
 
-var availableGroupsCache = types.NewAvailableGroupsCache()
-
-func markAvailableGroupsStale() {
-	availableGroupsCache.MarkStale()
-}
-
-// GetAvailableGroups parses the Excel header rows and returns available column groups.
-func GetAvailableGroups() ([]types.ColumnGroup, error) {
-	if groups, ok := availableGroupsCache.GetIfFresh(); ok {
-		slog.Info("Using cached available groups", slog.Int("count", len(groups)))
-		return groups, nil
-	}
-
-	file, err := openCurrentTimetableFile()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open timetable file: %w", err)
-	}
-	defer closeFile(file)
+// BuildAvailableGroups parses the Excel header rows and returns available column groups.
+func BuildAvailableGroups(file *excelize.File) ([]types.ColumnGroup, error) {
 	dataStartRow, err := findDataStartRow(file)
 	if err != nil {
 		return nil, err
@@ -48,8 +32,6 @@ func GetAvailableGroups() ([]types.ColumnGroup, error) {
 
 	mergeLookup := buildMergeLookup(file)
 	groups := buildColumnGroups(file, groupRow, categoryRow, mergeLookup)
-
-	availableGroupsCache.SetFresh(groups)
 
 	return groups, nil
 }

@@ -226,6 +226,11 @@ func TestParseClassText(t *testing.T) {
 			want:  types.Class{},
 		},
 		{
+			name:  "NewEnglish",
+			input: "J.angielski          C1  gr 12 i część gr 11              ćw.            mgr E. Szabat        s. 139 SJO     ",
+			want:  types.Class{Name: "J.angielski", Type: "ćw.", Teacher: "mgr E. Szabat", Level: "C1", Location: "s. 139 SJO", AdditionalInfo: "gr 12 i część gr 11"},
+		},
+		{
 			name:      "NilLegend",
 			input:     "AiSD     lab.     JD     s. 131",
 			nilLegend: true,
@@ -245,6 +250,7 @@ func TestParseClassText(t *testing.T) {
 				lg = nil
 			}
 			class := parseClassText(tt.input, testStartTime, testEndTime, testDay, lg)
+			t.Log("Class test", "parsed", class)
 			assertStructContains(t, class, tt.want)
 			if tt.extraCheck != nil {
 				tt.extraCheck(t, class)

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
+	"sync/atomic"
 
 	"github.com/gami13/PlanerPK/gen/db"
 	"github.com/gami13/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
@@ -81,42 +81,19 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db db.Querier) {
+func Start(db db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) {
 	query := db
-	handler := NewPKPlanerHandler(query)
+	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend)
 
 	mux := http.NewServeMux()
-	rateLimiter := NewRateLimiter()
-	generalPolicy := RateLimitPolicy{
-		Name:     "general",
-		Requests: global.GENERAL_RATE_LIMIT_PER_MINUTE,
-		Window:   time.Minute,
-	}
-	setChosenColumnPolicy := RateLimitPolicy{
-		Name:        "setChosenColumn-strict",
-		Requests:    3,
-		Window:      time.Hour,
-		BanDuration: 7 * 24 * time.Hour,
-	}
 
-	// Mount ConnectRPC service behind rate limiting.
 	interceptors := connect.WithInterceptors(AuthInterceptor(query))
 	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler, interceptors)
 
-	// Wrap the SetChosenColumn endpoint with the strict policy.
-	mux.Handle(rpcPath, rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/SetChosenColumn") {
-			rateLimitMiddleware(rateLimiter, setChosenColumnPolicy, rpcHandler).ServeHTTP(w, r)
-			return
-		}
-		rpcHandler.ServeHTTP(w, r)
-	})))
+	mux.Handle(rpcPath, rpcHandler)
 
-	// Frontend static files (catch-all).
+	mux.Handle("/", http.HandlerFunc(ServeFrontend))
 
-	mux.Handle("/", rateLimitMiddleware(rateLimiter, generalPolicy, http.HandlerFunc(ServeFrontend)))
-
-	// CORS + h2c for HTTP/2 cleartext (Connect protocol).
 	corsHandler := corsMiddleware(mux)
 	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
 

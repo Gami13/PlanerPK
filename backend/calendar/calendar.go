@@ -5,23 +5,20 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/gami13/PlanerPK/extractor"
 	"github.com/gami13/PlanerPK/gen/db"
 	"github.com/gami13/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )
 
-func ImportTimetable(groupColumn int64, token *oauth2.Token, queries db.Querier) {
+func ImportTimetable(allTimetables types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
 
-	timetable, err := extractor.GetTimetable(groupColumn)
-	if err != nil {
-		slog.Error("Failed to get timetable",
-			slog.Int64("group_column", groupColumn),
-			slog.Any("error", err))
+	timetable, ok := allTimetables[groupColumn]
+	if !ok {
+		slog.Error("Group column not found in timetable", slog.Int64("group_column", groupColumn))
 		return
 	}
 	srv, err := createService(ctx, token)

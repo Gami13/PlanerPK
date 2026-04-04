@@ -1,13 +1,19 @@
 package types
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Day struct {
 	StartingRow int
 	EndingRow   int
 	WeekDay     time.Weekday
 }
-type Timetable = map[time.Weekday][]Class
+type (
+	GroupTimetable = map[time.Weekday][]Class
+	Timetable      map[int64]GroupTimetable
+)
 
 const ADDED_BY = "GoogleCalendarTimetableImporter by Gami & Frytak"
 
@@ -30,4 +36,14 @@ type ColumnGroup struct {
 	Column   int    `json:"column"`
 	Label    string `json:"label"`
 	Category string `json:"category"`
+}
+
+func (timetable *Timetable) Print() {
+	for k, v := range *timetable {
+		for day, classes := range v {
+			for _, class := range classes {
+				fmt.Println(fmt.Sprintf("%d %d %s", k, day, class.String()))
+			}
+		}
+	}
 }
