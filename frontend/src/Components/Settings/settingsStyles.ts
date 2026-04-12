@@ -25,11 +25,18 @@ export const flexColumn = {
 export const settingsStyles = stylex.create({
 	columnSelect: {
 		...inputBase,
-		borderRadius: borderRadius.lg,
-		paddingBlock: "0.6em",
-		paddingInline: "0.9em",
+		borderRadius: borderRadius.md,
+		paddingBlock: "10px",
+		paddingInline: "14px",
 		maxWidth: "20em",
 		width: "100%",
+		outline: {
+			default: "none",
+			":focus": "2px solid #039be5",
+		},
+		outlineOffset: {
+			":focus": "-1px",
+		},
 	},
 	overrideGrid: {
 		...flexColumn,
@@ -109,10 +116,17 @@ export const settingsStyles = stylex.create({
 	timeInput: {
 		...inputBase,
 		borderRadius: borderRadius.sm,
-		paddingBlock: "0.4em",
-		paddingInline: "0.6em",
+		paddingBlock: "8px",
+		paddingInline: "12px",
 		fontSize: "0.9em",
 		width: "12em",
+		outline: {
+			default: "none",
+			":focus": "2px solid #039be5",
+		},
+		outlineOffset: {
+			":focus": "-1px",
+		},
 	},
 	saveRow: {
 		...flexRow,
