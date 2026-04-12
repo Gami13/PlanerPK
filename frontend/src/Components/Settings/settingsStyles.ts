@@ -1,30 +1,28 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "../../styles/tokens.stylex";
-
-const MEDIUM_SCREEN = "@media (min-width: 48em)" as const;
+import { borderRadius, breakpoints, colors, spacing } from "../../styles/tokens.stylex";
 
 export const settingsStyles = stylex.create({
 	main: {
-		padding: "2em",
-		gap: "2em",
+		padding: spacing.xl,
+		gap: spacing.xl,
 		alignItems: "center",
 		display: "flex",
 		flexDirection: "column",
 		width: "100%",
 	},
 	basicSection: {
-		gap: "1em",
+		gap: spacing.md,
 		alignItems: "center",
 		display: "flex",
 		flexDirection: "column",
 		width: "100%",
 	},
 	description: {
-		gap: "0.5em",
+		gap: spacing.sm,
 		display: "flex",
 		flexDirection: "column",
 		textAlign: {
-			[MEDIUM_SCREEN]: "left",
+			[breakpoints.desktop]: "left",
 			default: "center",
 		},
 		width: "min(100%, 48em)",
@@ -34,13 +32,13 @@ export const settingsStyles = stylex.create({
 		fontWeight: 500,
 	},
 	setting: {
-		padding: "1.5em",
+		padding: spacing.lg,
 		borderColor: colors.defaultBorder,
-		borderRadius: "16px",
+		borderRadius: borderRadius.xl,
 		borderStyle: "solid",
 		borderWidth: "1px",
 		gap: "0.75em",
-		backgroundColor: "#fff",
+		backgroundColor: colors.white,
 		display: "flex",
 		flexDirection: "column",
 		width: "min(100%, 48em)",
@@ -56,7 +54,7 @@ export const settingsStyles = stylex.create({
 	},
 	columnSelect: {
 		borderColor: colors.defaultBorder,
-		borderRadius: "12px",
+		borderRadius: borderRadius.lg,
 		borderStyle: "solid",
 		borderWidth: "1px",
 		paddingBlock: "0.6em",
@@ -81,10 +79,10 @@ export const settingsStyles = stylex.create({
 	},
 	addOverrideSelect: {
 		borderColor: colors.defaultBorder,
-		borderRadius: "10px",
+		borderRadius: borderRadius.md,
 		borderStyle: "solid",
 		borderWidth: "1px",
-		paddingBlock: "0.5em",
+		paddingBlock: spacing.sm,
 		paddingInline: "0.75em",
 		color: colors.primaryText,
 		fontSize: "0.95em",
@@ -93,20 +91,20 @@ export const settingsStyles = stylex.create({
 	},
 	classCard: {
 		borderColor: colors.defaultBorder,
-		borderRadius: "12px",
+		borderRadius: borderRadius.lg,
 		borderStyle: "solid",
 		borderWidth: "1px",
 		gap: "0.75em",
-		paddingBlock: "1em",
+		paddingBlock: spacing.md,
 		paddingInline: "1.25em",
 		transition: "border-color 0.15s ease, background-color 0.15s ease",
-		backgroundColor: "#fafbfd",
+		backgroundColor: colors.lightCardBg,
 		display: "flex",
 		flexDirection: "column",
 	},
 	classCardActive: {
 		borderColor: colors.primary,
-		backgroundColor: "#f0f9ff",
+		backgroundColor: colors.primaryLightBg,
 	},
 	classCardRow: {
 		gap: "0.5em 1.5em",
@@ -132,7 +130,7 @@ export const settingsStyles = stylex.create({
 		flexWrap: "wrap",
 	},
 	checkboxGroup: {
-		gap: "0.25em",
+		gap: spacing.xs,
 		display: "flex",
 		flexDirection: "column",
 	},
@@ -145,7 +143,7 @@ export const settingsStyles = stylex.create({
 		fontSize: "0.88em",
 	},
 	timeGroup: {
-		gap: "0.25em",
+		gap: spacing.xs,
 		display: "flex",
 		flexDirection: "column",
 	},
@@ -156,7 +154,7 @@ export const settingsStyles = stylex.create({
 	},
 	timeInput: {
 		borderColor: colors.defaultBorder,
-		borderRadius: "8px",
+		borderRadius: borderRadius.sm,
 		borderStyle: "solid",
 		borderWidth: "1px",
 		paddingBlock: "0.4em",
@@ -180,8 +178,8 @@ export const settingsStyles = stylex.create({
 		fontSize: "0.82em",
 	},
 	emptyNote: {
-		paddingBlock: "1em",
-		paddingInline: "0",
+		paddingBlock: spacing.md,
+		paddingInline: 0,
 		color: colors.secondaryText,
 		fontSize: "0.9em",
 		textAlign: "center",

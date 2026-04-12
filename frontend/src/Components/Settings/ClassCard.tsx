@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show, createSignal } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS } from "../../constants";
+import { DAY_LABELS, UI_MESSAGES } from "../../constants";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { setClassOverride } from "../../services/pkplaner";
 import { attrs } from "../../utils";
@@ -13,33 +13,45 @@ type ClassCardProps = {
 	onSaved: (updated: ClassOverride) => void;
 };
 
+type CardState = {
+	isHidden: boolean;
+	isTransparent: boolean;
+	startHour: string;
+	status: "idle" | "saving" | "ok" | "error";
+};
+
 export function ClassCard(props: ClassCardProps) {
-	const initial = () => props.override;
+	const [cardState, setCardState] = createSignal<CardState>({
+		isHidden: props.override?.isHidden ?? false,
+		isTransparent: props.override?.isTransparent ?? false,
+		startHour: props.override?.startHour ?? "",
+		status: "idle",
+	});
 
-	const [isHidden, setIsHidden] = createSignal(initial()?.isHidden ?? false);
-	const [isTransparent, setIsTransparent] = createSignal(initial()?.isTransparent ?? false);
-	const [startHour, setStartHour] = createSignal(initial()?.startHour ?? "");
-	const [status, setStatus] = createSignal<"idle" | "saving" | "ok" | "error">("idle");
-
-	const hasActiveOverride = () => isHidden() || isTransparent() || startHour() !== "";
+	const hasActiveOverride = () => {
+		const state = cardState();
+		return state.isHidden || state.isTransparent || state.startHour !== "";
+	};
 
 	async function save() {
-		setStatus("saving");
+		setCardState((prev) => ({ ...prev, status: "saving" }));
+
+		const state = cardState();
 		const updatedOverride = {
 			classHash: props.classInfo.hash,
-			startHour: startHour(),
-			isHidden: isHidden(),
-			isTransparent: isTransparent(),
+			startHour: state.startHour,
+			isHidden: state.isHidden,
+			isTransparent: state.isTransparent,
 		} as ClassOverride;
 
 		const success = await setClassOverride(updatedOverride);
 		if (success) {
-			setStatus("ok");
+			setCardState((prev) => ({ ...prev, status: "ok" }));
 			props.onSaved(updatedOverride);
-			setTimeout(() => setStatus("idle"), 2500);
+			setTimeout(() => setCardState((prev) => ({ ...prev, status: "idle" })), 2500);
 		} else {
-			setStatus("error");
-			setTimeout(() => setStatus("idle"), 3000);
+			setCardState((prev) => ({ ...prev, status: "error" }));
+			setTimeout(() => setCardState((prev) => ({ ...prev, status: "idle" })), 3000);
 		}
 	}
 
@@ -69,10 +81,15 @@ export function ClassCard(props: ClassCardProps) {
 						<input
 							id={`hidden-${props.classInfo.hash}`}
 							type="checkbox"
-							checked={isHidden()}
-							onChange={(e) => setIsHidden(e.currentTarget.checked)}
+							checked={cardState().isHidden}
+							onChange={(e) =>
+								setCardState((prev) => ({
+									...prev,
+									isHidden: e.currentTarget.checked,
+								}))
+							}
 						/>
-						Ukryj zajęcia
+						{UI_MESSAGES.HIDE_CLASS}
 					</label>
 					<label
 						{...attrs(stylex.props(settingsStyles.checkboxLabel))}
@@ -81,23 +98,33 @@ export function ClassCard(props: ClassCardProps) {
 						<input
 							id={`transparent-${props.classInfo.hash}`}
 							type="checkbox"
-							checked={isTransparent()}
-							onChange={(e) => setIsTransparent(e.currentTarget.checked)}
+							checked={cardState().isTransparent}
+							onChange={(e) =>
+								setCardState((prev) => ({
+									...prev,
+									isTransparent: e.currentTarget.checked,
+								}))
+							}
 						/>
-						Pokaż poprzednią pozycję jako transparentną
+						{UI_MESSAGES.SHOW_TRANSPARENT}
 					</label>
 				</div>
 
-				<Show when={!isHidden()}>
+				<Show when={!cardState().isHidden}>
 					<div {...attrs(stylex.props(settingsStyles.timeGroup))}>
 						<label {...attrs(stylex.props(settingsStyles.timeLabel))} for={`start-hour-${props.classInfo.hash}`}>
-							Przesuń na godzinę
+							{UI_MESSAGES.SHIFT_TIME}
 						</label>
 						<input
 							id={`start-hour-${props.classInfo.hash}`}
 							type="time"
-							value={startHour()}
-							onInput={(e) => setStartHour(e.currentTarget.value)}
+							value={cardState().startHour}
+							onInput={(e) =>
+								setCardState((prev) => ({
+									...prev,
+									startHour: e.currentTarget.value,
+								}))
+							}
 							{...attrs(stylex.props(settingsStyles.timeInput))}
 						/>
 					</div>
@@ -106,13 +133,13 @@ export function ClassCard(props: ClassCardProps) {
 
 			<div {...attrs(stylex.props(settingsStyles.saveRow))}>
 				<Button isPrimary={true} onClick={save}>
-					{status() === "saving" ? "Zapisywanie…" : "Zapisz"}
+					{cardState().status === "saving" ? UI_MESSAGES.SAVING : UI_MESSAGES.SAVE}
 				</Button>
-				<Show when={status() === "ok"}>
-					<span {...attrs(stylex.props(settingsStyles.feedbackSuccess))}>✓ Zapisano</span>
+				<Show when={cardState().status === "ok"}>
+					<span {...attrs(stylex.props(settingsStyles.feedbackSuccess))}>{UI_MESSAGES.SAVED}</span>
 				</Show>
-				<Show when={status() === "error"}>
-					<span {...attrs(stylex.props(settingsStyles.feedbackError))}>✗ Błąd zapisu</span>
+				<Show when={cardState().status === "error"}>
+					<span {...attrs(stylex.props(settingsStyles.feedbackError))}>{UI_MESSAGES.SAVE_ERROR}</span>
 				</Show>
 			</div>
 		</div>

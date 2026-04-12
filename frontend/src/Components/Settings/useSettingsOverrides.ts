@@ -3,24 +3,30 @@ import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb
 
 type MutateOverrides = (mutator: (prev: Map<string, ClassOverride> | undefined) => Map<string, ClassOverride>) => void;
 
+type HookState = {
+	addedClassHashes: Set<string>;
+	selectedClassHash: string;
+};
+
 export function useSettingsOverrides(
 	classes: Accessor<ClassInfo[] | undefined>,
 	overrides: Accessor<Map<string, ClassOverride> | undefined>,
 	mutateOverrides: MutateOverrides
 ) {
-	const [addedClassHashes, setAddedClassHashes] = createSignal<Set<string>>(new Set());
-	const [selectedClassHash, setSelectedClassHash] = createSignal("");
+	const [state, setState] = createSignal<HookState>({
+		addedClassHashes: new Set(),
+		selectedClassHash: "",
+	});
 
 	function handleOverrideSaved(updated: ClassOverride) {
 		mutateOverrides((prev) => {
 			const next = new Map(prev ?? []);
 			if (!updated.isHidden && !updated.isTransparent && updated.startHour === "") {
 				next.delete(updated.classHash);
-				setAddedClassHashes((old) => {
-					const newSet = new Set(old);
-					newSet.delete(updated.classHash);
-					return newSet;
-				});
+				setState((prev) => ({
+					...prev,
+					addedClassHashes: new Set([...prev.addedClassHashes].filter((h) => h !== updated.classHash)),
+				}));
 			} else {
 				next.set(updated.classHash, updated);
 			}
@@ -31,28 +37,27 @@ export function useSettingsOverrides(
 	const visibleClasses = createMemo(() => {
 		const classesValue = classes() ?? [];
 		const overridesValue = overrides();
-		const added = addedClassHashes();
+		const added = state().addedClassHashes;
 		return classesValue.filter((cls) => overridesValue?.has(cls.hash) || added.has(cls.hash));
 	});
 
 	const classesAvailableToAdd = createMemo(() => {
 		const classesValue = classes() ?? [];
 		const overridesValue = overrides();
-		const added = addedClassHashes();
+		const added = state().addedClassHashes;
 		return classesValue.filter((cls) => !overridesValue?.has(cls.hash) && !added.has(cls.hash));
 	});
 
 	function addSelectedClassToOverrides() {
-		const classHash = selectedClassHash();
+		const currentState = state();
+		const classHash = currentState.selectedClassHash;
 		if (!classHash) {
 			return;
 		}
-		setAddedClassHashes((old) => {
-			const newSet = new Set(old);
-			newSet.add(classHash);
-			return newSet;
-		});
-		setSelectedClassHash("");
+		setState((prev) => ({
+			selectedClassHash: "",
+			addedClassHashes: new Set([...prev.addedClassHashes, classHash]),
+		}));
 	}
 
 	return {
@@ -60,7 +65,7 @@ export function useSettingsOverrides(
 		visibleClasses,
 		classesAvailableToAdd,
 		addSelectedClassToOverrides,
-		selectedClassHash,
-		setSelectedClassHash,
+		selectedClassHash: () => state().selectedClassHash,
+		setSelectedClassHash: (value: string) => setState((prev) => ({ ...prev, selectedClassHash: value })),
 	};
 }

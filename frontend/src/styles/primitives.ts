@@ -1,13 +1,13 @@
 import * as stylex from "@stylexjs/stylex";
-import { colors } from "./tokens.stylex";
+import { borderRadius, colors, spacing } from "./tokens.stylex";
 
 export const primitiveStyles = stylex.create({
 	buttonBase: {
-		borderRadius: "9999px",
+		borderRadius: borderRadius.full,
 		borderStyle: "none",
 		borderWidth: 0,
 		paddingBlock: "0.45em",
-		paddingInline: "1.3em",
+		paddingInline: spacing.lg,
 		textDecoration: "none",
 		transition: "transform 0.15s ease, box-shadow 0.15s ease",
 		alignItems: "center",
@@ -20,20 +20,20 @@ export const primitiveStyles = stylex.create({
 	},
 	buttonPrimary: {
 		backgroundColor: colors.primary,
-		color: "#fff",
+		color: colors.white,
 	},
 	buttonSecondary: {
 		borderColor: colors.defaultBorder,
 		borderStyle: "solid",
 		borderWidth: "1px",
-		backgroundColor: "#fff",
+		backgroundColor: colors.white,
 		color: colors.primaryText,
 	},
 	pillBase: {
-		borderRadius: "999px",
-		paddingBlock: "0.35rem",
-		paddingInline: "0.75rem",
-		backgroundColor: "#f4f6fb",
+		borderRadius: borderRadius.full,
+		paddingBlock: spacing.xs,
+		paddingInline: spacing.md,
+		backgroundColor: colors.lightBg,
 		color: colors.secondaryText,
 		fontSize: "0.8rem",
 	},

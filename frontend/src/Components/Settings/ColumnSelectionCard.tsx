@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { For, Show } from "solid-js";
 import { Button } from "../../Components/Button";
+import { UI_MESSAGES } from "../../constants";
 import { ColumnGroup } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { attrs, groupByCategory } from "../../utils";
 import { settingsStyles } from "./settingsStyles";
@@ -33,10 +34,10 @@ export function ColumnSelectionCard(props: ColumnSelectionCardProps) {
 			<p {...attrs(stylex.props(settingsStyles.settingDescription))}>Obecna kolumna: {props.currentColumnLabel}</p>
 			<select {...attrs(stylex.props(settingsStyles.columnSelect))} name="chosen_column" id="chosen_column">
 				<Show when={props.columnsError}>
-					<option disabled>Błąd ładowania kolumn</option>
+					<option disabled>{UI_MESSAGES.ERROR_LOADING_COLUMNS}</option>
 				</Show>
 				<Show when={props.columnsLoading}>
-					<option disabled>Ładowanie...</option>
+					<option disabled>{UI_MESSAGES.LOADING}</option>
 				</Show>
 				<Show when={props.columns}>
 					<For each={[...groupByCategory(props.columns!)]}>
@@ -54,7 +55,7 @@ export function ColumnSelectionCard(props: ColumnSelectionCardProps) {
 					</For>
 				</Show>
 			</select>
-			<Button isPrimary={true}>Zmień kolumnę</Button>
+			<Button isPrimary={true}>{UI_MESSAGES.CHANGE_COLUMN}</Button>
 		</form>
 	);
 }

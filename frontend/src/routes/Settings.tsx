@@ -10,6 +10,7 @@ import { OverridesSection } from "../Components/Settings/OverridesSection";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
 import { settingsStyles } from "../Components/Settings/settingsStyles";
 import { useSettingsOverrides } from "../Components/Settings/useSettingsOverrides";
+import { UI_MESSAGES } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
 import { attrs, getGroupByColumnIndex } from "../utils";
 
@@ -33,10 +34,10 @@ export function Settings() {
 	const currentColumnLabel = createMemo(() => {
 		const selectedColumn = chosenColumn();
 		if (selectedColumn === 0) {
-			return "Nie wybrano kolumny";
+			return UI_MESSAGES.COLUMN_NOT_SELECTED;
 		}
 
-		return getGroupByColumnIndex(columns(), selectedColumn)?.label ?? "Ładowanie...";
+		return getGroupByColumnIndex(columns(), selectedColumn)?.label ?? UI_MESSAGES.LOADING;
 	});
 
 	async function toggleAccountStatus() {
@@ -47,7 +48,7 @@ export function Settings() {
 		const newStatus = !AppState.store.userInfo.isActive;
 		const success = await setUserActive(newStatus);
 		if (!success) {
-			alert("Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.");
+			alert(UI_MESSAGES.ACCOUNT_STATUS_ERROR);
 			return;
 		}
 
@@ -58,11 +59,11 @@ export function Settings() {
 	async function changeChosenColumn(nextColumn: number) {
 		const success = await setChosenColumn(nextColumn);
 		if (!success) {
-			alert("Wystąpił błąd podczas zmiany kolumny. Spróbuj ponownie.");
+			alert(UI_MESSAGES.COLUMN_ERROR);
 			return;
 		}
 
-		alert("Pomyślnie zmieniono kolumnę.");
+		alert(UI_MESSAGES.COLUMN_SUCCESS);
 		AppState.setStore("userInfo", "chosenColumn", BigInt(nextColumn));
 		refetchClasses();
 	}

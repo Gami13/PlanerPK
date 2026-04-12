@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { For, Show } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS } from "../../constants";
+import { DAY_LABELS, UI_MESSAGES } from "../../constants";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { attrs } from "../../utils";
 import { ClassCard } from "./ClassCard";
@@ -36,10 +36,10 @@ export function OverridesSection(props: OverridesSectionProps) {
 				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Wybierz kolumnę powyżej, aby zobaczyć listę zajęć.</p>
 			</Show>
 			<Show when={props.chosenColumn > 0 && props.classesLoading}>
-				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Ładowanie zajęć…</p>
+				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UI_MESSAGES.LOADING_CLASSES}</p>
 			</Show>
 			<Show when={props.chosenColumn > 0 && props.classesError}>
-				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Błąd ładowania zajęć.</p>
+				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UI_MESSAGES.ERROR_LOADING_CLASSES}</p>
 			</Show>
 			<Show when={props.chosenColumn > 0 && props.classes.length === 0}>
 				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Brak zajęć dla wybranej kolumny.</p>
