@@ -1,11 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show, createSignal } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS, UIText } from "../../constants";
+import { DayLabels, UIText } from "../../constants";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { setClassOverride } from "../../services/pkplaner";
 import { attrs } from "../../utils";
 import { settingsStyles } from "./settingsStyles";
+import { useAsyncAction } from "./useAsyncAction";
 
 type ClassCardProps = {
 	classInfo: ClassInfo;
@@ -13,45 +14,48 @@ type ClassCardProps = {
 	onSaved: (updated: ClassOverride) => void;
 };
 
-type CardState = {
+type CardOverride = {
 	isHidden: boolean;
 	isTransparent: boolean;
 	startHour: string;
-	status: "idle" | "saving" | "ok" | "error";
 };
 
 export function ClassCard(props: ClassCardProps) {
-	const [cardState, setCardState] = createSignal<CardState>({
+	const [localOverride, setLocalOverride] = createSignal<CardOverride>({
 		isHidden: props.override?.isHidden ?? false,
 		isTransparent: props.override?.isTransparent ?? false,
 		startHour: props.override?.startHour ?? "",
-		status: "idle",
 	});
 
+	const { status, run } = useAsyncAction();
+	const hiddenId = `hidden-${props.classInfo.hash}`;
+	const hiddenLabelId = `hidden-label-${props.classInfo.hash}`;
+	const transparentId = `transparent-${props.classInfo.hash}`;
+	const transparentLabelId = `transparent-label-${props.classInfo.hash}`;
+	const startHourId = `start-hour-${props.classInfo.hash}`;
+	const classTitleId = `class-title-${props.classInfo.hash}`;
+
+	const updateOverride = (patch: Partial<CardOverride>) => {
+		setLocalOverride((prev) => ({ ...prev, ...patch }));
+	};
+
 	const hasActiveOverride = () => {
-		const state = cardState();
-		return state.isHidden || state.isTransparent || state.startHour !== "";
+		const o = localOverride();
+		return o.isHidden || o.isTransparent || o.startHour !== "";
 	};
 
 	async function save() {
-		setCardState((prev) => ({ ...prev, status: "saving" }));
-
-		const state = cardState();
+		const o = localOverride();
 		const updatedOverride = {
 			classHash: props.classInfo.hash,
-			startHour: state.startHour,
-			isHidden: state.isHidden,
-			isTransparent: state.isTransparent,
+			startHour: o.startHour,
+			isHidden: o.isHidden,
+			isTransparent: o.isTransparent,
 		} as ClassOverride;
 
-		const success = await setClassOverride(updatedOverride);
+		const success = await run(() => setClassOverride(updatedOverride));
 		if (success) {
-			setCardState((prev) => ({ ...prev, status: "ok" }));
 			props.onSaved(updatedOverride);
-			setTimeout(() => setCardState((prev) => ({ ...prev, status: "idle" })), 2500);
-		} else {
-			setCardState((prev) => ({ ...prev, status: "error" }));
-			setTimeout(() => setCardState((prev) => ({ ...prev, status: "idle" })), 3000);
 		}
 	}
 
@@ -61,89 +65,70 @@ export function ClassCard(props: ClassCardProps) {
 			: stylex.props(settingsStyles.classCard);
 
 	return (
-		<div {...attrs(cardStyle())}>
-			<div {...attrs(stylex.props(settingsStyles.classCardRow))}>
-				<span {...attrs(stylex.props(settingsStyles.classTitle))}>
+		<article {...attrs(cardStyle())} aria-labelledby={classTitleId}>
+			<header {...attrs(stylex.props(settingsStyles.classCardRow))}>
+				<h3 {...attrs(stylex.props(settingsStyles.classTitle))} id={classTitleId}>
 					{props.classInfo.name}
 					<Show when={props.classInfo.type}> ({props.classInfo.type})</Show>
-				</span>
-				<span {...attrs(stylex.props(settingsStyles.classMeta))}>
-					{DAY_LABELS[props.classInfo.day] ?? props.classInfo.day} &nbsp;·&nbsp;
-					{props.classInfo.startTime}–{props.classInfo.endTime}
+				</h3>
+				<p {...attrs(stylex.props(settingsStyles.classMeta))}>
+					{DayLabels[props.classInfo.day] ?? props.classInfo.day} &nbsp;·&nbsp;
+					<time dateTime={props.classInfo.startTime}>{props.classInfo.startTime}</time>–
+					<time dateTime={props.classInfo.endTime}>{props.classInfo.endTime}</time>
 					<Show when={props.classInfo.teacher}> &nbsp;·&nbsp; {props.classInfo.teacher}</Show>
 					<Show when={props.classInfo.location}> &nbsp;·&nbsp; {props.classInfo.location}</Show>
-				</span>
-			</div>
+				</p>
+			</header>
 
-			<div {...attrs(stylex.props(settingsStyles.overrideControls))}>
-				<div {...attrs(stylex.props(settingsStyles.checkboxGroup))}>
-					<label {...attrs(stylex.props(settingsStyles.checkboxLabel))} id={`hidden-label-${props.classInfo.hash}`}>
+			<section {...attrs(stylex.props(settingsStyles.overrideControls))}>
+				<section {...attrs(stylex.props(settingsStyles.checkboxGroup))}>
+					<label {...attrs(stylex.props(settingsStyles.checkboxLabel))} id={hiddenLabelId}>
 						<input
-							id={`hidden-${props.classInfo.hash}`}
+							id={hiddenId}
 							type="checkbox"
-							checked={cardState().isHidden}
-							onChange={(e) =>
-								setCardState((prev) => ({
-									...prev,
-									isHidden: e.currentTarget.checked,
-								}))
-							}
+							checked={localOverride().isHidden}
+							onChange={(e) => updateOverride({ isHidden: e.currentTarget.checked })}
 						/>
 						{UIText.settings.classOverrides.hideClass}
 					</label>
-					<label
-						{...attrs(stylex.props(settingsStyles.checkboxLabel))}
-						id={`transparent-label-${props.classInfo.hash}`}
-					>
+					<label {...attrs(stylex.props(settingsStyles.checkboxLabel))} id={transparentLabelId}>
 						<input
-							id={`transparent-${props.classInfo.hash}`}
+							id={transparentId}
 							type="checkbox"
-							checked={cardState().isTransparent}
-							onChange={(e) =>
-								setCardState((prev) => ({
-									...prev,
-									isTransparent: e.currentTarget.checked,
-								}))
-							}
+							checked={localOverride().isTransparent}
+							onChange={(e) => updateOverride({ isTransparent: e.currentTarget.checked })}
 						/>
 						{UIText.settings.classOverrides.showTransparent}
 					</label>
-				</div>
+				</section>
 
-				<Show when={!cardState().isHidden}>
-					<div {...attrs(stylex.props(settingsStyles.timeGroup))}>
-						<label {...attrs(stylex.props(settingsStyles.timeLabel))} for={`start-hour-${props.classInfo.hash}`}>
+				<Show when={!localOverride().isHidden}>
+					<section {...attrs(stylex.props(settingsStyles.timeGroup))}>
+						<label {...attrs(stylex.props(settingsStyles.timeLabel))} for={startHourId}>
 							{UIText.settings.classOverrides.shiftTime}
 						</label>
 						<input
-							id={`start-hour-${props.classInfo.hash}`}
+							id={startHourId}
 							type="time"
-							value={cardState().startHour}
-							onInput={(e) =>
-								setCardState((prev) => ({
-									...prev,
-									startHour: e.currentTarget.value,
-								}))
-							}
+							value={localOverride().startHour}
+							onInput={(e) => updateOverride({ startHour: e.currentTarget.value })}
 							{...attrs(stylex.props(settingsStyles.timeInput))}
 						/>
-					</div>
+					</section>
 				</Show>
-			</div>
+			</section>
 
-			<div {...attrs(stylex.props(settingsStyles.saveRow))}>
+			<footer {...attrs(stylex.props(settingsStyles.saveRow))}>
 				<Button isPrimary={true} onClick={save}>
-					{cardState().status === "saving"
-						? UIText.settings.classOverrides.saving
-						: UIText.settings.classOverrides.save}
+					{status() === "loading" ? UIText.settings.classOverrides.saving : UIText.settings.classOverrides.save}
 				</Button>
-				<Show when={cardState().status === "ok"}>
+				<Show when={status() === "success"}>
 					<span {...attrs(stylex.props(settingsStyles.feedbackSuccess))}>{UIText.settings.classOverrides.saved}</span>
 				</Show>
-				<Show when={cardState().status === "error"}>
+				<Show when={status() === "error"}>
 					<span {...attrs(stylex.props(settingsStyles.feedbackError))}>{UIText.settings.classOverrides.saveError}</span>
 				</Show>
-			</div>
-		</div>
+			</footer>
+		</article>
 	);
 }

@@ -1,6 +1,6 @@
 import { A } from "@solidjs/router";
 import * as stylex from "@stylexjs/stylex";
-import { Match, Switch, type JSX } from "solid-js";
+import { Show, type JSX } from "solid-js";
 import { primitiveStyles } from "../styles/primitives";
 import { attrs } from "../utils";
 
@@ -10,25 +10,13 @@ const styles = {
 	secondaryButton: primitiveStyles.buttonSecondary,
 };
 
-type ButtonBaseProps = {
-	isPrimary?: boolean;
+type ButtonProps = {
 	children: JSX.Element;
-};
-
-type NavigationButtonProps = ButtonBaseProps & {
-	isNavigation: true;
-	href: string | undefined;
-	onClick?: never;
-	isVanillaNavigation?: boolean;
-};
-
-type ActionButtonProps = ButtonBaseProps & {
-	isNavigation?: false;
+	isPrimary?: boolean;
 	onClick?: () => void;
-	href?: never;
+	href?: string;
+	isVanillaLink?: boolean;
 };
-
-type ButtonProps = NavigationButtonProps | ActionButtonProps;
 
 export function Button(props: ButtonProps) {
 	const buttonStyles = () =>
@@ -38,22 +26,22 @@ export function Button(props: ButtonProps) {
 	const buttonAttrs = () => attrs(buttonStyles());
 
 	return (
-		<Switch>
-			<Match when={props.isNavigation && props.isVanillaNavigation}>
-				<a {...buttonAttrs()} href={props.href ?? "#"}>
-					{props.children}
-				</a>
-			</Match>
-			<Match when={props.isNavigation}>
-				<A {...buttonAttrs()} href={props.href ?? "#"}>
+		<>
+			<Show when={props.href && !props.isVanillaLink}>
+				<A {...buttonAttrs()} href={props.href!}>
 					{props.children}
 				</A>
-			</Match>
-			<Match when={!props.isNavigation}>
-				<button {...buttonAttrs()} onClick={() => props.onClick?.()}>
+			</Show>
+			<Show when={props.href && props.isVanillaLink}>
+				<a {...buttonAttrs()} href={props.href}>
+					{props.children}
+				</a>
+			</Show>
+			<Show when={!props.href}>
+				<button {...buttonAttrs()} onClick={props.onClick}>
 					{props.children}
 				</button>
-			</Match>
-		</Switch>
+			</Show>
+		</>
 	);
 }

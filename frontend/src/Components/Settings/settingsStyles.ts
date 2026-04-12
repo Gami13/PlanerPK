@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
-import { borderRadius, breakpoints, colors, spacing } from "../../styles/tokens.stylex";
+import { borderRadius, colors, spacing } from "../../styles/tokens.stylex";
 
-const inputBase = {
+export const inputBase = {
 	borderColor: colors.defaultBorder,
 	borderStyle: "solid",
 	borderWidth: "1px",
@@ -9,70 +9,20 @@ const inputBase = {
 	fontSize: "1em",
 };
 
-const flexRow = {
+export const flexRow = {
 	gap: "0.75em",
 	alignItems: "center",
 	display: "flex",
 	flexWrap: "wrap",
 };
 
-const flexColumn = {
+export const flexColumn = {
 	gap: "0.75em",
 	display: "flex",
 	flexDirection: "column",
 };
 
 export const settingsStyles = stylex.create({
-	main: {
-		padding: spacing.xl,
-		gap: spacing.xl,
-		alignItems: "center",
-		display: "flex",
-		flexDirection: "column",
-		width: "100%",
-	},
-	basicSection: {
-		gap: spacing.md,
-		alignItems: "center",
-		display: "flex",
-		flexDirection: "column",
-		width: "100%",
-	},
-	description: {
-		gap: spacing.sm,
-		display: "flex",
-		flexDirection: "column",
-		textAlign: {
-			[breakpoints.desktop]: "left",
-			default: "center",
-		},
-		width: "min(100%, 48em)",
-	},
-	header: {
-		fontSize: "2.8em",
-		fontWeight: 500,
-	},
-	setting: {
-		padding: spacing.lg,
-		borderColor: colors.defaultBorder,
-		borderRadius: borderRadius.xl,
-		borderStyle: "solid",
-		borderWidth: "1px",
-		gap: "0.75em",
-		backgroundColor: colors.white,
-		display: "flex",
-		flexDirection: "column",
-		width: "min(100%, 48em)",
-	},
-	settingHeader: {
-		margin: 0,
-		fontSize: "1.4em",
-		fontWeight: 600,
-	},
-	settingDescription: {
-		margin: 0,
-		color: colors.secondaryText,
-	},
 	columnSelect: {
 		...inputBase,
 		borderRadius: borderRadius.lg,
@@ -88,15 +38,11 @@ export const settingsStyles = stylex.create({
 	addOverrideRow: {
 		...flexRow,
 		width: "100%",
+		justifyContent: "space-between",
 	},
 	addOverrideSelect: {
-		...inputBase,
-		borderRadius: borderRadius.md,
-		paddingBlock: spacing.sm,
-		paddingInline: "0.75em",
-		fontSize: "0.95em",
+		flex: 1,
 		maxWidth: "28em",
-		width: "100%",
 	},
 	classCard: {
 		borderColor: colors.defaultBorder,
@@ -123,12 +69,14 @@ export const settingsStyles = stylex.create({
 	},
 	classTitle: {
 		flex: "1",
+		margin: 0,
 		color: colors.primaryText,
 		fontSize: "0.95em",
 		fontWeight: 600,
 		minWidth: "10em",
 	},
 	classMeta: {
+		margin: 0,
 		color: colors.secondaryText,
 		fontSize: "0.82em",
 	},
@@ -151,6 +99,7 @@ export const settingsStyles = stylex.create({
 	},
 	timeGroup: {
 		...flexColumn,
+		marginLeft: "auto",
 	},
 	timeLabel: {
 		color: colors.secondaryText,
@@ -163,7 +112,7 @@ export const settingsStyles = stylex.create({
 		paddingBlock: "0.4em",
 		paddingInline: "0.6em",
 		fontSize: "0.9em",
-		width: "7em",
+		width: "12em",
 	},
 	saveRow: {
 		...flexRow,

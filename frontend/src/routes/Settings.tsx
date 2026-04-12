@@ -9,12 +9,29 @@ import { ColumnSelectionCard } from "../Components/Settings/ColumnSelectionCard"
 import { OverridesProvider } from "../Components/Settings/OverridesContext";
 import { OverridesSection } from "../Components/Settings/OverridesSection";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
-import { settingsStyles } from "../Components/Settings/settingsStyles";
 import { useSettingsOverrides } from "../Components/Settings/useSettingsOverrides";
 import { UIText } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
+import { spacing } from "../styles/tokens.stylex";
 import { attrs, getGroupByColumnIndex } from "../utils";
 
+const style = stylex.create({
+	main: {
+		padding: spacing.xl,
+		gap: spacing.xl,
+		alignItems: "center",
+		display: "flex",
+		flexDirection: "column",
+		width: "100%",
+	},
+	basicSection: {
+		gap: spacing.md,
+		alignItems: "center",
+		display: "flex",
+		flexDirection: "column",
+		width: "100%",
+	},
+});
 export function Settings() {
 	const AppState = useContext(AppContext);
 	const [columns] = createResource(getColumns);
@@ -64,10 +81,10 @@ export function Settings() {
 	}
 
 	return (
-		<main {...attrs(stylex.props(settingsStyles.main))}>
+		<main {...attrs(stylex.props(style.main))}>
 			<PageTitle title="Ustawienia" />
 
-			<section {...attrs(stylex.props(settingsStyles.basicSection))}>
+			<section {...attrs(stylex.props(style.basicSection))}>
 				<SettingsIntro />
 
 				<AccountStatusCard isActive={AppState.store.userInfo?.isActive} onToggle={toggleAccountStatus} />

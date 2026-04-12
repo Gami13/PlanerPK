@@ -51,7 +51,6 @@ export function ColumnSelectionCard(props: ColumnSelectionCardProps) {
 				}}
 			>
 				<div {...attrs(stylex.props(columnFormStyles.formContent))}>
-					<p {...attrs(stylex.props(settingsStyles.settingDescription))}>Obecna kolumna: {props.currentColumnLabel}</p>
 					<div {...attrs(stylex.props(columnFormStyles.selectRow))}>
 						<select
 							{...attrs(stylex.props(settingsStyles.columnSelect, columnFormStyles.selectInput))}

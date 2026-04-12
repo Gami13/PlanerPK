@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { For, Show, useContext } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS, UIText } from "../../constants";
+import { DayLabels, UIText } from "../../constants";
 import { attrs } from "../../utils";
 import { ClassCard } from "./ClassCard";
 import { OverridesContext } from "./OverridesContext";
@@ -41,7 +41,7 @@ export function OverridesSection(props: OverridesSectionProps) {
 						id="override-class-select"
 						value={context.selected()}
 						onChange={(e) => context.setSelected(e.currentTarget.value)}
-						{...attrs(stylex.props(settingsStyles.addOverrideSelect))}
+						{...attrs(stylex.props(settingsStyles.columnSelect, settingsStyles.addOverrideSelect))}
 					>
 						<option value="">Wybierz zajęcia do nadpisania…</option>
 						<For each={context.availableClasses()}>
@@ -50,7 +50,7 @@ export function OverridesSection(props: OverridesSectionProps) {
 									{cls.name}
 									<Show when={cls.type}> ({cls.type})</Show>
 									{" - "}
-									{DAY_LABELS[cls.day] ?? cls.day} {cls.startTime}-{cls.endTime} -- {cls.teacher} @ {cls.location}
+									{DayLabels[cls.day] ?? cls.day} {cls.startTime}-{cls.endTime} -- {cls.teacher} @ {cls.location}
 								</option>
 							)}
 						</For>
