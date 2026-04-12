@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap");
 
-/* Base reset styles - avoid resetting properties that components need to set */
 *,
 *::before,
 *::after {
@@ -18,19 +17,38 @@
         "ROND" 0;
 }
 
+html,
+body,
+#root {
+    min-height: 100%;
+}
 
-
-/* Only reset margin/padding on specific elements, not everything */
-body, h1, h2, h3, h4, h5, h6, p, ul, ol, li, figure, figcaption, blockquote, dl, dd {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+li,
+figure,
+figcaption,
+blockquote,
+dl,
+dd {
     margin: 0;
     padding: 0;
 }
 
-main {
-    width: 100vw;
-    height: 100vh;
+body {
+    min-height: 100vh;
+    line-height: 1.5;
 }
 
-:root {
-    --blue: ;
+img {
+    display: block;
+    max-width: 100%;
 }

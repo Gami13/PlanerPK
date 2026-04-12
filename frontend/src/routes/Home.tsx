@@ -120,7 +120,7 @@ export function Home() {
 					<Show
 						when={userInfo()}
 						fallback={
-							<Button isPrimary={true} isNavigation={true} isVanillaNavigation={true} href={authURL()}>
+							<Button isPrimary={true} isVanillaLink={true} href={authURL()}>
 								Zarejestruj się z Google
 							</Button>
 						}
@@ -129,7 +129,7 @@ export function Home() {
 							<>
 								<UserCard userInfo={info()} />
 								<div {...attrs(stylex.props(styles.authButtons))}>
-									<Button isPrimary={true} isNavigation={true} href="/settings">
+									<Button isPrimary={true} href="/settings">
 										Ustawienia
 									</Button>
 
