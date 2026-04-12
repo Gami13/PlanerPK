@@ -648,6 +648,419 @@ func (x *GetUserInfoResponse) GetChosenColumn() int64 {
 	return 0
 }
 
+// ClassInfo represents a single parsed class from the timetable.
+type ClassInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hash          string                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Day           string                 `protobuf:"bytes,4,opt,name=day,proto3" json:"day,omitempty"`
+	StartTime     string                 `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime       string                 `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Location      string                 `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty"`
+	Teacher       string                 `protobuf:"bytes,8,opt,name=teacher,proto3" json:"teacher,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClassInfo) Reset() {
+	*x = ClassInfo{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassInfo) ProtoMessage() {}
+
+func (x *ClassInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassInfo.ProtoReflect.Descriptor instead.
+func (*ClassInfo) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ClassInfo) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetDay() string {
+	if x != nil {
+		return x.Day
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetTeacher() string {
+	if x != nil {
+		return x.Teacher
+	}
+	return ""
+}
+
+// ClassOverride holds the override settings for a single class (identified by hash).
+// Sending an override with all fields at their zero values will delete the override.
+type ClassOverride struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClassHash     string                 `protobuf:"bytes,1,opt,name=class_hash,json=classHash,proto3" json:"class_hash,omitempty"`
+	StartHour     string                 `protobuf:"bytes,2,opt,name=start_hour,json=startHour,proto3" json:"start_hour,omitempty"` // "HH:MM" or empty for no time shift
+	IsHidden      bool                   `protobuf:"varint,3,opt,name=is_hidden,json=isHidden,proto3" json:"is_hidden,omitempty"`
+	IsTransparent bool                   `protobuf:"varint,4,opt,name=is_transparent,json=isTransparent,proto3" json:"is_transparent,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClassOverride) Reset() {
+	*x = ClassOverride{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassOverride) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassOverride) ProtoMessage() {}
+
+func (x *ClassOverride) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassOverride.ProtoReflect.Descriptor instead.
+func (*ClassOverride) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ClassOverride) GetClassHash() string {
+	if x != nil {
+		return x.ClassHash
+	}
+	return ""
+}
+
+func (x *ClassOverride) GetStartHour() string {
+	if x != nil {
+		return x.StartHour
+	}
+	return ""
+}
+
+func (x *ClassOverride) GetIsHidden() bool {
+	if x != nil {
+		return x.IsHidden
+	}
+	return false
+}
+
+func (x *ClassOverride) GetIsTransparent() bool {
+	if x != nil {
+		return x.IsTransparent
+	}
+	return false
+}
+
+// GetClassesRequest is empty — the user's chosen_column is read from auth context.
+type GetClassesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetClassesRequest) Reset() {
+	*x = GetClassesRequest{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetClassesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetClassesRequest) ProtoMessage() {}
+
+func (x *GetClassesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetClassesRequest.ProtoReflect.Descriptor instead.
+func (*GetClassesRequest) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{15}
+}
+
+type GetClassesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Classes       []*ClassInfo           `protobuf:"bytes,1,rep,name=classes,proto3" json:"classes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetClassesResponse) Reset() {
+	*x = GetClassesResponse{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetClassesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetClassesResponse) ProtoMessage() {}
+
+func (x *GetClassesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetClassesResponse.ProtoReflect.Descriptor instead.
+func (*GetClassesResponse) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetClassesResponse) GetClasses() []*ClassInfo {
+	if x != nil {
+		return x.Classes
+	}
+	return nil
+}
+
+// GetOverridesRequest is empty — authentication is handled via headers.
+type GetOverridesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOverridesRequest) Reset() {
+	*x = GetOverridesRequest{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOverridesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOverridesRequest) ProtoMessage() {}
+
+func (x *GetOverridesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOverridesRequest.ProtoReflect.Descriptor instead.
+func (*GetOverridesRequest) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{17}
+}
+
+type GetOverridesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Overrides     []*ClassOverride       `protobuf:"bytes,1,rep,name=overrides,proto3" json:"overrides,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOverridesResponse) Reset() {
+	*x = GetOverridesResponse{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOverridesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOverridesResponse) ProtoMessage() {}
+
+func (x *GetOverridesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOverridesResponse.ProtoReflect.Descriptor instead.
+func (*GetOverridesResponse) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetOverridesResponse) GetOverrides() []*ClassOverride {
+	if x != nil {
+		return x.Overrides
+	}
+	return nil
+}
+
+type SetOverrideRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Override      *ClassOverride         `protobuf:"bytes,1,opt,name=override,proto3" json:"override,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetOverrideRequest) Reset() {
+	*x = SetOverrideRequest{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetOverrideRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetOverrideRequest) ProtoMessage() {}
+
+func (x *SetOverrideRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetOverrideRequest.ProtoReflect.Descriptor instead.
+func (*SetOverrideRequest) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SetOverrideRequest) GetOverride() *ClassOverride {
+	if x != nil {
+		return x.Override
+	}
+	return nil
+}
+
+type SetOverrideResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetOverrideResponse) Reset() {
+	*x = SetOverrideResponse{}
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetOverrideResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetOverrideResponse) ProtoMessage() {}
+
+func (x *SetOverrideResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pkplaner_v1_pkplaner_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetOverrideResponse.ProtoReflect.Descriptor instead.
+func (*SetOverrideResponse) Descriptor() ([]byte, []int) {
+	return file_pkplaner_v1_pkplaner_proto_rawDescGZIP(), []int{20}
+}
+
 var File_pkplaner_v1_pkplaner_proto protoreflect.FileDescriptor
 
 const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
@@ -685,7 +1098,33 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"given_name\x18\x03 \x01(\tR\tgivenName\x12\x18\n" +
 	"\apicture\x18\x04 \x01(\tR\apicture\x12\x1b\n" +
 	"\tis_active\x18\x05 \x01(\bR\bisActive\x12#\n" +
-	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn2\x83\x04\n" +
+	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn\"\xc9\x01\n" +
+	"\tClassInfo\x12\x12\n" +
+	"\x04hash\x18\x01 \x01(\tR\x04hash\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x10\n" +
+	"\x03day\x18\x04 \x01(\tR\x03day\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x05 \x01(\tR\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x06 \x01(\tR\aendTime\x12\x1a\n" +
+	"\blocation\x18\a \x01(\tR\blocation\x12\x18\n" +
+	"\ateacher\x18\b \x01(\tR\ateacher\"\x91\x01\n" +
+	"\rClassOverride\x12\x1d\n" +
+	"\n" +
+	"class_hash\x18\x01 \x01(\tR\tclassHash\x12\x1d\n" +
+	"\n" +
+	"start_hour\x18\x02 \x01(\tR\tstartHour\x12\x1b\n" +
+	"\tis_hidden\x18\x03 \x01(\bR\bisHidden\x12%\n" +
+	"\x0eis_transparent\x18\x04 \x01(\bR\risTransparent\"\x13\n" +
+	"\x11GetClassesRequest\"F\n" +
+	"\x12GetClassesResponse\x120\n" +
+	"\aclasses\x18\x01 \x03(\v2\x16.pkplaner.v1.ClassInfoR\aclasses\"\x15\n" +
+	"\x13GetOverridesRequest\"P\n" +
+	"\x14GetOverridesResponse\x128\n" +
+	"\toverrides\x18\x01 \x03(\v2\x1a.pkplaner.v1.ClassOverrideR\toverrides\"L\n" +
+	"\x12SetOverrideRequest\x126\n" +
+	"\boverride\x18\x01 \x01(\v2\x1a.pkplaner.v1.ClassOverrideR\boverride\"\x15\n" +
+	"\x13SetOverrideResponse2\xf9\x05\n" +
 	"\x0fPKPlanerService\x12M\n" +
 	"\n" +
 	"GetColumns\x12\x1e.pkplaner.v1.GetColumnsRequest\x1a\x1f.pkplaner.v1.GetColumnsResponse\x12\\\n" +
@@ -694,7 +1133,11 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\tAuthorize\x12\x1d.pkplaner.v1.AuthorizeRequest\x1a\x1e.pkplaner.v1.AuthorizeResponse\x12M\n" +
 	"\n" +
 	"GetAuthURL\x12\x1e.pkplaner.v1.GetAuthURLRequest\x1a\x1f.pkplaner.v1.GetAuthURLResponse\x12P\n" +
-	"\vGetUserInfo\x12\x1f.pkplaner.v1.GetUserInfoRequest\x1a .pkplaner.v1.GetUserInfoResponseB7Z5github.com/gami13/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
+	"\vGetUserInfo\x12\x1f.pkplaner.v1.GetUserInfoRequest\x1a .pkplaner.v1.GetUserInfoResponse\x12M\n" +
+	"\n" +
+	"GetClasses\x12\x1e.pkplaner.v1.GetClassesRequest\x1a\x1f.pkplaner.v1.GetClassesResponse\x12S\n" +
+	"\fGetOverrides\x12 .pkplaner.v1.GetOverridesRequest\x1a!.pkplaner.v1.GetOverridesResponse\x12P\n" +
+	"\vSetOverride\x12\x1f.pkplaner.v1.SetOverrideRequest\x1a .pkplaner.v1.SetOverrideResponseB7Z5github.com/gami13/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
 
 var (
 	file_pkplaner_v1_pkplaner_proto_rawDescOnce sync.Once
@@ -708,7 +1151,7 @@ func file_pkplaner_v1_pkplaner_proto_rawDescGZIP() []byte {
 	return file_pkplaner_v1_pkplaner_proto_rawDescData
 }
 
-var file_pkplaner_v1_pkplaner_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_pkplaner_v1_pkplaner_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_pkplaner_v1_pkplaner_proto_goTypes = []any{
 	(*ColumnGroup)(nil),             // 0: pkplaner.v1.ColumnGroup
 	(*GetColumnsRequest)(nil),       // 1: pkplaner.v1.GetColumnsRequest
@@ -723,26 +1166,43 @@ var file_pkplaner_v1_pkplaner_proto_goTypes = []any{
 	(*GetAuthURLResponse)(nil),      // 10: pkplaner.v1.GetAuthURLResponse
 	(*GetUserInfoRequest)(nil),      // 11: pkplaner.v1.GetUserInfoRequest
 	(*GetUserInfoResponse)(nil),     // 12: pkplaner.v1.GetUserInfoResponse
+	(*ClassInfo)(nil),               // 13: pkplaner.v1.ClassInfo
+	(*ClassOverride)(nil),           // 14: pkplaner.v1.ClassOverride
+	(*GetClassesRequest)(nil),       // 15: pkplaner.v1.GetClassesRequest
+	(*GetClassesResponse)(nil),      // 16: pkplaner.v1.GetClassesResponse
+	(*GetOverridesRequest)(nil),     // 17: pkplaner.v1.GetOverridesRequest
+	(*GetOverridesResponse)(nil),    // 18: pkplaner.v1.GetOverridesResponse
+	(*SetOverrideRequest)(nil),      // 19: pkplaner.v1.SetOverrideRequest
+	(*SetOverrideResponse)(nil),     // 20: pkplaner.v1.SetOverrideResponse
 }
 var file_pkplaner_v1_pkplaner_proto_depIdxs = []int32{
 	0,  // 0: pkplaner.v1.GetColumnsResponse.columns:type_name -> pkplaner.v1.ColumnGroup
-	1,  // 1: pkplaner.v1.PKPlanerService.GetColumns:input_type -> pkplaner.v1.GetColumnsRequest
-	3,  // 2: pkplaner.v1.PKPlanerService.SetChosenColumn:input_type -> pkplaner.v1.SetChosenColumnRequest
-	5,  // 3: pkplaner.v1.PKPlanerService.SetUserActive:input_type -> pkplaner.v1.SetUserActiveRequest
-	7,  // 4: pkplaner.v1.PKPlanerService.Authorize:input_type -> pkplaner.v1.AuthorizeRequest
-	9,  // 5: pkplaner.v1.PKPlanerService.GetAuthURL:input_type -> pkplaner.v1.GetAuthURLRequest
-	11, // 6: pkplaner.v1.PKPlanerService.GetUserInfo:input_type -> pkplaner.v1.GetUserInfoRequest
-	2,  // 7: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
-	4,  // 8: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
-	6,  // 9: pkplaner.v1.PKPlanerService.SetUserActive:output_type -> pkplaner.v1.SetUserActiveResponse
-	8,  // 10: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
-	10, // 11: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
-	12, // 12: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	13, // 1: pkplaner.v1.GetClassesResponse.classes:type_name -> pkplaner.v1.ClassInfo
+	14, // 2: pkplaner.v1.GetOverridesResponse.overrides:type_name -> pkplaner.v1.ClassOverride
+	14, // 3: pkplaner.v1.SetOverrideRequest.override:type_name -> pkplaner.v1.ClassOverride
+	1,  // 4: pkplaner.v1.PKPlanerService.GetColumns:input_type -> pkplaner.v1.GetColumnsRequest
+	3,  // 5: pkplaner.v1.PKPlanerService.SetChosenColumn:input_type -> pkplaner.v1.SetChosenColumnRequest
+	5,  // 6: pkplaner.v1.PKPlanerService.SetUserActive:input_type -> pkplaner.v1.SetUserActiveRequest
+	7,  // 7: pkplaner.v1.PKPlanerService.Authorize:input_type -> pkplaner.v1.AuthorizeRequest
+	9,  // 8: pkplaner.v1.PKPlanerService.GetAuthURL:input_type -> pkplaner.v1.GetAuthURLRequest
+	11, // 9: pkplaner.v1.PKPlanerService.GetUserInfo:input_type -> pkplaner.v1.GetUserInfoRequest
+	15, // 10: pkplaner.v1.PKPlanerService.GetClasses:input_type -> pkplaner.v1.GetClassesRequest
+	17, // 11: pkplaner.v1.PKPlanerService.GetOverrides:input_type -> pkplaner.v1.GetOverridesRequest
+	19, // 12: pkplaner.v1.PKPlanerService.SetOverride:input_type -> pkplaner.v1.SetOverrideRequest
+	2,  // 13: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
+	4,  // 14: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
+	6,  // 15: pkplaner.v1.PKPlanerService.SetUserActive:output_type -> pkplaner.v1.SetUserActiveResponse
+	8,  // 16: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
+	10, // 17: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
+	12, // 18: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
+	16, // 19: pkplaner.v1.PKPlanerService.GetClasses:output_type -> pkplaner.v1.GetClassesResponse
+	18, // 20: pkplaner.v1.PKPlanerService.GetOverrides:output_type -> pkplaner.v1.GetOverridesResponse
+	20, // 21: pkplaner.v1.PKPlanerService.SetOverride:output_type -> pkplaner.v1.SetOverrideResponse
+	13, // [13:22] is the sub-list for method output_type
+	4,  // [4:13] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_pkplaner_v1_pkplaner_proto_init() }
@@ -756,7 +1216,7 @@ func file_pkplaner_v1_pkplaner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkplaner_v1_pkplaner_proto_rawDesc), len(file_pkplaner_v1_pkplaner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

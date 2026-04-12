@@ -200,6 +200,13 @@ func updateAllTimetables(queries db.Querier, availableGroups *atomic.Value, time
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
-		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries)
+		overrides, err := queries.GetOverridesForUser(context.Background(), user.ID)
+		if err != nil {
+			slog.Warn("Failed to fetch overrides for user, syncing without overrides",
+				slog.String("email", *user.Email),
+				slog.Any("error", err))
+			overrides = nil
+		}
+		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides)
 	}
 }

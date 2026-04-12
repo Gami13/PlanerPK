@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetColumnsRequest, GetColumnsResponse, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse, SetUserActiveRequest, SetUserActiveResponse } from "./pkplaner_pb.js";
+import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetClassesRequest, GetClassesResponse, GetColumnsRequest, GetColumnsResponse, GetOverridesRequest, GetOverridesResponse, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse, SetOverrideRequest, SetOverrideResponse, SetUserActiveRequest, SetUserActiveResponse } from "./pkplaner_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -78,6 +78,39 @@ export const PKPlanerService = {
       name: "GetUserInfo",
       I: GetUserInfoRequest,
       O: GetUserInfoResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetClasses returns all classes for the authenticated user's chosen column.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.GetClasses
+     */
+    getClasses: {
+      name: "GetClasses",
+      I: GetClassesRequest,
+      O: GetClassesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GetOverrides returns all class overrides for the authenticated user.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.GetOverrides
+     */
+    getOverrides: {
+      name: "GetOverrides",
+      I: GetOverridesRequest,
+      O: GetOverridesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * SetOverride creates, updates, or deletes a class override for the authenticated user.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.SetOverride
+     */
+    setOverride: {
+      name: "SetOverride",
+      I: SetOverrideRequest,
+      O: SetOverrideResponse,
       kind: MethodKind.Unary,
     },
   }

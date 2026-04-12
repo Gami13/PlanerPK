@@ -51,6 +51,15 @@ const (
 	// PKPlanerServiceGetUserInfoProcedure is the fully-qualified name of the PKPlanerService's
 	// GetUserInfo RPC.
 	PKPlanerServiceGetUserInfoProcedure = "/pkplaner.v1.PKPlanerService/GetUserInfo"
+	// PKPlanerServiceGetClassesProcedure is the fully-qualified name of the PKPlanerService's
+	// GetClasses RPC.
+	PKPlanerServiceGetClassesProcedure = "/pkplaner.v1.PKPlanerService/GetClasses"
+	// PKPlanerServiceGetOverridesProcedure is the fully-qualified name of the PKPlanerService's
+	// GetOverrides RPC.
+	PKPlanerServiceGetOverridesProcedure = "/pkplaner.v1.PKPlanerService/GetOverrides"
+	// PKPlanerServiceSetOverrideProcedure is the fully-qualified name of the PKPlanerService's
+	// SetOverride RPC.
+	PKPlanerServiceSetOverrideProcedure = "/pkplaner.v1.PKPlanerService/SetOverride"
 )
 
 // PKPlanerServiceClient is a client for the pkplaner.v1.PKPlanerService service.
@@ -67,6 +76,12 @@ type PKPlanerServiceClient interface {
 	GetAuthURL(context.Context, *connect.Request[v1.GetAuthURLRequest]) (*connect.Response[v1.GetAuthURLResponse], error)
 	// GetUserInfo returns information about the authenticated user.
 	GetUserInfo(context.Context, *connect.Request[v1.GetUserInfoRequest]) (*connect.Response[v1.GetUserInfoResponse], error)
+	// GetClasses returns all classes for the authenticated user's chosen column.
+	GetClasses(context.Context, *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error)
+	// GetOverrides returns all class overrides for the authenticated user.
+	GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error)
+	// SetOverride creates, updates, or deletes a class override for the authenticated user.
+	SetOverride(context.Context, *connect.Request[v1.SetOverrideRequest]) (*connect.Response[v1.SetOverrideResponse], error)
 }
 
 // NewPKPlanerServiceClient constructs a client for the pkplaner.v1.PKPlanerService service. By
@@ -116,6 +131,24 @@ func NewPKPlanerServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(pKPlanerServiceMethods.ByName("GetUserInfo")),
 			connect.WithClientOptions(opts...),
 		),
+		getClasses: connect.NewClient[v1.GetClassesRequest, v1.GetClassesResponse](
+			httpClient,
+			baseURL+PKPlanerServiceGetClassesProcedure,
+			connect.WithSchema(pKPlanerServiceMethods.ByName("GetClasses")),
+			connect.WithClientOptions(opts...),
+		),
+		getOverrides: connect.NewClient[v1.GetOverridesRequest, v1.GetOverridesResponse](
+			httpClient,
+			baseURL+PKPlanerServiceGetOverridesProcedure,
+			connect.WithSchema(pKPlanerServiceMethods.ByName("GetOverrides")),
+			connect.WithClientOptions(opts...),
+		),
+		setOverride: connect.NewClient[v1.SetOverrideRequest, v1.SetOverrideResponse](
+			httpClient,
+			baseURL+PKPlanerServiceSetOverrideProcedure,
+			connect.WithSchema(pKPlanerServiceMethods.ByName("SetOverride")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -127,6 +160,9 @@ type pKPlanerServiceClient struct {
 	authorize       *connect.Client[v1.AuthorizeRequest, v1.AuthorizeResponse]
 	getAuthURL      *connect.Client[v1.GetAuthURLRequest, v1.GetAuthURLResponse]
 	getUserInfo     *connect.Client[v1.GetUserInfoRequest, v1.GetUserInfoResponse]
+	getClasses      *connect.Client[v1.GetClassesRequest, v1.GetClassesResponse]
+	getOverrides    *connect.Client[v1.GetOverridesRequest, v1.GetOverridesResponse]
+	setOverride     *connect.Client[v1.SetOverrideRequest, v1.SetOverrideResponse]
 }
 
 // GetColumns calls pkplaner.v1.PKPlanerService.GetColumns.
@@ -159,6 +195,21 @@ func (c *pKPlanerServiceClient) GetUserInfo(ctx context.Context, req *connect.Re
 	return c.getUserInfo.CallUnary(ctx, req)
 }
 
+// GetClasses calls pkplaner.v1.PKPlanerService.GetClasses.
+func (c *pKPlanerServiceClient) GetClasses(ctx context.Context, req *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error) {
+	return c.getClasses.CallUnary(ctx, req)
+}
+
+// GetOverrides calls pkplaner.v1.PKPlanerService.GetOverrides.
+func (c *pKPlanerServiceClient) GetOverrides(ctx context.Context, req *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error) {
+	return c.getOverrides.CallUnary(ctx, req)
+}
+
+// SetOverride calls pkplaner.v1.PKPlanerService.SetOverride.
+func (c *pKPlanerServiceClient) SetOverride(ctx context.Context, req *connect.Request[v1.SetOverrideRequest]) (*connect.Response[v1.SetOverrideResponse], error) {
+	return c.setOverride.CallUnary(ctx, req)
+}
+
 // PKPlanerServiceHandler is an implementation of the pkplaner.v1.PKPlanerService service.
 type PKPlanerServiceHandler interface {
 	// GetColumns returns available column groups parsed from the Excel header rows.
@@ -173,6 +224,12 @@ type PKPlanerServiceHandler interface {
 	GetAuthURL(context.Context, *connect.Request[v1.GetAuthURLRequest]) (*connect.Response[v1.GetAuthURLResponse], error)
 	// GetUserInfo returns information about the authenticated user.
 	GetUserInfo(context.Context, *connect.Request[v1.GetUserInfoRequest]) (*connect.Response[v1.GetUserInfoResponse], error)
+	// GetClasses returns all classes for the authenticated user's chosen column.
+	GetClasses(context.Context, *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error)
+	// GetOverrides returns all class overrides for the authenticated user.
+	GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error)
+	// SetOverride creates, updates, or deletes a class override for the authenticated user.
+	SetOverride(context.Context, *connect.Request[v1.SetOverrideRequest]) (*connect.Response[v1.SetOverrideResponse], error)
 }
 
 // NewPKPlanerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -218,6 +275,24 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 		connect.WithSchema(pKPlanerServiceMethods.ByName("GetUserInfo")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pKPlanerServiceGetClassesHandler := connect.NewUnaryHandler(
+		PKPlanerServiceGetClassesProcedure,
+		svc.GetClasses,
+		connect.WithSchema(pKPlanerServiceMethods.ByName("GetClasses")),
+		connect.WithHandlerOptions(opts...),
+	)
+	pKPlanerServiceGetOverridesHandler := connect.NewUnaryHandler(
+		PKPlanerServiceGetOverridesProcedure,
+		svc.GetOverrides,
+		connect.WithSchema(pKPlanerServiceMethods.ByName("GetOverrides")),
+		connect.WithHandlerOptions(opts...),
+	)
+	pKPlanerServiceSetOverrideHandler := connect.NewUnaryHandler(
+		PKPlanerServiceSetOverrideProcedure,
+		svc.SetOverride,
+		connect.WithSchema(pKPlanerServiceMethods.ByName("SetOverride")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/pkplaner.v1.PKPlanerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PKPlanerServiceGetColumnsProcedure:
@@ -232,6 +307,12 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 			pKPlanerServiceGetAuthURLHandler.ServeHTTP(w, r)
 		case PKPlanerServiceGetUserInfoProcedure:
 			pKPlanerServiceGetUserInfoHandler.ServeHTTP(w, r)
+		case PKPlanerServiceGetClassesProcedure:
+			pKPlanerServiceGetClassesHandler.ServeHTTP(w, r)
+		case PKPlanerServiceGetOverridesProcedure:
+			pKPlanerServiceGetOverridesHandler.ServeHTTP(w, r)
+		case PKPlanerServiceSetOverrideProcedure:
+			pKPlanerServiceSetOverrideHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -263,4 +344,16 @@ func (UnimplementedPKPlanerServiceHandler) GetAuthURL(context.Context, *connect.
 
 func (UnimplementedPKPlanerServiceHandler) GetUserInfo(context.Context, *connect.Request[v1.GetUserInfoRequest]) (*connect.Response[v1.GetUserInfoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.GetUserInfo is not implemented"))
+}
+
+func (UnimplementedPKPlanerServiceHandler) GetClasses(context.Context, *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.GetClasses is not implemented"))
+}
+
+func (UnimplementedPKPlanerServiceHandler) GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.GetOverrides is not implemented"))
+}
+
+func (UnimplementedPKPlanerServiceHandler) SetOverride(context.Context, *connect.Request[v1.SetOverrideRequest]) (*connect.Response[v1.SetOverrideResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.SetOverride is not implemented"))
 }

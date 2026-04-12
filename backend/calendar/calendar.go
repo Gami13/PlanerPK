@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func ImportTimetable(allTimetables types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier) {
+func ImportTimetable(allTimetables types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
@@ -32,7 +32,13 @@ func ImportTimetable(allTimetables types.Timetable, groupColumn int64, token *oa
 		return
 	}
 
-	newEvents := buildNewEventsMap(timetable)
+	// Convert overrides slice to a map keyed by class_hash for O(1) lookup.
+	overridesMap := make(map[string]db.Override, len(overrides))
+	for _, o := range overrides {
+		overridesMap[o.ClassHash] = o
+	}
+
+	newEvents := buildNewEventsMap(timetable, overridesMap)
 	eventsToDelete, eventsToAdd, unchangedEvents := calculateEventDiffs(currentEvents, newEvents)
 
 	createdCount, deletedCount := applyEventChanges(srv, eventsToDelete, eventsToAdd)

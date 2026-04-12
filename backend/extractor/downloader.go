@@ -141,8 +141,9 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 	if err != nil {
 		return types.TimetableFileStats{}, fmt.Errorf("failed to download the timetable: %w", err)
 	}
-	defer logCloseWarn("response body", response.Body.Close())
-
+	defer func() {
+		logCloseWarn("response body", response.Body.Close())
+	}()
 	if response.StatusCode != http.StatusOK {
 		return types.TimetableFileStats{}, fmt.Errorf("HTTP %d: %s", response.StatusCode, response.Status)
 	}

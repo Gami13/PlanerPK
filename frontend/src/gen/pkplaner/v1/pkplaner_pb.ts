@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file pkplaner/v1/pkplaner.proto.
  */
 export const file_pkplaner_v1_pkplaner: GenFile = /*@__PURE__*/
-  fileDesc("Chpwa3BsYW5lci92MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiLwoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFIhkKF1NldENob3NlbkNvbHVtblJlc3BvbnNlIikKFFNldFVzZXJBY3RpdmVSZXF1ZXN0EhEKCWlzX2FjdGl2ZRgBIAEoCCIXChVTZXRVc2VyQWN0aXZlUmVzcG9uc2UiIAoQQXV0aG9yaXplUmVxdWVzdBIMCgRjb2RlGAEgASgJIm4KEUF1dGhvcml6ZVJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRINCgVlbWFpbBgCIAEoCRIVCg1jaG9zZW5fY29sdW1uGAMgASgDEgwKBG5hbWUYBCABKAkSDwoHcGljdHVyZRgFIAEoCSITChFHZXRBdXRoVVJMUmVxdWVzdCIhChJHZXRBdXRoVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJIhQKEkdldFVzZXJJbmZvUmVxdWVzdCKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAzKDBAoPUEtQbGFuZXJTZXJ2aWNlEk0KCkdldENvbHVtbnMSHi5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXNwb25zZRJcCg9TZXRDaG9zZW5Db2x1bW4SIy5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXF1ZXN0GiQucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVzcG9uc2USVgoNU2V0VXNlckFjdGl2ZRIhLnBrcGxhbmVyLnYxLlNldFVzZXJBY3RpdmVSZXF1ZXN0GiIucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlc3BvbnNlEkoKCUF1dGhvcml6ZRIdLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlcXVlc3QaHi5wa3BsYW5lci52MS5BdXRob3JpemVSZXNwb25zZRJNCgpHZXRBdXRoVVJMEh4ucGtwbGFuZXIudjEuR2V0QXV0aFVSTFJlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVzcG9uc2USUAoLR2V0VXNlckluZm8SHy5wa3BsYW5lci52MS5HZXRVc2VySW5mb1JlcXVlc3QaIC5wa3BsYW5lci52MS5HZXRVc2VySW5mb1Jlc3BvbnNlQjdaNWdpdGh1Yi5jb20vZ2FtaTEzL1BsYW5lclBLL2dlbi9wa3BsYW5lci92MTtwa3BsYW5lcnYxYgZwcm90bzM");
+  fileDesc("Chpwa3BsYW5lci92MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiLwoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFIhkKF1NldENob3NlbkNvbHVtblJlc3BvbnNlIikKFFNldFVzZXJBY3RpdmVSZXF1ZXN0EhEKCWlzX2FjdGl2ZRgBIAEoCCIXChVTZXRVc2VyQWN0aXZlUmVzcG9uc2UiIAoQQXV0aG9yaXplUmVxdWVzdBIMCgRjb2RlGAEgASgJIm4KEUF1dGhvcml6ZVJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRINCgVlbWFpbBgCIAEoCRIVCg1jaG9zZW5fY29sdW1uGAMgASgDEgwKBG5hbWUYBCABKAkSDwoHcGljdHVyZRgFIAEoCSITChFHZXRBdXRoVVJMUmVxdWVzdCIhChJHZXRBdXRoVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJIhQKEkdldFVzZXJJbmZvUmVxdWVzdCKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAyKLAQoJQ2xhc3NJbmZvEgwKBGhhc2gYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEgsKA2RheRgEIAEoCRISCgpzdGFydF90aW1lGAUgASgJEhAKCGVuZF90aW1lGAYgASgJEhAKCGxvY2F0aW9uGAcgASgJEg8KB3RlYWNoZXIYCCABKAkiYgoNQ2xhc3NPdmVycmlkZRISCgpjbGFzc19oYXNoGAEgASgJEhIKCnN0YXJ0X2hvdXIYAiABKAkSEQoJaXNfaGlkZGVuGAMgASgIEhYKDmlzX3RyYW5zcGFyZW50GAQgASgIIhMKEUdldENsYXNzZXNSZXF1ZXN0Ij0KEkdldENsYXNzZXNSZXNwb25zZRInCgdjbGFzc2VzGAEgAygLMhYucGtwbGFuZXIudjEuQ2xhc3NJbmZvIhUKE0dldE92ZXJyaWRlc1JlcXVlc3QiRQoUR2V0T3ZlcnJpZGVzUmVzcG9uc2USLQoJb3ZlcnJpZGVzGAEgAygLMhoucGtwbGFuZXIudjEuQ2xhc3NPdmVycmlkZSJCChJTZXRPdmVycmlkZVJlcXVlc3QSLAoIb3ZlcnJpZGUYASABKAsyGi5wa3BsYW5lci52MS5DbGFzc092ZXJyaWRlIhUKE1NldE92ZXJyaWRlUmVzcG9uc2Uy+QUKD1BLUGxhbmVyU2VydmljZRJNCgpHZXRDb2x1bW5zEh4ucGtwbGFuZXIudjEuR2V0Q29sdW1uc1JlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRDb2x1bW5zUmVzcG9uc2USXAoPU2V0Q2hvc2VuQ29sdW1uEiMucGtwbGFuZXIudjEuU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBokLnBrcGxhbmVyLnYxLlNldENob3NlbkNvbHVtblJlc3BvbnNlElYKDVNldFVzZXJBY3RpdmUSIS5wa3BsYW5lci52MS5TZXRVc2VyQWN0aXZlUmVxdWVzdBoiLnBrcGxhbmVyLnYxLlNldFVzZXJBY3RpdmVSZXNwb25zZRJKCglBdXRob3JpemUSHS5wa3BsYW5lci52MS5BdXRob3JpemVSZXF1ZXN0Gh4ucGtwbGFuZXIudjEuQXV0aG9yaXplUmVzcG9uc2USTQoKR2V0QXV0aFVSTBIeLnBrcGxhbmVyLnYxLkdldEF1dGhVUkxSZXF1ZXN0Gh8ucGtwbGFuZXIudjEuR2V0QXV0aFVSTFJlc3BvbnNlElAKC0dldFVzZXJJbmZvEh8ucGtwbGFuZXIudjEuR2V0VXNlckluZm9SZXF1ZXN0GiAucGtwbGFuZXIudjEuR2V0VXNlckluZm9SZXNwb25zZRJNCgpHZXRDbGFzc2VzEh4ucGtwbGFuZXIudjEuR2V0Q2xhc3Nlc1JlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRDbGFzc2VzUmVzcG9uc2USUwoMR2V0T3ZlcnJpZGVzEiAucGtwbGFuZXIudjEuR2V0T3ZlcnJpZGVzUmVxdWVzdBohLnBrcGxhbmVyLnYxLkdldE92ZXJyaWRlc1Jlc3BvbnNlElAKC1NldE92ZXJyaWRlEh8ucGtwbGFuZXIudjEuU2V0T3ZlcnJpZGVSZXF1ZXN0GiAucGtwbGFuZXIudjEuU2V0T3ZlcnJpZGVSZXNwb25zZUI3WjVnaXRodWIuY29tL2dhbWkxMy9QbGFuZXJQSy9nZW4vcGtwbGFuZXIvdjE7cGtwbGFuZXJ2MWIGcHJvdG8z");
 
 /**
  * ColumnGroup represents an available column/group option parsed from the Excel header rows.
@@ -283,6 +283,191 @@ export const GetUserInfoResponseSchema: GenMessage<GetUserInfoResponse> = /*@__P
   messageDesc(file_pkplaner_v1_pkplaner, 12);
 
 /**
+ * ClassInfo represents a single parsed class from the timetable.
+ *
+ * @generated from message pkplaner.v1.ClassInfo
+ */
+export type ClassInfo = Message<"pkplaner.v1.ClassInfo"> & {
+  /**
+   * @generated from field: string hash = 1;
+   */
+  hash: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string type = 3;
+   */
+  type: string;
+
+  /**
+   * @generated from field: string day = 4;
+   */
+  day: string;
+
+  /**
+   * @generated from field: string start_time = 5;
+   */
+  startTime: string;
+
+  /**
+   * @generated from field: string end_time = 6;
+   */
+  endTime: string;
+
+  /**
+   * @generated from field: string location = 7;
+   */
+  location: string;
+
+  /**
+   * @generated from field: string teacher = 8;
+   */
+  teacher: string;
+};
+
+/**
+ * Describes the message pkplaner.v1.ClassInfo.
+ * Use `create(ClassInfoSchema)` to create a new message.
+ */
+export const ClassInfoSchema: GenMessage<ClassInfo> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 13);
+
+/**
+ * ClassOverride holds the override settings for a single class (identified by hash).
+ * Sending an override with all fields at their zero values will delete the override.
+ *
+ * @generated from message pkplaner.v1.ClassOverride
+ */
+export type ClassOverride = Message<"pkplaner.v1.ClassOverride"> & {
+  /**
+   * @generated from field: string class_hash = 1;
+   */
+  classHash: string;
+
+  /**
+   * "HH:MM" or empty for no time shift
+   *
+   * @generated from field: string start_hour = 2;
+   */
+  startHour: string;
+
+  /**
+   * @generated from field: bool is_hidden = 3;
+   */
+  isHidden: boolean;
+
+  /**
+   * @generated from field: bool is_transparent = 4;
+   */
+  isTransparent: boolean;
+};
+
+/**
+ * Describes the message pkplaner.v1.ClassOverride.
+ * Use `create(ClassOverrideSchema)` to create a new message.
+ */
+export const ClassOverrideSchema: GenMessage<ClassOverride> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 14);
+
+/**
+ * GetClassesRequest is empty — the user's chosen_column is read from auth context.
+ *
+ * @generated from message pkplaner.v1.GetClassesRequest
+ */
+export type GetClassesRequest = Message<"pkplaner.v1.GetClassesRequest"> & {
+};
+
+/**
+ * Describes the message pkplaner.v1.GetClassesRequest.
+ * Use `create(GetClassesRequestSchema)` to create a new message.
+ */
+export const GetClassesRequestSchema: GenMessage<GetClassesRequest> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 15);
+
+/**
+ * @generated from message pkplaner.v1.GetClassesResponse
+ */
+export type GetClassesResponse = Message<"pkplaner.v1.GetClassesResponse"> & {
+  /**
+   * @generated from field: repeated pkplaner.v1.ClassInfo classes = 1;
+   */
+  classes: ClassInfo[];
+};
+
+/**
+ * Describes the message pkplaner.v1.GetClassesResponse.
+ * Use `create(GetClassesResponseSchema)` to create a new message.
+ */
+export const GetClassesResponseSchema: GenMessage<GetClassesResponse> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 16);
+
+/**
+ * GetOverridesRequest is empty — authentication is handled via headers.
+ *
+ * @generated from message pkplaner.v1.GetOverridesRequest
+ */
+export type GetOverridesRequest = Message<"pkplaner.v1.GetOverridesRequest"> & {
+};
+
+/**
+ * Describes the message pkplaner.v1.GetOverridesRequest.
+ * Use `create(GetOverridesRequestSchema)` to create a new message.
+ */
+export const GetOverridesRequestSchema: GenMessage<GetOverridesRequest> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 17);
+
+/**
+ * @generated from message pkplaner.v1.GetOverridesResponse
+ */
+export type GetOverridesResponse = Message<"pkplaner.v1.GetOverridesResponse"> & {
+  /**
+   * @generated from field: repeated pkplaner.v1.ClassOverride overrides = 1;
+   */
+  overrides: ClassOverride[];
+};
+
+/**
+ * Describes the message pkplaner.v1.GetOverridesResponse.
+ * Use `create(GetOverridesResponseSchema)` to create a new message.
+ */
+export const GetOverridesResponseSchema: GenMessage<GetOverridesResponse> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 18);
+
+/**
+ * @generated from message pkplaner.v1.SetOverrideRequest
+ */
+export type SetOverrideRequest = Message<"pkplaner.v1.SetOverrideRequest"> & {
+  /**
+   * @generated from field: pkplaner.v1.ClassOverride override = 1;
+   */
+  override?: ClassOverride;
+};
+
+/**
+ * Describes the message pkplaner.v1.SetOverrideRequest.
+ * Use `create(SetOverrideRequestSchema)` to create a new message.
+ */
+export const SetOverrideRequestSchema: GenMessage<SetOverrideRequest> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 19);
+
+/**
+ * @generated from message pkplaner.v1.SetOverrideResponse
+ */
+export type SetOverrideResponse = Message<"pkplaner.v1.SetOverrideResponse"> & {
+};
+
+/**
+ * Describes the message pkplaner.v1.SetOverrideResponse.
+ * Use `create(SetOverrideResponseSchema)` to create a new message.
+ */
+export const SetOverrideResponseSchema: GenMessage<SetOverrideResponse> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 20);
+
+/**
  * PKPlanerService provides RPCs for managing timetable calendar integration.
  *
  * @generated from service pkplaner.v1.PKPlanerService
@@ -347,6 +532,36 @@ export const PKPlanerService: GenService<{
     methodKind: "unary";
     input: typeof GetUserInfoRequestSchema;
     output: typeof GetUserInfoResponseSchema;
+  },
+  /**
+   * GetClasses returns all classes for the authenticated user's chosen column.
+   *
+   * @generated from rpc pkplaner.v1.PKPlanerService.GetClasses
+   */
+  getClasses: {
+    methodKind: "unary";
+    input: typeof GetClassesRequestSchema;
+    output: typeof GetClassesResponseSchema;
+  },
+  /**
+   * GetOverrides returns all class overrides for the authenticated user.
+   *
+   * @generated from rpc pkplaner.v1.PKPlanerService.GetOverrides
+   */
+  getOverrides: {
+    methodKind: "unary";
+    input: typeof GetOverridesRequestSchema;
+    output: typeof GetOverridesResponseSchema;
+  },
+  /**
+   * SetOverride creates, updates, or deletes a class override for the authenticated user.
+   *
+   * @generated from rpc pkplaner.v1.PKPlanerService.SetOverride
+   */
+  setOverride: {
+    methodKind: "unary";
+    input: typeof SetOverrideRequestSchema;
+    output: typeof SetOverrideResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_pkplaner_v1_pkplaner, 0);

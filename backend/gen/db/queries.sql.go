@@ -10,6 +10,21 @@ import (
 	"time"
 )
 
+const deleteOverride = `-- name: DeleteOverride :exec
+DELETE FROM overrides
+WHERE user_id = ?1 AND class_hash = ?2
+`
+
+type DeleteOverrideParams struct {
+	UserID    int64  `json:"user_id"`
+	ClassHash string `json:"class_hash"`
+}
+
+func (q *Queries) DeleteOverride(ctx context.Context, arg DeleteOverrideParams) error {
+	_, err := q.db.ExecContext(ctx, deleteOverride, arg.UserID, arg.ClassHash)
+	return err
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
 FROM users
@@ -38,6 +53,42 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.ChosenColumn,
 			&i.IsActive,
 			&i.LastSynced,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOverridesForUser = `-- name: GetOverridesForUser :many
+SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent
+FROM overrides
+WHERE user_id = ?1
+`
+
+func (q *Queries) GetOverridesForUser(ctx context.Context, userID int64) ([]Override, error) {
+	rows, err := q.db.QueryContext(ctx, getOverridesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Override
+	for rows.Next() {
+		var i Override
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ClassHash,
+			&i.StartHour,
+			&i.IsHidden,
+			&i.IsTransparent,
 		); err != nil {
 			return nil, err
 		}
@@ -173,6 +224,34 @@ WHERE access_token = ?1
 
 func (q *Queries) UpdateUserSyncTime(ctx context.Context, accessToken string) error {
 	_, err := q.db.ExecContext(ctx, updateUserSyncTime, accessToken)
+	return err
+}
+
+const upsertOverride = `-- name: UpsertOverride :exec
+INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent)
+VALUES (?1, ?2, ?3, ?4, ?5)
+ON CONFLICT(user_id, class_hash) DO UPDATE SET
+    start_hour     = excluded.start_hour,
+    is_hidden      = excluded.is_hidden,
+    is_transparent = excluded.is_transparent
+`
+
+type UpsertOverrideParams struct {
+	UserID        int64  `json:"user_id"`
+	ClassHash     string `json:"class_hash"`
+	StartHour     string `json:"start_hour"`
+	IsHidden      bool   `json:"is_hidden"`
+	IsTransparent bool   `json:"is_transparent"`
+}
+
+func (q *Queries) UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error {
+	_, err := q.db.ExecContext(ctx, upsertOverride,
+		arg.UserID,
+		arg.ClassHash,
+		arg.StartHour,
+		arg.IsHidden,
+		arg.IsTransparent,
+	)
 	return err
 }
 

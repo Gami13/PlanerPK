@@ -23,6 +23,15 @@ service PKPlanerService {
 
   // GetUserInfo returns information about the authenticated user.
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+
+  // GetClasses returns all classes for the authenticated user's chosen column.
+  rpc GetClasses(GetClassesRequest) returns (GetClassesResponse);
+
+  // GetOverrides returns all class overrides for the authenticated user.
+  rpc GetOverrides(GetOverridesRequest) returns (GetOverridesResponse);
+
+  // SetOverride creates, updates, or deletes a class override for the authenticated user.
+  rpc SetOverride(SetOverrideRequest) returns (SetOverrideResponse);
 }
 
 // ColumnGroup represents an available column/group option parsed from the Excel header rows.
@@ -84,3 +93,44 @@ message GetUserInfoResponse {
   bool   is_active     = 5;
   int64  chosen_column = 6;
 }
+
+// ClassInfo represents a single parsed class from the timetable.
+message ClassInfo {
+  string hash       = 1;
+  string name       = 2;
+  string type       = 3;
+  string day        = 4;
+  string start_time = 5;
+  string end_time   = 6;
+  string location   = 7;
+  string teacher    = 8;
+}
+
+// ClassOverride holds the override settings for a single class (identified by hash).
+// Sending an override with all fields at their zero values will delete the override.
+message ClassOverride {
+  string class_hash    = 1;
+  string start_hour    = 2; // "HH:MM" or empty for no time shift
+  bool   is_hidden     = 3;
+  bool   is_transparent = 4;
+}
+
+// GetClassesRequest is empty — the user's chosen_column is read from auth context.
+message GetClassesRequest {}
+
+message GetClassesResponse {
+  repeated ClassInfo classes = 1;
+}
+
+// GetOverridesRequest is empty — authentication is handled via headers.
+message GetOverridesRequest {}
+
+message GetOverridesResponse {
+  repeated ClassOverride overrides = 1;
+}
+
+message SetOverrideRequest {
+  ClassOverride override = 1;
+}
+
+message SetOverrideResponse {}

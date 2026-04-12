@@ -19,6 +19,9 @@ func AuthInterceptor(query db.Querier) connect.UnaryInterceptorFunc {
 		"/pkplaner.v1.PKPlanerService/SetChosenColumn": true,
 		"/pkplaner.v1.PKPlanerService/SetUserActive":   true,
 		"/pkplaner.v1.PKPlanerService/GetUserInfo":     true,
+		"/pkplaner.v1.PKPlanerService/GetClasses":      true,
+		"/pkplaner.v1.PKPlanerService/GetOverrides":    true,
+		"/pkplaner.v1.PKPlanerService/SetOverride":     true,
 	}
 
 	return connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {

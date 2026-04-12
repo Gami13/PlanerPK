@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"sync/atomic"
 
 	"connectrpc.com/connect"
@@ -93,13 +94,18 @@ func (h *PKPlanerHandler) SetChosenColumn(
 
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
 	allTimetables := h.Timetable.Load().(types.Timetable)
+	overrides, err := h.Query.GetOverridesForUser(ctx, user.ID)
+	if err != nil {
+		slog.Warn("Failed to fetch overrides for initial import, proceeding without", slog.Any("error", err))
+		overrides = nil
+	}
 	go calendar.ImportTimetable(allTimetables, chosenColumn, &oauth2.Token{
 		AccessToken:  user.AccessToken,
 		TokenType:    user.TokenType,
 		RefreshToken: user.RefreshToken,
 		Expiry:       user.Expiry,
 		ExpiresIn:    user.ExpiresIn,
-	}, h.Query)
+	}, h.Query, overrides)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }
@@ -215,4 +221,120 @@ func (h *PKPlanerHandler) GetUserInfo(
 		IsActive:     *user.IsActive,
 		ChosenColumn: *user.ChosenColumn,
 	}), nil
+}
+
+// startHourRe validates "HH:MM" format.
+var startHourRe = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
+
+// GetClasses returns all classes for the authenticated user's chosen column as ClassInfo protos.
+func (h *PKPlanerHandler) GetClasses(
+	ctx context.Context,
+	req *connect.Request[pkplanerv1.GetClassesRequest],
+) (*connect.Response[pkplanerv1.GetClassesResponse], error) {
+	user := ctx.Value(authUserKey).(db.User)
+
+	if user.ChosenColumn == nil || *user.ChosenColumn < 0 {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("no column chosen"))
+	}
+
+	allTimetables := h.Timetable.Load().(types.Timetable)
+	timetable, ok := allTimetables[*user.ChosenColumn]
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("timetable for chosen column not found"))
+	}
+
+	var classes []*pkplanerv1.ClassInfo
+	for day, dayClasses := range timetable {
+		for _, class := range dayClasses {
+			classes = append(classes, &pkplanerv1.ClassInfo{
+				Hash:      class.Hash(),
+				Name:      class.Name,
+				Type:      class.Type,
+				Day:       day.String(),
+				StartTime: class.StartTime.Format("15:04"),
+				EndTime:   class.EndTime.Format("15:04"),
+				Location:  class.Location,
+				Teacher:   class.Teacher,
+			})
+		}
+	}
+
+	slog.Debug("Returning classes", slog.Int("count", len(classes)))
+	return connect.NewResponse(&pkplanerv1.GetClassesResponse{Classes: classes}), nil
+}
+
+// GetOverrides returns all class overrides for the authenticated user.
+func (h *PKPlanerHandler) GetOverrides(
+	ctx context.Context,
+	req *connect.Request[pkplanerv1.GetOverridesRequest],
+) (*connect.Response[pkplanerv1.GetOverridesResponse], error) {
+	user := ctx.Value(authUserKey).(db.User)
+
+	rows, err := h.Query.GetOverridesForUser(ctx, user.ID)
+	if err != nil {
+		slog.Error("Failed to fetch overrides", slog.Any("error", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to fetch overrides: %w", err))
+	}
+
+	ovr := make([]*pkplanerv1.ClassOverride, len(rows))
+	for i, row := range rows {
+		ovr[i] = &pkplanerv1.ClassOverride{
+			ClassHash:     row.ClassHash,
+			StartHour:     row.StartHour,
+			IsHidden:      row.IsHidden,
+			IsTransparent: row.IsTransparent,
+		}
+	}
+
+	return connect.NewResponse(&pkplanerv1.GetOverridesResponse{Overrides: ovr}), nil
+}
+
+// SetOverride creates, updates, or deletes a class override for the authenticated user.
+// If all fields are zero-values the override is deleted.
+func (h *PKPlanerHandler) SetOverride(
+	ctx context.Context,
+	req *connect.Request[pkplanerv1.SetOverrideRequest],
+) (*connect.Response[pkplanerv1.SetOverrideResponse], error) {
+	user := ctx.Value(authUserKey).(db.User)
+	ovr := req.Msg.Override
+
+	if ovr == nil || ovr.ClassHash == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("class_hash is required"))
+	}
+
+	if ovr.StartHour != "" && !startHourRe.MatchString(ovr.StartHour) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("start_hour must be in HH:MM format"))
+	}
+
+	// Delete when all override fields are zero/empty.
+	if ovr.StartHour == "" && !ovr.IsHidden && !ovr.IsTransparent {
+		slog.Info("Deleting override", slog.String("class_hash", ovr.ClassHash))
+		if err := h.Query.DeleteOverride(ctx, db.DeleteOverrideParams{
+			UserID:    user.ID,
+			ClassHash: ovr.ClassHash,
+		}); err != nil {
+			slog.Error("Failed to delete override", slog.Any("error", err))
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to delete override: %w", err))
+		}
+		return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
+	}
+
+	slog.Info("Upserting override",
+		slog.String("class_hash", ovr.ClassHash),
+		slog.String("start_hour", ovr.StartHour),
+		slog.Bool("is_hidden", ovr.IsHidden),
+		slog.Bool("is_transparent", ovr.IsTransparent))
+
+	if err := h.Query.UpsertOverride(ctx, db.UpsertOverrideParams{
+		UserID:        user.ID,
+		ClassHash:     ovr.ClassHash,
+		StartHour:     ovr.StartHour,
+		IsHidden:      ovr.IsHidden,
+		IsTransparent: ovr.IsTransparent,
+	}); err != nil {
+		slog.Error("Failed to upsert override", slog.Any("error", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to upsert override: %w", err))
+	}
+
+	return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
 }

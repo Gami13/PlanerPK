@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+type Override struct {
+	ID            int64  `json:"id"`
+	UserID        int64  `json:"user_id"`
+	ClassHash     string `json:"class_hash"`
+	StartHour     string `json:"start_hour"`
+	IsHidden      bool   `json:"is_hidden"`
+	IsTransparent bool   `json:"is_transparent"`
+}
+
 type User struct {
 	ID           int64     `json:"id"`
 	Email        *string   `json:"email"`

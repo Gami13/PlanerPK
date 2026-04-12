@@ -9,13 +9,16 @@ import (
 )
 
 type Querier interface {
+	DeleteOverride(ctx context.Context, arg DeleteOverrideParams) error
 	GetAllUsers(ctx context.Context) ([]User, error)
+	GetOverridesForUser(ctx context.Context, userID int64) ([]Override, error)
 	GetTokenByAccessToken(ctx context.Context, accessToken string) (GetTokenByAccessTokenRow, error)
 	GetUserByAccessToken(ctx context.Context, accessToken string) (User, error)
 	GetUserByEmail(ctx context.Context, email *string) (User, error)
 	UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumnParams) error
 	UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
+	UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error
 	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }
 
