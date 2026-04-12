@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show, createSignal } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS, UI_MESSAGES } from "../../constants";
+import { DAY_LABELS, UIText } from "../../constants";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { setClassOverride } from "../../services/pkplaner";
 import { attrs } from "../../utils";
@@ -89,7 +89,7 @@ export function ClassCard(props: ClassCardProps) {
 								}))
 							}
 						/>
-						{UI_MESSAGES.HIDE_CLASS}
+						{UIText.settings.classOverrides.hideClass}
 					</label>
 					<label
 						{...attrs(stylex.props(settingsStyles.checkboxLabel))}
@@ -106,14 +106,14 @@ export function ClassCard(props: ClassCardProps) {
 								}))
 							}
 						/>
-						{UI_MESSAGES.SHOW_TRANSPARENT}
+						{UIText.settings.classOverrides.showTransparent}
 					</label>
 				</div>
 
 				<Show when={!cardState().isHidden}>
 					<div {...attrs(stylex.props(settingsStyles.timeGroup))}>
 						<label {...attrs(stylex.props(settingsStyles.timeLabel))} for={`start-hour-${props.classInfo.hash}`}>
-							{UI_MESSAGES.SHIFT_TIME}
+							{UIText.settings.classOverrides.shiftTime}
 						</label>
 						<input
 							id={`start-hour-${props.classInfo.hash}`}
@@ -133,13 +133,15 @@ export function ClassCard(props: ClassCardProps) {
 
 			<div {...attrs(stylex.props(settingsStyles.saveRow))}>
 				<Button isPrimary={true} onClick={save}>
-					{cardState().status === "saving" ? UI_MESSAGES.SAVING : UI_MESSAGES.SAVE}
+					{cardState().status === "saving"
+						? UIText.settings.classOverrides.saving
+						: UIText.settings.classOverrides.save}
 				</Button>
 				<Show when={cardState().status === "ok"}>
-					<span {...attrs(stylex.props(settingsStyles.feedbackSuccess))}>{UI_MESSAGES.SAVED}</span>
+					<span {...attrs(stylex.props(settingsStyles.feedbackSuccess))}>{UIText.settings.classOverrides.saved}</span>
 				</Show>
 				<Show when={cardState().status === "error"}>
-					<span {...attrs(stylex.props(settingsStyles.feedbackError))}>{UI_MESSAGES.SAVE_ERROR}</span>
+					<span {...attrs(stylex.props(settingsStyles.feedbackError))}>{UIText.settings.classOverrides.saveError}</span>
 				</Show>
 			</div>
 		</div>

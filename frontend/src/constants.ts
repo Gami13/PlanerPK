@@ -12,33 +12,45 @@ export const DAY_LABELS: Record<string, string> = {
 };
 
 // UI Messages - Settings
-export const UI_MESSAGES = {
+export const UIText = {
 	// Status messages
-	LOADING: "Ładowanie...",
-	LOADING_CLASSES: "Ładowanie zajęć…",
-	LOADING_COLUMNS: "Ładowanie kolumn",
-	ERROR_LOADING_CLASSES: "Błąd ładowania zajęć.",
-	ERROR_LOADING_COLUMNS: "Błąd ładowania kolumn",
-
+	status: {
+		loading: "Ładowanie...",
+	},
 	// Account status
-	ACCOUNT_STATUS_ERROR: "Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.",
-	ACCOUNT_ACTIVE: "Aktywny",
-	ACCOUNT_INACTIVE: "Nieaktywny",
-	MARK_ACTIVE: "Oznacz konto jako aktywne",
-	MARK_INACTIVE: "Oznacz konto jako nieaktywne",
 
-	// Column selection
-	COLUMN_ERROR: "Wystąpił błąd podczas zmiany kolumny. Spróbuj ponownie.",
-	COLUMN_SUCCESS: "Pomyślnie zmieniono kolumnę.",
-	COLUMN_NOT_SELECTED: "Nie wybrano kolumny",
-	CHANGE_COLUMN: "Zmień kolumnę",
-
-	// Class overrides
-	HIDE_CLASS: "Ukryj zajęcia",
-	SHOW_TRANSPARENT: "Pokaż poprzednią pozycję jako transparentną",
-	SHIFT_TIME: "Przesuń na godzinę",
-	SAVING: "Zapisywanie…",
-	SAVE: "Zapisz",
-	SAVED: "✓ Zapisano",
-	SAVE_ERROR: "✗ Błąd zapisu",
+	settings: {
+		account: {
+			title: "Status aktywności",
+			statusError: "Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.",
+			active: "Aktywny",
+			inactive: "Nieaktywny",
+			markActive: "Oznacz konto jako aktywne",
+			markInactive: "Oznacz konto jako nieaktywne",
+		},
+		column: {
+			title: "Wybrana kolumna",
+			description: "Zmianę kolumny wykonuj wyłącznie w uzasadnionych przypadkach, aby uniknąć ograniczeń konta.",
+			loadingColumns: "Ładowanie kolumn",
+			errorLoadingColumns: "Błąd ładowania kolumn",
+			errorSetting: "Wystąpił błąd podczas zmiany kolumny. Spróbuj ponownie.",
+			successSetting: "Pomyślnie zmieniono kolumnę.",
+			notSelected: "Nie wybrano kolumny",
+			change: "Zmień kolumnę",
+		},
+		classOverrides: {
+			title: "Nadpisania zajęć",
+			description:
+				"Możesz ukryć zajęcia, przesunąć ich godzinę lub zostawić poprzednią pozycję jako transparentną w kalendarzu. Zmiany zostaną zastosowane przy następnej synchronizacji.",
+			hideClass: "Ukryj zajęcia",
+			showTransparent: "Pokaż poprzednią pozycję jako transparentną",
+			shiftTime: "Przesuń na godzinę",
+			saving: "Zapisywanie…",
+			save: "Zapisz",
+			saved: "✓ Zapisano",
+			saveError: "✗ Błąd zapisu",
+			loadingClasses: "Ładowanie zajęć…",
+			errorLoadingClasses: "Błąd ładowania zajęć.",
+		},
+	},
 } as const;

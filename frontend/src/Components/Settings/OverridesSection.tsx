@@ -1,47 +1,37 @@
 import * as stylex from "@stylexjs/stylex";
-import { For, Show } from "solid-js";
+import { For, Show, useContext } from "solid-js";
 import { Button } from "../../Components/Button";
-import { DAY_LABELS, UI_MESSAGES } from "../../constants";
-import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
+import { DAY_LABELS, UIText } from "../../constants";
 import { attrs } from "../../utils";
 import { ClassCard } from "./ClassCard";
+import { OverridesContext } from "./OverridesContext";
+import { SettingCard } from "./SettingCard";
 import { settingsStyles } from "./settingsStyles";
 
 type OverridesSectionProps = {
 	chosenColumn: number;
 	classesLoading: boolean;
 	classesError: unknown;
-	classes: ClassInfo[];
-	classesAvailableToAdd: ClassInfo[];
-	visibleClasses: ClassInfo[];
-	selectedClassHash: string;
-	onSelectedClassHashChange: (value: string) => void;
-	onAddOverride: () => void;
-	overridesByHash: Map<string, ClassOverride> | undefined;
-	onOverrideSaved: (updated: ClassOverride) => void;
 };
 
 export function OverridesSection(props: OverridesSectionProps) {
-	const showOverridesEditor = () => props.chosenColumn > 0 && props.classes.length > 0;
+	const context = useContext(OverridesContext);
+	if (!context) throw new Error("OverridesSection must be used within OverridesProvider");
+
+	const showOverridesEditor = () => props.chosenColumn > 0 && (context.classes() ?? []).length > 0;
 
 	return (
-		<article {...attrs(stylex.props(settingsStyles.setting))}>
-			<h2 {...attrs(stylex.props(settingsStyles.settingHeader))}>Nadpisania zajęć</h2>
-			<p {...attrs(stylex.props(settingsStyles.settingDescription))}>
-				Możesz ukryć zajęcia, przesunąć ich godzinę lub zostawić poprzednią pozycję jako transparentną w kalendarzu.
-				Zmiany zostaną zastosowane przy następnej synchronizacji.
-			</p>
-
+		<SettingCard title={UIText.settings.classOverrides.title} description={UIText.settings.classOverrides.description}>
 			<Show when={props.chosenColumn <= 0}>
 				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Wybierz kolumnę powyżej, aby zobaczyć listę zajęć.</p>
 			</Show>
 			<Show when={props.chosenColumn > 0 && props.classesLoading}>
-				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UI_MESSAGES.LOADING_CLASSES}</p>
+				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UIText.settings.classOverrides.loadingClasses}</p>
 			</Show>
 			<Show when={props.chosenColumn > 0 && props.classesError}>
-				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UI_MESSAGES.ERROR_LOADING_CLASSES}</p>
+				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>{UIText.settings.classOverrides.errorLoadingClasses}</p>
 			</Show>
-			<Show when={props.chosenColumn > 0 && props.classes.length === 0}>
+			<Show when={props.chosenColumn > 0 && (context.classes() ?? []).length === 0}>
 				<p {...attrs(stylex.props(settingsStyles.emptyNote))}>Brak zajęć dla wybranej kolumny.</p>
 			</Show>
 
@@ -49,12 +39,12 @@ export function OverridesSection(props: OverridesSectionProps) {
 				<div {...attrs(stylex.props(settingsStyles.addOverrideRow))}>
 					<select
 						id="override-class-select"
-						value={props.selectedClassHash}
-						onChange={(e) => props.onSelectedClassHashChange(e.currentTarget.value)}
+						value={context.selected()}
+						onChange={(e) => context.setSelected(e.currentTarget.value)}
 						{...attrs(stylex.props(settingsStyles.addOverrideSelect))}
 					>
 						<option value="">Wybierz zajęcia do nadpisania…</option>
-						<For each={props.classesAvailableToAdd}>
+						<For each={context.availableClasses()}>
 							{(cls) => (
 								<option value={cls.hash}>
 									{cls.name}
@@ -65,28 +55,28 @@ export function OverridesSection(props: OverridesSectionProps) {
 							)}
 						</For>
 					</select>
-					<Button isPrimary={false} onClick={props.onAddOverride}>
+					<Button isPrimary={false} onClick={context.addSelected}>
 						Dodaj nadpisanie
 					</Button>
 				</div>
 
 				<div {...attrs(stylex.props(settingsStyles.overrideGrid))}>
-					<For each={props.visibleClasses}>
+					<For each={context.visibleClasses()}>
 						{(cls) => (
 							<ClassCard
 								classInfo={cls}
-								override={props.overridesByHash?.get(cls.hash)}
-								onSaved={props.onOverrideSaved}
+								override={context.overrides()?.get(cls.hash)}
+								onSaved={context.handleOverrideSaved}
 							/>
 						)}
 					</For>
-					<Show when={props.visibleClasses.length === 0}>
+					<Show when={context.visibleClasses().length === 0}>
 						<p {...attrs(stylex.props(settingsStyles.emptyNote))}>
 							Brak aktywnych nadpisań. Wybierz zajęcia z listy powyżej.
 						</p>
 					</Show>
 				</div>
 			</Show>
-		</article>
+		</SettingCard>
 	);
 }

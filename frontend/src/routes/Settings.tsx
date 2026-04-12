@@ -6,11 +6,12 @@ import { PageTitle } from "../Components/PageTitle";
 import { AppContext } from "../appContext";
 import { AccountStatusCard } from "../Components/Settings/AccountStatusCard";
 import { ColumnSelectionCard } from "../Components/Settings/ColumnSelectionCard";
+import { OverridesProvider } from "../Components/Settings/OverridesContext";
 import { OverridesSection } from "../Components/Settings/OverridesSection";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
 import { settingsStyles } from "../Components/Settings/settingsStyles";
 import { useSettingsOverrides } from "../Components/Settings/useSettingsOverrides";
-import { UI_MESSAGES } from "../constants";
+import { UIText } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
 import { attrs, getGroupByColumnIndex } from "../utils";
 
@@ -20,24 +21,18 @@ export function Settings() {
 	const [classes, { refetch: refetchClasses }] = createResource(getClasses);
 	const [overrides, { mutate: mutateOverrides }] = createResource(getOverrides);
 
-	const {
-		addSelectedClassToOverrides,
-		classesAvailableToAdd,
-		handleOverrideSaved,
-		selectedClassHash,
-		setSelectedClassHash,
-		visibleClasses,
-	} = useSettingsOverrides(classes, overrides, mutateOverrides);
+	const { selected, setSelected, addSelected, visibleClasses, availableClasses, handleOverrideSaved } =
+		useSettingsOverrides(classes, overrides, mutateOverrides);
 
 	const chosenColumn = createMemo(() => Number(AppState.store.userInfo?.chosenColumn ?? 0n));
 
 	const currentColumnLabel = createMemo(() => {
 		const selectedColumn = chosenColumn();
 		if (selectedColumn === 0) {
-			return UI_MESSAGES.COLUMN_NOT_SELECTED;
+			return UIText.settings.column.notSelected;
 		}
 
-		return getGroupByColumnIndex(columns(), selectedColumn)?.label ?? UI_MESSAGES.LOADING;
+		return getGroupByColumnIndex(columns(), selectedColumn)?.label ?? UIText.settings.column.loadingColumns;
 	});
 
 	async function toggleAccountStatus() {
@@ -48,7 +43,7 @@ export function Settings() {
 		const newStatus = !AppState.store.userInfo.isActive;
 		const success = await setUserActive(newStatus);
 		if (!success) {
-			alert(UI_MESSAGES.ACCOUNT_STATUS_ERROR);
+			alert(UIText.settings.account.statusError);
 			return;
 		}
 
@@ -59,11 +54,11 @@ export function Settings() {
 	async function changeChosenColumn(nextColumn: number) {
 		const success = await setChosenColumn(nextColumn);
 		if (!success) {
-			alert(UI_MESSAGES.COLUMN_ERROR);
+			alert(UIText.settings.column.errorSetting);
 			return;
 		}
 
-		alert(UI_MESSAGES.COLUMN_SUCCESS);
+		alert(UIText.settings.column.successSetting);
 		AppState.setStore("userInfo", "chosenColumn", BigInt(nextColumn));
 		refetchClasses();
 	}
@@ -86,19 +81,24 @@ export function Settings() {
 					onChangeChosenColumn={changeChosenColumn}
 				/>
 
-				<OverridesSection
-					chosenColumn={chosenColumn()}
-					classesLoading={classes.loading}
-					classesError={classes.error}
-					classes={classes() ?? []}
-					classesAvailableToAdd={classesAvailableToAdd()}
-					visibleClasses={visibleClasses()}
-					selectedClassHash={selectedClassHash()}
-					onSelectedClassHashChange={setSelectedClassHash}
-					onAddOverride={addSelectedClassToOverrides}
-					overridesByHash={overrides()}
-					onOverrideSaved={handleOverrideSaved}
-				/>
+				<OverridesProvider
+					value={{
+						classes,
+						overrides,
+						selected,
+						setSelected,
+						addSelected,
+						visibleClasses,
+						availableClasses,
+						handleOverrideSaved,
+					}}
+				>
+					<OverridesSection
+						chosenColumn={chosenColumn()}
+						classesLoading={classes.loading}
+						classesError={classes.error}
+					/>
+				</OverridesProvider>
 			</section>
 		</main>
 	);

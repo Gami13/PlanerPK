@@ -1,6 +1,27 @@
 import * as stylex from "@stylexjs/stylex";
 import { borderRadius, breakpoints, colors, spacing } from "../../styles/tokens.stylex";
 
+const inputBase = {
+	borderColor: colors.defaultBorder,
+	borderStyle: "solid",
+	borderWidth: "1px",
+	color: colors.primaryText,
+	fontSize: "1em",
+};
+
+const flexRow = {
+	gap: "0.75em",
+	alignItems: "center",
+	display: "flex",
+	flexWrap: "wrap",
+};
+
+const flexColumn = {
+	gap: "0.75em",
+	display: "flex",
+	flexDirection: "column",
+};
+
 export const settingsStyles = stylex.create({
 	main: {
 		padding: spacing.xl,
@@ -53,38 +74,26 @@ export const settingsStyles = stylex.create({
 		color: colors.secondaryText,
 	},
 	columnSelect: {
-		borderColor: colors.defaultBorder,
+		...inputBase,
 		borderRadius: borderRadius.lg,
-		borderStyle: "solid",
-		borderWidth: "1px",
 		paddingBlock: "0.6em",
 		paddingInline: "0.9em",
-		color: colors.primaryText,
-		fontSize: "1em",
 		maxWidth: "20em",
 		width: "100%",
 	},
 	overrideGrid: {
-		gap: "0.75em",
-		display: "flex",
-		flexDirection: "column",
+		...flexColumn,
 		width: "100%",
 	},
 	addOverrideRow: {
-		gap: "0.75em",
-		alignItems: "center",
-		display: "flex",
-		flexWrap: "wrap",
+		...flexRow,
 		width: "100%",
 	},
 	addOverrideSelect: {
-		borderColor: colors.defaultBorder,
+		...inputBase,
 		borderRadius: borderRadius.md,
-		borderStyle: "solid",
-		borderWidth: "1px",
 		paddingBlock: spacing.sm,
 		paddingInline: "0.75em",
-		color: colors.primaryText,
 		fontSize: "0.95em",
 		maxWidth: "28em",
 		width: "100%",
@@ -124,15 +133,13 @@ export const settingsStyles = stylex.create({
 		fontSize: "0.82em",
 	},
 	overrideControls: {
-		gap: "0.75em 1.5em",
+		...flexRow,
 		alignItems: "flex-end",
-		display: "flex",
-		flexWrap: "wrap",
+		columnGap: "1.5em",
+		rowGap: "0.75em",
 	},
 	checkboxGroup: {
-		gap: spacing.xs,
-		display: "flex",
-		flexDirection: "column",
+		...flexColumn,
 	},
 	checkboxLabel: {
 		gap: "0.4em",
@@ -143,9 +150,7 @@ export const settingsStyles = stylex.create({
 		fontSize: "0.88em",
 	},
 	timeGroup: {
-		gap: spacing.xs,
-		display: "flex",
-		flexDirection: "column",
+		...flexColumn,
 	},
 	timeLabel: {
 		color: colors.secondaryText,
@@ -153,21 +158,15 @@ export const settingsStyles = stylex.create({
 		fontWeight: 500,
 	},
 	timeInput: {
-		borderColor: colors.defaultBorder,
+		...inputBase,
 		borderRadius: borderRadius.sm,
-		borderStyle: "solid",
-		borderWidth: "1px",
 		paddingBlock: "0.4em",
 		paddingInline: "0.6em",
-		color: colors.primaryText,
 		fontSize: "0.9em",
 		width: "7em",
 	},
 	saveRow: {
-		gap: "0.75em",
-		alignItems: "center",
-		display: "flex",
-		flexWrap: "wrap",
+		...flexRow,
 	},
 	feedbackSuccess: {
 		color: colors.activeText,
