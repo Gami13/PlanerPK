@@ -1,12 +1,11 @@
+import { PageTitle } from "#components/PageTitle";
 import * as stylex from "@stylexjs/stylex";
 import { createResource, Show, useContext } from "solid-js";
-import { AppContext } from "..";
-import { rpc } from "../api_client";
+import { AppContext } from "../appContext";
 import { Button } from "../Components/Button";
-import { PageTitle } from "../Components/PageTitle";
 import { UserCard } from "../Components/UserCard";
 import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
-import type { GetUserInfoResponse } from "../gen/pkplaner/v1/pkplaner_pb.js";
+import { getAuthURL } from "../services/pkplaner";
 import { attrs, setAccessToken } from "../utils";
 
 const MOBILE_MAX = "@media (max-width: 33.75em)" as const;
@@ -91,11 +90,6 @@ const styles = stylex.create({
 	},
 });
 
-async function fetchAuthURL() {
-	const res = await rpc.getAuthURL({});
-	return res.url;
-}
-
 export function logOut() {
 	setAccessToken("");
 	window.location.reload();
@@ -103,8 +97,9 @@ export function logOut() {
 
 export function Home() {
 	const AppState = useContext(AppContext);
-	const [authURL] = createResource(fetchAuthURL);
-	console.log(AppState.store.userInfo);
+	const [authURL] = createResource(getAuthURL);
+	const userInfo = () => AppState.store.userInfo;
+
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
 			<PageTitle />
@@ -123,23 +118,27 @@ export function Home() {
 				</div>
 				<div {...attrs(stylex.props(styles.interactionsContainer))}>
 					<Show
-						when={AppState.store.userInfo?.email}
+						when={userInfo()}
 						fallback={
 							<Button isPrimary={true} isNavigation={true} isVanillaNavigation={true} href={authURL()}>
 								Zarejestruj się z Google
 							</Button>
 						}
 					>
-						<UserCard userInfo={AppState.store.userInfo as GetUserInfoResponse} />
-						<div {...attrs(stylex.props(styles.authButtons))}>
-							<Button isPrimary={true} isNavigation={true} href="/settings">
-								Ustawienia
-							</Button>
+						{(info) => (
+							<>
+								<UserCard userInfo={info()} />
+								<div {...attrs(stylex.props(styles.authButtons))}>
+									<Button isPrimary={true} isNavigation={true} href="/settings">
+										Ustawienia
+									</Button>
 
-							<Button isPrimary={false} onClick={logOut}>
-								Wyloguj
-							</Button>
-						</div>
+									<Button isPrimary={false} onClick={logOut}>
+										Wyloguj
+									</Button>
+								</div>
+							</>
+						)}
 					</Show>
 				</div>
 

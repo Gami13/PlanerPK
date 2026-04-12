@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
-import { colors } from "../styleTokens.stylex";
+import { primitiveStyles } from "../styles/primitives";
 import { attrs } from "../utils";
 
 type PillTagProps = {
@@ -9,28 +9,12 @@ type PillTagProps = {
 	text: string;
 };
 
-const styles = stylex.create({
-	metaLabel: {
-		borderRadius: "999px",
-		paddingBlock: "0.35rem",
-		paddingInline: "0.75rem",
-		backgroundColor: "#f4f6fb",
-		color: colors.secondaryText,
-
-		fontSize: "0.8rem",
-	},
-	status: {
-		fontWeight: 600,
-	},
-	statusActive: {
-		backgroundColor: colors.activeBackground,
-		color: colors.activeText,
-	},
-	statusInactive: {
-		backgroundColor: colors.inactiveBackground,
-		color: colors.inactiveText,
-	},
-});
+const styles = {
+	metaLabel: primitiveStyles.pillBase,
+	status: primitiveStyles.pillStatusText,
+	statusActive: primitiveStyles.pillStatusActive,
+	statusInactive: primitiveStyles.pillStatusInactive,
+};
 
 export function PillTag(props: PillTagProps) {
 	return (

@@ -47,3 +47,15 @@ export function getGroupByColumnIndex(
 ): ColumnGroup | undefined {
 	return columns?.find((col) => col.column === columnIndex);
 }
+
+export function groupByCategory(columns: ColumnGroup[]): Map<string, ColumnGroup[]> {
+	const grouped = new Map<string, ColumnGroup[]>();
+	for (const column of columns) {
+		const key = column.category || "";
+		if (!grouped.has(key)) {
+			grouped.set(key, []);
+		}
+		grouped.get(key)!.push(column);
+	}
+	return grouped;
+}

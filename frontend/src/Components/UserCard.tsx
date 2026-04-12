@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import type { GetUserInfoResponse } from "../gen/pkplaner/v1/pkplaner_pb.js";
-import { colors } from "../styleTokens.stylex";
+import { colors } from "../styles/tokens.stylex";
 import { attrs } from "../utils";
 import { PillTag } from "./PillTag";
 

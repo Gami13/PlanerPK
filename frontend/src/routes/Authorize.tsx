@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "@solidjs/router";
-import { createEffect, useContext } from "solid-js";
-import { AppContext, updateLoggedInUser } from "..";
-import { rpc } from "../api_client";
+import { onMount, useContext } from "solid-js";
 import { PageTitle } from "../Components/PageTitle";
+import { AppContext, updateLoggedInUser } from "../appContext";
+import { authorizeByCode } from "../services/pkplaner";
 import { setAccessToken } from "../utils";
 
 export function Authorize() {
@@ -10,26 +10,26 @@ export function Authorize() {
 	const navigate = useNavigate();
 	const AppState = useContext(AppContext);
 
-	createEffect(() => {
+	onMount(async () => {
 		const code = new URLSearchParams(location.search).get("code");
+		if (!code) {
+			return;
+		}
 
-		if (code) {
-			rpc
-				.authorize({ code })
-				.then((data) => {
-					if (data.accessToken) {
-						setAccessToken(data.accessToken);
+		try {
+			const data = await authorizeByCode(code);
+			if (!data.accessToken) {
+				return;
+			}
 
-						updateLoggedInUser(AppState.store, AppState.setStore).then(() => {
-							navigate("/settings");
-						});
-					}
-				})
-				.catch((error) => {
-					console.error("Authorization error:", error);
-				});
+			setAccessToken(data.accessToken);
+			await updateLoggedInUser(AppState.setStore);
+			navigate("/settings");
+		} catch (error) {
+			console.error("Authorization error:", error);
 		}
 	});
+
 	return (
 		<main>
 			<PageTitle title="Autoryzacja" />

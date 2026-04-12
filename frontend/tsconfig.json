@@ -1,20 +1,28 @@
 {
-  "compilerOptions": {
-    // General
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
-    "target": "ESNext",
+	"compilerOptions": {
+		// General
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js",
+		"target": "ESNext",
 
-    // Modules
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "noEmit": true,
+		// Modules
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"paths": {
+			"#components": ["./src/Components"],
+			"#components/*": ["./src/Components/*"],
+			"#routes": ["./src/routes"],
+			"#routes/*": ["./src/routes/*"],
+			"#styles": ["./src/styles"],
+			"#styles/*": ["./src/styles/*"]
+		},
+		"noEmit": true,
 
-    // Type Checking & Safety
-    "strict": true,
-    "types": ["vite/client"]
-  }
+		// Type Checking & Safety
+		"strict": true,
+		"types": ["vite/client"]
+	}
 }

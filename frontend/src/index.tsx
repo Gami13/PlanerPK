@@ -1,22 +1,22 @@
 /* @refresh reload */
-import "solid-devtools";
 import "./index.css";
 
 import { render } from "solid-js/web";
 
 import { Route, Router, RouteSectionProps } from "@solidjs/router";
-import { Component, createContext, onMount, Suspense } from "solid-js";
+import { Component, onMount, ParentProps, Suspense } from "solid-js";
 
 import { MetaProvider } from "@solidjs/meta";
-import { createStore, SetStoreFunction } from "solid-js/store";
-import { rpc } from "./api_client";
-import { ENV } from "./env";
-import type { GetUserInfoResponse } from "./gen/pkplaner/v1/pkplaner_pb.js";
+import { createStore } from "solid-js/store";
+import { AppContext, type AppStore, updateLoggedInUser } from "./appContext";
 import { Authorize } from "./routes/Authorize";
 import { Home } from "./routes/Home";
 import { NotFound } from "./routes/NotFound";
 import { Settings } from "./routes/Settings";
-import { getAccessToken } from "./utils";
+
+if (import.meta.env.DEV) {
+	void import("solid-devtools");
+}
 
 const root = document.getElementById("root");
 
@@ -26,54 +26,16 @@ if (!root) {
 	);
 }
 
-export type AppStore = {
-	userInfo: GetUserInfoResponse | undefined;
-};
+export function App(props: ParentProps) {
+	const [store, setStore] = createStore<AppStore>({ userInfo: undefined });
 
-interface AppContextValue {
-	store: AppStore;
-	setStore: SetStoreFunction<{
-		userInfo: GetUserInfoResponse | undefined;
-	}>;
-}
-const defaultContext: AppContextValue = {
-	store: { userInfo: undefined },
-	setStore: () => {},
-};
-
-export const AppContext = createContext<AppContextValue>(defaultContext);
-
-async function fetchUserInfo(): Promise<GetUserInfoResponse | undefined> {
-	try {
-		return await rpc.getUserInfo({});
-	} catch {
-		return undefined;
-	}
-}
-
-export async function updateLoggedInUser(store: AppStore, setStore: SetStoreFunction<AppStore>) {
-	const userToken = getAccessToken();
-	if (userToken) {
-		fetchUserInfo().then((userInfo) => {
-			setStore({ userInfo });
-			console.log("Fetched user info on update:", userInfo);
-		});
-	}
-}
-
-export function App(props: { children: Element }) {
-	const [store, setStore] = createStore({
-		userInfo: {} as GetUserInfoResponse | undefined,
-	});
-
-	onMount(async () => {
-		console.log(ENV);
-		updateLoggedInUser(store, setStore);
+	onMount(() => {
+		void updateLoggedInUser(setStore);
 	});
 
 	return (
 		<AppContext.Provider value={{ store, setStore }}>
-			<Suspense> {props.children}</Suspense>
+			<Suspense>{props.children}</Suspense>
 		</AppContext.Provider>
 	);
 }
