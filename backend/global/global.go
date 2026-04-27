@@ -136,6 +136,10 @@ func LoadEnvVariables() {
 	if logsPath != "" {
 		LOGS_PATH = logsPath
 	}
+	jsonInfoLocation := os.Getenv("JSON_INFO_LOCATION")
+	if jsonInfoLocation != "" {
+		JSON_INFO_LOCATION = jsonInfoLocation
+	}
 }
 
 func PrintEnvVariables() {
@@ -156,5 +160,6 @@ func PrintEnvVariables() {
 		slog.Int("TIME_BETWEEN_SYNC_HOURS", TIME_BETWEEN_SYNC_HOURS),
 		slog.Int("LAST_COLUMN", LAST_COLUMN),
 		slog.String("LOGS_PATH", LOGS_PATH),
+		slog.String("JSON_INFO_LOCATION", JSON_INFO_LOCATION),
 	)
 }

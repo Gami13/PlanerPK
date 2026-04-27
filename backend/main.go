@@ -44,6 +44,13 @@ func initializeXlsxInfo() {
 		panic("Failed to check if stats file exists: " + err.Error())
 	}
 
+	// Create the directory if it doesn't exist
+	dir := filepath.Dir(filename)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		panic("Could not create stats directory: " + err.Error())
+	}
+
 	jsonText, err := json.Marshal(types.TimetableFileStats{})
 	if err != nil {
 		panic("Could not marshal json")
