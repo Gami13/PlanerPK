@@ -39,7 +39,7 @@ func (c Class) String() string {
 }
 
 func (c Class) Hash() string {
-	return fmt.Sprintf("%s|%s|%s|%s", c.Summary(), c.StartTimeRFC3339(), c.EndTimeRFC3339(), c.Location)
+	return fmt.Sprintf("%s|%d|%s|%s|%s", c.Summary(), c.Day, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Location)
 }
 
 func (c Class) Summary() string {
