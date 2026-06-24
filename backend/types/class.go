@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gami13/PlanerPK/utils"
+	"github.com/woodpkrs/PlanerPK/utils"
 	"google.golang.org/api/calendar/v3"
 )
 

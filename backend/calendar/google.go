@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/gami13/PlanerPK/global"
-	"github.com/gami13/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"

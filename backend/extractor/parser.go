@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gami13/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 // Global so it's not recompiled every time the function is called

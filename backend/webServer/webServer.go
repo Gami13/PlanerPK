@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/gami13/PlanerPK/gen/db"
-	"github.com/gami13/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
-	"github.com/gami13/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
+	"github.com/woodpkrs/PlanerPK/global"
 
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"

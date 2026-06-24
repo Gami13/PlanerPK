@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pkplaner.v1;
 
-option go_package = "github.com/gami13/PlanerPK/gen/pkplaner/v1;pkplanerv1";
+option go_package = "github.com/woodpkrs/PlanerPK/gen/pkplaner/v1;pkplanerv1";
 
 // PKPlanerService provides RPCs for managing timetable calendar integration.
 service PKPlanerService {

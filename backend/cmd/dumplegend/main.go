@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gami13/PlanerPK/extractor"
-	"github.com/gami13/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/extractor"
+	"github.com/woodpkrs/PlanerPK/global"
 )
 
 func main() {

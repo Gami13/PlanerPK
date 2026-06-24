@@ -1137,7 +1137,7 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\n" +
 	"GetClasses\x12\x1e.pkplaner.v1.GetClassesRequest\x1a\x1f.pkplaner.v1.GetClassesResponse\x12S\n" +
 	"\fGetOverrides\x12 .pkplaner.v1.GetOverridesRequest\x1a!.pkplaner.v1.GetOverridesResponse\x12P\n" +
-	"\vSetOverride\x12\x1f.pkplaner.v1.SetOverrideRequest\x1a .pkplaner.v1.SetOverrideResponseB7Z5github.com/gami13/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
+	"\vSetOverride\x12\x1f.pkplaner.v1.SetOverrideRequest\x1a .pkplaner.v1.SetOverrideResponseB9Z7github.com/woodpkrs/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
 
 var (
 	file_pkplaner_v1_pkplaner_proto_rawDescOnce sync.Once

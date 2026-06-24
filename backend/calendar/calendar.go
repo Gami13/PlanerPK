@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/gami13/PlanerPK/gen/db"
-	"github.com/gami13/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )

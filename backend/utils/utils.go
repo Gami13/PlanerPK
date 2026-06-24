@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gami13/PlanerPK/gen/db"
 	"github.com/lmittmann/tint"
+	"github.com/woodpkrs/PlanerPK/gen/db"
 	"golang.org/x/oauth2"
 )
 

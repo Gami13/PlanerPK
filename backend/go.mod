@@ -1,4 +1,4 @@
-module github.com/gami13/PlanerPK
+module github.com/woodpkrs/PlanerPK
 
 go 1.24.4
 

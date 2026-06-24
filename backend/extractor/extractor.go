@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/gami13/PlanerPK/global"
-	"github.com/gami13/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 

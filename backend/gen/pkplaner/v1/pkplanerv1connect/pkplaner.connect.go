@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/gami13/PlanerPK/gen/pkplaner/v1"
+	v1 "github.com/woodpkrs/PlanerPK/gen/pkplaner/v1"
 	http "net/http"
 	strings "strings"
 )

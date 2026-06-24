@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gami13/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 // mockLegend returns a Legend populated with sample teachers and locations

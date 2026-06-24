@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/gami13/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/gen/db"
 )
 
 type contextKey string

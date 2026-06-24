@@ -14,15 +14,15 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/gami13/PlanerPK/calendar"
-	"github.com/gami13/PlanerPK/gen/db"
-	"github.com/gami13/PlanerPK/types"
-	"github.com/gami13/PlanerPK/webServer"
+	"github.com/woodpkrs/PlanerPK/calendar"
+	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/webServer"
 
-	"github.com/gami13/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/global"
 
-	"github.com/gami13/PlanerPK/extractor"
-	"github.com/gami13/PlanerPK/utils"
+	"github.com/woodpkrs/PlanerPK/extractor"
+	"github.com/woodpkrs/PlanerPK/utils"
 )
 
 //go:embed schema.sql
