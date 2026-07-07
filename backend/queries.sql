@@ -63,3 +63,40 @@ ON CONFLICT(user_id, class_hash) DO UPDATE SET
 -- name: DeleteOverride :exec
 DELETE FROM overrides
 WHERE user_id = sqlc.arg(user_id) AND class_hash = sqlc.arg(class_hash);
+
+-- name: GetBuildings :many
+SELECT *
+FROM buildings;
+
+-- name: GetBuildingByID :one
+SELECT *
+FROM buildings
+WHERE id = sqlc.arg(id);
+
+-- name: GetBuildingByKey :one
+SELECT *
+FROM buildings
+WHERE key = sqlc.arg(key);
+
+-- name: GetBuildingByGooglePlaceID :one
+SELECT *
+FROM buildings
+WHERE google_place_id = sqlc.arg(google_place_id);
+
+-- name: GetBuildingByClassroomName :one
+SELECT p.*
+FROM buildings p
+JOIN building_classrooms pc ON p.id = pc.building_id
+JOIN classrooms c ON c.id = pc.classroom_id
+WHERE c.name = sqlc.arg(classroom_name);
+
+-- name: GetClassroomNamesWithBuildingIDs :many
+SELECT c.name, p.id
+FROM buildings p
+JOIN building_classrooms pc ON p.id = pc.building_id
+JOIN classrooms c ON c.id = pc.classroom_id;
+
+-- name: UpdateBuilding :exec
+UPDATE buildings
+SET name = sqlc.arg(name), address = sqlc.arg(address)
+WHERE id = sqlc.arg(id);

@@ -161,6 +161,31 @@ func main() {
 
 	go webServer.Start(queries, &availableGroups, &timetable, &legend)
 
+	// TODO: update once two weeks
+	err = types.UpdateBuildingsDetails(context.Background(), queries)
+	if err != nil {
+		slog.Error("Failed to update buildings details", "error", err)
+	}
+
+	// Cache buildings from the database
+	buildings, err := queries.GetBuildings(context.Background())
+	if err != nil {
+		slog.Error("Failed to fetch buildings from database", "error", err)
+	}
+
+	for _, building := range buildings {
+		types.BuildingsGlobalCache.SetBuilding(building.ID, types.MapToCachedBuildings(building))
+	}
+
+	classrooms, err := queries.GetClassroomNamesWithBuildingIDs(context.Background())
+	if err != nil {
+		slog.Error("Failed to fetch classroom associations with buildings from database", "error", err)
+	}
+
+	for _, classroom := range classrooms {
+		types.BuildingsGlobalCache.SetClassroom(*classroom.Name, classroom.ID)
+	}
+
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
 	func() {
