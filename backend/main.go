@@ -161,7 +161,7 @@ func main() {
 
 	go webServer.Start(queries, &availableGroups, &timetable, &legend)
 
-	// TODO: update once two weeks
+	// TODO: update once two weeks, currently it's unsafe and might cost us money
 	err = types.UpdateBuildingsDetails(context.Background(), queries)
 	if err != nil {
 		slog.Error("Failed to update buildings details", "error", err)
