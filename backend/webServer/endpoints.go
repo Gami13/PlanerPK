@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
-)
 
-var fs = http.FileServer(http.Dir("./static/"))
+	"github.com/woodpkrs/PlanerPK/global"
+)
 
 func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	// Prevent caching of env.js since it's dynamically generated at runtime
@@ -18,7 +19,7 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path != "/" {
-		fullPath := "./static/" + strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+		fullPath := filepath.Join(global.STATIC_FILES_LOCATION, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		_, err := os.Stat(fullPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -29,5 +30,5 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 			r.URL.Path = "/"
 		}
 	}
-	fs.ServeHTTP(w, r)
+	http.FileServer(http.Dir(global.STATIC_FILES_LOCATION)).ServeHTTP(w, r)
 }

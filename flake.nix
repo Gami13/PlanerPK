@@ -104,6 +104,7 @@
                             mkdir -p "$STATIC_DIR"
                             cp -rf ${self'.packages.frontend}/static/* "$STATIC_DIR/"
                             chmod -R u+w "$STATIC_DIR"
+                            export STATIC_FILES_LOCATION="''${STATIC_FILES_LOCATION:-$STATIC_DIR}"
 
                             for js_file in "$STATIC_DIR"/assets/*.js; do
                                 if [ -f "$js_file" ]; then
@@ -199,6 +200,7 @@
                                 TIMETABLE_DOWNLOAD_DESTINATION = "data/downloads/";
                                 TIMETABLE_CURRENT_DESTINATION = "data/current_timetable/";
                                 JSON_INFO_LOCATION = "data/";
+                                STATIC_FILES_LOCATION="static/";
                                 CALENDAR_CREDENTIALS_PATH = "%d/credentials.json";
                                 LOGS_PATH = "%L/planer-pk/";
                                 DATABASE_SOURCE = "file:data/database.db?cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite";
