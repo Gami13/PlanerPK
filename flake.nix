@@ -121,6 +121,12 @@
                     };
                 };
 
+                apps.default = {
+                    type = "app";
+                    program = "${self'.packages.default}/bin/planer-pk";
+                    meta.description = "Run the Planer PK backend and frontend locally";
+                };
+
                 devShells.default = pkgs.mkShell {
                     name = "planer-pk";
 
@@ -136,6 +142,10 @@
                         pnpm
                         libreoffice
                     ];
+                };
+
+                checks = {
+                    inherit (self'.packages) frontend backend default;
                 };
             };
 
