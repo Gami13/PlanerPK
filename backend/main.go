@@ -108,7 +108,7 @@ func buildNewCache() ([]types.ColumnGroup, *types.Legend, types.Timetable, error
 	return newGroups, newLegend, newTimetable, nil
 }
 
-func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, buildings *atomic.Value, isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], isInitialRun bool) (hasChanged bool, err error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -143,9 +143,9 @@ func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Value, 
 		} else {
 			buildings.Store(newBuildings)
 		}
-		availableGroups.Store(newGroups)
+		availableGroups.Store(&newGroups)
 		legend.Store(newLegend)
-		timetable.Store(newTimetable)
+		timetable.Store(&newTimetable)
 	}
 
 	return hasChanged, nil
@@ -154,10 +154,10 @@ func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Value, 
 func main() {
 	queries := initializeApp()
 
-	var availableGroups atomic.Value
-	var timetable atomic.Value
-	var legend atomic.Value
-	var buildings atomic.Value
+	var availableGroups atomic.Pointer[[]types.ColumnGroup]
+	var timetable atomic.Pointer[types.Timetable]
+	var legend atomic.Pointer[types.Legend]
+	var buildings atomic.Pointer[types.Buildings]
 
 	_, err := updateTimetableAndCache(queries, &availableGroups, &timetable, &legend, &buildings, true)
 	if err != nil {
@@ -187,7 +187,7 @@ func main() {
 	}()
 }
 
-func updateAllTimetables(queries db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, buildings *atomic.Value) {
+func updateAllTimetables(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings]) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
@@ -197,11 +197,11 @@ func updateAllTimetables(queries db.Querier, availableGroups *atomic.Value, time
 	if err != nil {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}
-	allTimetables := timetable.Load().(types.Timetable)
+	allTimetables := timetable.Load()
 
 	var b *types.Buildings
 	if loaded := buildings.Load(); loaded != nil {
-		b = loaded.(*types.Buildings)
+		b = loaded
 	}
 
 	for _, user := range users {

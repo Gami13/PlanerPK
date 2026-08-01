@@ -11,12 +11,12 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func ImportTimetable(allTimetables types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *types.Buildings) {
+func ImportTimetable(allTimetables *types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *types.Buildings) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
 
-	timetable, ok := allTimetables[groupColumn]
+	timetable, ok := (*allTimetables)[groupColumn]
 	if !ok {
 		slog.Error("Group column not found in timetable", slog.Int64("group_column", groupColumn))
 		return

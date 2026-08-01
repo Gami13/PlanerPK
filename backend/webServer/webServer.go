@@ -11,6 +11,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
 	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
@@ -81,7 +82,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, buildings *atomic.Value) {
+func Start(db db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings]) {
 	query := db
 	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend, buildings)
 
