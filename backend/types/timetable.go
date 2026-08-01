@@ -42,7 +42,7 @@ func (timetable *Timetable) Print() {
 	for k, v := range *timetable {
 		for day, classes := range v {
 			for _, class := range classes {
-				fmt.Println(fmt.Sprintf("%d %d %s", k, day, class.String()))
+				fmt.Printf("%d %d %s\n", k, day, class.String())
 			}
 		}
 	}
