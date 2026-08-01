@@ -3,11 +3,11 @@ package types
 import (
 	"context"
 	"fmt"
-	"os"
 
 	places "cloud.google.com/go/maps/places/apiv1"
 	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/global"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/metadata"
 )
@@ -124,12 +124,7 @@ func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlac
 }
 
 func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
-	apiKey := os.Getenv("GOOGLE_PLACES_NEW_API_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("GOOGLE_PLACES_NEW_API_KEY environment variable is not set")
-	}
-
-	client, err := places.NewClient(ctx, option.WithAPIKey(apiKey))
+	client, err := places.NewClient(ctx, option.WithAPIKey(global.GOOGLE_PLACES_API_KEY))
 	if err != nil {
 		return fmt.Errorf("failed to create Google Places client: %w", err)
 	}
@@ -161,4 +156,3 @@ func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
 
 	return nil
 }
-

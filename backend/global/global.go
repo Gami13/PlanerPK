@@ -28,6 +28,7 @@ var (
 	TIME_BETWEEN_SYNC_HOURS        = 72
 	TIMETABLE_CURRENT_STATS_NAME   = "current_timetable_stats.json"
 	JSON_INFO_LOCATION             = "../data"
+	GOOGLE_PLACES_API_KEY          = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
 )
 
 // var LAST_ROW = 365
@@ -140,6 +141,10 @@ func LoadEnvVariables() {
 	if jsonInfoLocation != "" {
 		JSON_INFO_LOCATION = jsonInfoLocation
 	}
+	googlePlacesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
+	if googlePlacesAPIKey != "" {
+		GOOGLE_PLACES_API_KEY = googlePlacesAPIKey
+	}
 }
 
 func PrintEnvVariables() {
@@ -161,5 +166,6 @@ func PrintEnvVariables() {
 		slog.Int("LAST_COLUMN", LAST_COLUMN),
 		slog.String("LOGS_PATH", LOGS_PATH),
 		slog.String("JSON_INFO_LOCATION", JSON_INFO_LOCATION),
+		slog.String("GOOGLE_PLACES_API_KEY", GOOGLE_PLACES_API_KEY),
 	)
 }
