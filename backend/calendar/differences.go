@@ -38,7 +38,7 @@ func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*
 	return eventsToDelete, eventsToAdd, unchangedEvents
 }
 
-func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.Override) map[string]*calendar.Event {
+func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.Override, buildings *types.Buildings) map[string]*calendar.Event {
 	newEvents := make(map[string]*calendar.Event)
 	for day, entry := range timetable {
 		slog.Debug("Processing day", slog.String("day", day.String()))
@@ -47,7 +47,7 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 
 			// No override — emit normally.
 			if !hasOverride {
-				event := class.ToEvent()
+				event := class.ToEvent(buildings)
 				newEvents[event.ExtendedProperties.Private["hash"]] = &event
 				continue
 			}
@@ -61,19 +61,19 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 			// Hidden + transparent → emit only a ghost at the original position.
 			if ovr.IsHidden && ovr.IsTransparent {
 				slog.Debug("Adding ghost for hidden class", slog.String("hash", class.Hash()))
-				ghost := buildGhostEvent(class)
+				ghost := buildGhostEvent(class, buildings)
 				newEvents[ghost.ExtendedProperties.Private["hash"]] = &ghost
 				continue
 			}
 
 			// Not hidden — emit real event, possibly time-shifted.
-			realEvent := buildRealEvent(class, ovr.StartHour)
+			realEvent := buildRealEvent(class, ovr.StartHour, buildings)
 			newEvents[realEvent.ExtendedProperties.Private["hash"]] = &realEvent
 
 			// If transparent, also emit a ghost at the original position.
 			if ovr.IsTransparent && ovr.StartHour != "" {
 				slog.Debug("Adding ghost for shifted class", slog.String("hash", class.Hash()))
-				ghost := buildGhostEvent(class)
+				ghost := buildGhostEvent(class, buildings)
 				newEvents[ghost.ExtendedProperties.Private["hash"]] = &ghost
 			}
 		}
@@ -85,8 +85,8 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 // class's original time slot. It uses Google Calendar's Graphite colour (id "8")
 // so the ghost is visually distinct from real events on the calendar website.
 // The Transparency field marks the slot as "Free" in availability checks.
-func buildGhostEvent(class types.Class) calendar.Event {
-	event := class.ToEvent()
+func buildGhostEvent(class types.Class, buildings *types.Buildings) calendar.Event {
+	event := class.ToEvent(buildings)
 	event.Transparency = "transparent"
 	event.ColorId = "8" // Graphite — muted gray, signals a placeholder
 	// Use a distinct hash so GCal treats this as a separate event.
@@ -96,9 +96,9 @@ func buildGhostEvent(class types.Class) calendar.Event {
 
 // buildRealEvent builds the primary calendar event, optionally shifting the start time.
 // startHour must be "HH:MM" or empty.
-func buildRealEvent(class types.Class, startHour string) calendar.Event {
+func buildRealEvent(class types.Class, startHour string, buildings *types.Buildings) calendar.Event {
 	if startHour == "" {
-		return class.ToEvent()
+		return class.ToEvent(buildings)
 	}
 
 	var h, m int
@@ -106,7 +106,7 @@ func buildRealEvent(class types.Class, startHour string) calendar.Event {
 		slog.Error("Failed to parse start_hour override, using original time",
 			slog.String("start_hour", startHour),
 			slog.Any("error", err))
-		return class.ToEvent()
+		return class.ToEvent(buildings)
 	}
 
 	originalStart := class.StartTime
@@ -124,7 +124,7 @@ func buildRealEvent(class types.Class, startHour string) calendar.Event {
 	shiftedClass.StartTime = shiftedStart
 	shiftedClass.EndTime = shiftedEnd
 
-	return shiftedClass.ToEvent()
+	return shiftedClass.ToEvent(buildings)
 }
 
 // can return that it found one and its identical, or that it found none

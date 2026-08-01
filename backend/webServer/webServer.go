@@ -81,9 +81,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) {
+func Start(db db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, buildings *atomic.Value) {
 	query := db
-	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend)
+	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend, buildings)
 
 	mux := http.NewServeMux()
 

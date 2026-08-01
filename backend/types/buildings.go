@@ -7,82 +7,90 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"sync"
 
 	"github.com/woodpkrs/PlanerPK/gen/db"
 )
 
-type CachedBuilding struct {
-	ID            int
+type Building struct {
+	ID            int64
 	Key           string
 	GooglePlaceID string
 	Name          string
 	Address       string
 }
 
-type BuildingsCache struct {
-	mu         sync.RWMutex
-	buildings  map[int64]CachedBuilding
-	classrooms map[string]int64
+type Buildings struct {
+	Buildings  map[int64]Building
+	Classrooms map[string]int64
 }
 
-var BuildingsGlobalCache = &BuildingsCache{
-	buildings:  make(map[int64]CachedBuilding),
-	classrooms: make(map[string]int64),
-}
-
-func (c *BuildingsCache) SetBuilding(id int64, building CachedBuilding) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.buildings[id] = building
-}
-
-func (c *BuildingsCache) SetClassroom(classroomName string, buildingId int64) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.classrooms[classroomName] = buildingId
-}
-
-func (c *BuildingsCache) GetBuilding(id int64) (CachedBuilding, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	building, exists := c.buildings[id]
+func (b *Buildings) GetBuilding(id int64) (Building, bool) {
+	if b == nil || b.Buildings == nil {
+		return Building{}, false
+	}
+	building, exists := b.Buildings[id]
 	return building, exists
 }
 
-func (c *BuildingsCache) GetBuildingByClassroom(classroomName string) (CachedBuilding, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	buildingKey, roomExists := c.classrooms[classroomName]
-	if !roomExists {
-		return CachedBuilding{}, false
+func (b *Buildings) GetBuildingByClassroom(classroomName string) (Building, bool) {
+	if b == nil || b.Classrooms == nil || b.Buildings == nil {
+		return Building{}, false
 	}
-
-	building, buildingExists := c.buildings[buildingKey]
+	buildingID, roomExists := b.Classrooms[classroomName]
+	if !roomExists {
+		return Building{}, false
+	}
+	building, buildingExists := b.Buildings[buildingID]
 	return building, buildingExists
 }
 
-func MapToCachedBuildings(building db.Building) CachedBuilding {
-	cachedBuilding := CachedBuilding{
-		ID: int(building.ID),
+func MapToBuilding(building db.Building) Building {
+	b := Building{
+		ID: building.ID,
 	}
 
 	if building.Key != nil {
-		cachedBuilding.Key = *building.Key
+		b.Key = *building.Key
 	}
 	if building.GooglePlaceID != nil {
-		cachedBuilding.GooglePlaceID = *building.GooglePlaceID
+		b.GooglePlaceID = *building.GooglePlaceID
 	}
 	if building.Name != nil {
-		cachedBuilding.Name = *building.Name
+		b.Name = *building.Name
 	}
 	if building.Address != nil {
-		cachedBuilding.Address = *building.Address
+		b.Address = *building.Address
 	}
 
-	return cachedBuilding
+	return b
+}
+
+func LoadBuildings(ctx context.Context, queries db.Querier) (*Buildings, error) {
+	bList, err := queries.GetBuildings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cList, err := queries.GetClassroomNamesWithBuildingIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &Buildings{
+		Buildings:  make(map[int64]Building, len(bList)),
+		Classrooms: make(map[string]int64, len(cList)),
+	}
+
+	for _, b := range bList {
+		res.Buildings[b.ID] = MapToBuilding(b)
+	}
+
+	for _, c := range cList {
+		if c.Name != nil {
+			res.Classrooms[*c.Name] = c.ID
+		}
+	}
+
+	return res, nil
 }
 
 type BuildingDetails struct {

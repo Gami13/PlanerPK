@@ -82,12 +82,14 @@ func (c Class) EndTimeRFC3339() string {
 	return c.timeOnDay(c.EndTime).Format(time.RFC3339)
 }
 
-func (c Class) ToEvent() calendar.Event {
+func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 	description := ""
 
-	building, found := BuildingsGlobalCache.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
-	if found {
-		description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s, %s</a>", building.GooglePlaceID, building.Name, building.Address)
+	if buildings != nil {
+		building, found := buildings.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
+		if found {
+			description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s, %s</a>", building.GooglePlaceID, building.Name, building.Address)
+		}
 	}
 
 	event := &calendar.Event{

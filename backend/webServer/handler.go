@@ -25,13 +25,14 @@ type PKPlanerHandler struct {
 	AvailableGroups *atomic.Value
 	Timetable       *atomic.Value
 	Legend          *atomic.Value
+	Buildings       *atomic.Value
 }
 
-func NewPKPlanerHandler(query db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) *PKPlanerHandler {
+func NewPKPlanerHandler(query db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, buildings *atomic.Value) *PKPlanerHandler {
 	if query == nil {
 		panic("Query is nil!")
 	}
-	return &PKPlanerHandler{Query: query, AvailableGroups: availableGroups, Timetable: timetable, Legend: legend}
+	return &PKPlanerHandler{Query: query, AvailableGroups: availableGroups, Timetable: timetable, Legend: legend, Buildings: buildings}
 }
 
 // GetColumns returns available column groups parsed from the Excel header rows.
@@ -99,13 +100,19 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		slog.Warn("Failed to fetch overrides for initial import, proceeding without", slog.Any("error", err))
 		overrides = nil
 	}
+	var b *types.Buildings
+	if h.Buildings != nil {
+		if loaded := h.Buildings.Load(); loaded != nil {
+			b = loaded.(*types.Buildings)
+		}
+	}
 	go calendar.ImportTimetable(allTimetables, chosenColumn, &oauth2.Token{
 		AccessToken:  user.AccessToken,
 		TokenType:    user.TokenType,
 		RefreshToken: user.RefreshToken,
 		Expiry:       user.Expiry,
 		ExpiresIn:    user.ExpiresIn,
-	}, h.Query, overrides)
+	}, h.Query, overrides, b)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }
