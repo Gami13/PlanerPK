@@ -108,7 +108,7 @@ func buildNewCache() ([]types.ColumnGroup, *types.Legend, types.Timetable, error
 	return newGroups, newLegend, newTimetable, nil
 }
 
-func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], lastBuildingUpdate *atomic.Pointer[time.Time], isInitialRun bool) (hasChanged bool, err error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -133,9 +133,15 @@ func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer
 		if err != nil {
 			return false, err
 		}
-		// TODO: update once two weeks, currently it's unsafe and might cost us money
-		if err := types.UpdateBuildingsDetails(context.Background(), queries); err != nil {
-			slog.Error("Failed to update buildings details", "error", err)
+		lastUpdate := lastBuildingUpdate.Load()
+		week := 7 * 24 * time.Hour
+		if lastUpdate == nil || time.Since(*lastUpdate) >= week {
+			if err := types.UpdateBuildingsDetails(context.Background(), queries); err != nil {
+				slog.Error("Failed to update buildings details", "error", err)
+			} else {
+				now := time.Now()
+				lastBuildingUpdate.Store(&now)
+			}
 		}
 		newBuildings, err := types.LoadBuildings(context.Background(), queries)
 		if err != nil {
@@ -158,8 +164,9 @@ func main() {
 	var timetable atomic.Pointer[types.Timetable]
 	var legend atomic.Pointer[types.Legend]
 	var buildings atomic.Pointer[types.Buildings]
+	var lastBuildingUpdate atomic.Pointer[time.Time]
 
-	_, err := updateTimetableAndCache(queries, &availableGroups, &timetable, &legend, &buildings, true)
+	_, err := updateTimetableAndCache(queries, &availableGroups, &timetable, &legend, &buildings, &lastBuildingUpdate, true)
 	if err != nil {
 		slog.Error("Failed to build initial cache", "error", err)
 		panic(err)
@@ -181,19 +188,19 @@ func main() {
 				return
 			case t := <-ticker.C:
 				slog.Info("Timetable update triggered", slog.Time("tick_time", t))
-				updateAllTimetables(queries, &availableGroups, &timetable, &legend, &buildings)
+				updateAllTimetables(queries, &availableGroups, &timetable, &legend, &buildings, &lastBuildingUpdate)
 			}
 		}
 	}()
 }
 
-func updateAllTimetables(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings]) {
+func updateAllTimetables(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], lastBuildingUpdate *atomic.Pointer[time.Time]) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
 	}
-	hasChanged, err := updateTimetableAndCache(queries, availableGroups, timetable, legend, buildings, false)
+	hasChanged, err := updateTimetableAndCache(queries, availableGroups, timetable, legend, buildings, lastBuildingUpdate, false)
 	if err != nil {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}

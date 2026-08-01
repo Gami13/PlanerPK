@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	places "cloud.google.com/go/maps/places/apiv1"
 	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
@@ -67,12 +68,15 @@ func MapToBuilding(building db.Building) Building {
 }
 
 func LoadBuildings(ctx context.Context, queries db.Querier) (*Buildings, error) {
+	slog.Info("Loading buildings and classrooms from database")
 	bList, err := queries.GetBuildings(ctx)
 	if err != nil {
+		slog.Error("Failed to fetch buildings from database", slog.Any("error", err))
 		return nil, err
 	}
 	cList, err := queries.GetClassroomNamesWithBuildingIDs(ctx)
 	if err != nil {
+		slog.Error("Failed to fetch classroom names with building IDs", slog.Any("error", err))
 		return nil, err
 	}
 
@@ -91,6 +95,10 @@ func LoadBuildings(ctx context.Context, queries db.Querier) (*Buildings, error) 
 		}
 	}
 
+	slog.Info("Successfully loaded buildings and classrooms",
+		slog.Int("buildings_count", len(res.Buildings)),
+		slog.Int("classrooms_count", len(res.Classrooms)))
+
 	return res, nil
 }
 
@@ -100,6 +108,7 @@ type BuildingDetails struct {
 }
 
 func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlaceID string) (*BuildingDetails, error) {
+	slog.Debug("Fetching building details from Google Places API", slog.String("google_place_id", googlePlaceID))
 	reqCtx := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "displayName,formattedAddress")
 
 	req := &placespb.GetPlaceRequest{
@@ -109,6 +118,7 @@ func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlac
 
 	resp, err := client.GetPlace(reqCtx, req)
 	if err != nil {
+		slog.Error("Google Places API call failed", slog.String("google_place_id", googlePlaceID), slog.Any("error", err))
 		return nil, fmt.Errorf("Google Places API error for place ID %s: %w", googlePlaceID, err)
 	}
 
@@ -117,31 +127,52 @@ func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlac
 		name = resp.GetDisplayName().GetText()
 	}
 
-	return &BuildingDetails{
+	details := &BuildingDetails{
 		Name:    name,
 		Address: resp.GetFormattedAddress(),
-	}, nil
+	}
+	slog.Debug("Successfully fetched building details from Google Places API",
+		slog.String("google_place_id", googlePlaceID),
+		slog.String("name", details.Name),
+		slog.String("address", details.Address))
+
+	return details, nil
 }
 
 func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
+	slog.Info("Starting update of building details")
 	client, err := places.NewClient(ctx, option.WithAPIKey(global.GOOGLE_PLACES_API_KEY))
 	if err != nil {
+		slog.Error("Failed to create Google Places client", slog.Any("error", err))
 		return fmt.Errorf("failed to create Google Places client: %w", err)
 	}
 	defer client.Close()
 
 	buildings, err := queries.GetBuildings(ctx)
 	if err != nil {
+		slog.Error("Failed to fetch buildings for details update", slog.Any("error", err))
 		return err
 	}
 
+	updatedCount := 0
+	skippedCount := 0
 	for _, building := range buildings {
 		if building.GooglePlaceID == nil || *building.GooglePlaceID == "" {
+			skippedCount++
+			slog.Debug("Skipping building without Google Place ID", slog.Int64("building_id", building.ID))
 			continue
 		}
 
+		slog.Info("Updating details for building",
+			slog.Int64("building_id", building.ID),
+			slog.String("google_place_id", *building.GooglePlaceID))
+
 		buildingDetails, err := fetchBuildingDetails(ctx, client, *building.GooglePlaceID)
 		if err != nil {
+			slog.Error("Failed to fetch building details",
+				slog.Int64("building_id", building.ID),
+				slog.String("google_place_id", *building.GooglePlaceID),
+				slog.Any("error", err))
 			return err
 		}
 
@@ -150,9 +181,21 @@ func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
 			Name:    &buildingDetails.Name,
 			Address: &buildingDetails.Address,
 		}); err != nil {
+			slog.Error("Failed to update building in database",
+				slog.Int64("building_id", building.ID),
+				slog.Any("error", err))
 			return err
 		}
+		updatedCount++
+		slog.Info("Successfully updated building details in database",
+			slog.Int64("building_id", building.ID),
+			slog.String("name", buildingDetails.Name),
+			slog.String("address", buildingDetails.Address))
 	}
+
+	slog.Info("Finished updating building details",
+		slog.Int("updated_count", updatedCount),
+		slog.Int("skipped_count", skippedCount))
 
 	return nil
 }
