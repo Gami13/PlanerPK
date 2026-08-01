@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync/atomic"
 
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
@@ -82,9 +81,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings]) {
+func Start(db db.Querier, cache *types.Cache) {
 	query := db
-	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend, buildings)
+	handler := NewPKPlanerHandler(query, cache)
 
 	mux := http.NewServeMux()
 

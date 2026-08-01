@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -108,7 +107,7 @@ func buildNewCache() ([]types.ColumnGroup, *types.Legend, types.Timetable, error
 	return newGroups, newLegend, newTimetable, nil
 }
 
-func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], lastBuildingUpdate *atomic.Pointer[time.Time], isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRun bool) (hasChanged bool, err error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -133,25 +132,25 @@ func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer
 		if err != nil {
 			return false, err
 		}
-		lastUpdate := lastBuildingUpdate.Load()
+		lastUpdate := cache.LastBuildingUpdate()
 		week := 7 * 24 * time.Hour
 		if lastUpdate == nil || time.Since(*lastUpdate) >= week {
 			if err := types.UpdateBuildingsDetails(context.Background(), queries); err != nil {
 				slog.Error("Failed to update buildings details", "error", err)
 			} else {
 				now := time.Now()
-				lastBuildingUpdate.Store(&now)
+				cache.SetLastBuildingUpdate(&now)
 			}
 		}
 		newBuildings, err := types.LoadBuildings(context.Background(), queries)
 		if err != nil {
 			slog.Error("Failed to load buildings", "error", err)
 		} else {
-			buildings.Store(newBuildings)
+			cache.SetBuildings(newBuildings)
 		}
-		availableGroups.Store(&newGroups)
-		legend.Store(newLegend)
-		timetable.Store(&newTimetable)
+		cache.SetAvailableGroups(&newGroups)
+		cache.SetLegend(newLegend)
+		cache.SetTimetable(&newTimetable)
 	}
 
 	return hasChanged, nil
@@ -160,13 +159,9 @@ func updateTimetableAndCache(queries db.Querier, availableGroups *atomic.Pointer
 func main() {
 	queries := initializeApp()
 
-	var availableGroups atomic.Pointer[[]types.ColumnGroup]
-	var timetable atomic.Pointer[types.Timetable]
-	var legend atomic.Pointer[types.Legend]
-	var buildings atomic.Pointer[types.Buildings]
-	var lastBuildingUpdate atomic.Pointer[time.Time]
+	var cache types.Cache
 
-	_, err := updateTimetableAndCache(queries, &availableGroups, &timetable, &legend, &buildings, &lastBuildingUpdate, true)
+	_, err := updateTimetableAndCache(queries, &cache, true)
 	if err != nil {
 		slog.Error("Failed to build initial cache", "error", err)
 		panic(err)
@@ -177,7 +172,7 @@ func main() {
 
 	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
 
-	go webServer.Start(queries, &availableGroups, &timetable, &legend, &buildings)
+	go webServer.Start(queries, &cache)
 
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
@@ -188,26 +183,26 @@ func main() {
 				return
 			case t := <-ticker.C:
 				slog.Info("Timetable update triggered", slog.Time("tick_time", t))
-				updateAllTimetables(queries, &availableGroups, &timetable, &legend, &buildings, &lastBuildingUpdate)
+				updateAllTimetables(queries, &cache)
 			}
 		}
 	}()
 }
 
-func updateAllTimetables(queries db.Querier, availableGroups *atomic.Pointer[[]types.ColumnGroup], timetable *atomic.Pointer[types.Timetable], legend *atomic.Pointer[types.Legend], buildings *atomic.Pointer[types.Buildings], lastBuildingUpdate *atomic.Pointer[time.Time]) {
+func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
 	}
-	hasChanged, err := updateTimetableAndCache(queries, availableGroups, timetable, legend, buildings, lastBuildingUpdate, false)
+	hasChanged, err := updateTimetableAndCache(queries, cache, false)
 	if err != nil {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}
-	allTimetables := timetable.Load()
+	allTimetables := cache.Timetable()
 
 	var b *types.Buildings
-	if loaded := buildings.Load(); loaded != nil {
+	if loaded := cache.Buildings(); loaded != nil {
 		b = loaded
 	}
 
