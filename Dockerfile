@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # --- Runtime ---
 FROM debian:bookworm-slim AS runtime
-ENV APP_HOME=/app HOME=/home/google
+ENV APP_HOME=/app HOME=/home/google DATA_DIRECTORY=/data
 WORKDIR /app
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -34,8 +34,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	ca-certificates libreoffice-calc gosu gettext-base && \
 	useradd -r -u 1000 -g users -d /home/google -m google && \
-	mkdir -p data/current_timetable data/downloads data/logs /home/google/.config && \
-	chown -R google:users /app/data /home/google
+	mkdir -p /data/current_timetable /data/downloads /data/logs /home/google/.config && \
+	chown -R google:users /data /home/google
 
 COPY --link --from=backend-builder /app/bin/main /usr/local/bin/google-calendar-timetable
 COPY --link --from=frontend-builder /app/static ./static

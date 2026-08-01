@@ -1,17 +1,19 @@
 #!/bin/sh
 set -e
 
+DATA_DIRECTORY="${DATA_DIRECTORY:-/data}"
+
 # Ensure data subdirectories exist
-mkdir -p /app/data/current_timetable /app/data/downloads /app/data/logs
+mkdir -p "${DATA_DIRECTORY}/current_timetable" "${DATA_DIRECTORY}/downloads" "${DATA_DIRECTORY}/logs"
 
 # Set ownership to google user
-chown -R google:users /app/data
+chown -R google:users "${DATA_DIRECTORY}"
 
 # Create symlinks for backward compatibility
-[ ! -e /app/current_timetable ] && ln -s /app/data/current_timetable /app/current_timetable
-[ ! -e /app/downloads ] && ln -s /app/data/downloads /app/downloads
-[ ! -e /app/logs ] && ln -s /app/data/logs /app/logs
-[ ! -e /app/database.db ] && ln -s /app/data/database.db /app/database.db
+[ ! -e /app/current_timetable ] && ln -s "${DATA_DIRECTORY}/current_timetable" /app/current_timetable
+[ ! -e /app/downloads ] && ln -s "${DATA_DIRECTORY}/downloads" /app/downloads
+[ ! -e /app/logs ] && ln -s "${DATA_DIRECTORY}/logs" /app/logs
+[ ! -e /app/database.db ] && ln -s "${DATA_DIRECTORY}/database.db" /app/database.db
 
 echo "Using API_BASE_URL: ${API_BASE_URL}"
 
