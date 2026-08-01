@@ -2,13 +2,14 @@ package types
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
+	places "cloud.google.com/go/maps/places/apiv1"
+	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc/metadata"
 )
 
 type Building struct {
@@ -98,73 +99,66 @@ type BuildingDetails struct {
 	Address string
 }
 
-func fetchBuildingDetails(googlePlaceID string) (*BuildingDetails, error) {
-	apiKey := os.Getenv("GOOGLE_PLACES_NEW_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("GOOGLE_PLACES_NEW_API_KEY environment variable is not set")
+func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlaceID string) (*BuildingDetails, error) {
+	reqCtx := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "displayName,formattedAddress")
+
+	req := &placespb.GetPlaceRequest{
+		Name:         fmt.Sprintf("places/%s", googlePlaceID),
+		LanguageCode: "pl",
 	}
 
-	url := fmt.Sprintf("https://places.googleapis.com/v1/places/%s?languageCode=pl", googlePlaceID)
-
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := client.GetPlace(reqCtx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+		return nil, fmt.Errorf("Google Places API error for place ID %s: %w", googlePlaceID, err)
 	}
 
-	req.Header.Set("X-Goog-Api-Key", apiKey)
-	req.Header.Set("X-Goog-FieldMask", "displayName,formattedAddress")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Google API error (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	var apiData struct {
-		DisplayName struct {
-			Text string `json:"text"`
-		} `json:"displayName"`
-		FormattedAddress string `json:"formattedAddress"`
-	}
-
-	if err := json.Unmarshal(body, &apiData); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	var name string
+	if resp.GetDisplayName() != nil {
+		name = resp.GetDisplayName().GetText()
 	}
 
 	return &BuildingDetails{
-		Name:    apiData.DisplayName.Text,
-		Address: apiData.FormattedAddress,
+		Name:    name,
+		Address: resp.GetFormattedAddress(),
 	}, nil
 }
 
 func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
+	apiKey := os.Getenv("GOOGLE_PLACES_NEW_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("GOOGLE_PLACES_NEW_API_KEY environment variable is not set")
+	}
+
+	client, err := places.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return fmt.Errorf("failed to create Google Places client: %w", err)
+	}
+	defer client.Close()
+
 	buildings, err := queries.GetBuildings(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, building := range buildings {
-		buildingDetails, err := fetchBuildingDetails(*building.GooglePlaceID)
+		if building.GooglePlaceID == nil || *building.GooglePlaceID == "" {
+			continue
+		}
+
+		buildingDetails, err := fetchBuildingDetails(ctx, client, *building.GooglePlaceID)
 		if err != nil {
 			return err
 		}
 
-		queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
+		if err := queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
 			ID:      building.ID,
 			Name:    &buildingDetails.Name,
 			Address: &buildingDetails.Address,
-		})
+		}); err != nil {
+			return err
+		}
 	}
 
-	return err
+	return nil
 }
+
