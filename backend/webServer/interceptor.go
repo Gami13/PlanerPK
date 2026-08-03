@@ -7,11 +7,8 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/webServer/handler"
 )
-
-type contextKey string
-
-const authUserKey contextKey = "AuthenticatedUser"
 
 func AuthInterceptor(query db.Querier) connect.UnaryInterceptorFunc {
 	// Procedures that require authentication
@@ -51,7 +48,7 @@ func AuthInterceptor(query db.Querier) connect.UnaryInterceptorFunc {
 			}
 
 			// Add the user to the context
-			ctx = context.WithValue(ctx, authUserKey, user)
+			ctx = context.WithValue(ctx, handler.AuthUserKey, user)
 
 			return next(ctx, req)
 		})

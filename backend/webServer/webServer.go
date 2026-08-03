@@ -11,10 +11,9 @@ import (
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
 	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/woodpkrs/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/webServer/handler"
 
 	"connectrpc.com/connect"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 
 	_ "modernc.org/sqlite"
 )
@@ -83,22 +82,29 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func Start(db db.Querier, cache *types.Cache) {
 	query := db
-	handler := NewPKPlanerHandler(query, cache)
+	pkPlanerHandler := handler.NewPKPlanerHandler(query, cache)
 
 	mux := http.NewServeMux()
 
 	interceptors := connect.WithInterceptors(AuthInterceptor(query))
-	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(handler, interceptors)
+	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(pkPlanerHandler, interceptors)
 
 	mux.Handle(rpcPath, rpcHandler)
 
 	mux.Handle("/", http.HandlerFunc(ServeFrontend))
 
 	corsHandler := corsMiddleware(mux)
-	h2cHandler := h2c.NewHandler(corsHandler, &http2.Server{})
+	server := &http.Server{
+		Addr:      ":" + global.SERVER_PORT,
+		Handler:   corsHandler,
+		Protocols: &http.Protocols{},
+	}
+	server.Protocols.SetHTTP1(true)
+	server.Protocols.SetHTTP2(true)
+	server.Protocols.SetUnencryptedHTTP2(true)
 
 	slog.Info("Web server listening", slog.String("port", global.SERVER_PORT))
-	if err := http.ListenAndServe(":"+global.SERVER_PORT, h2cHandler); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}
 }
