@@ -10,5 +10,8 @@ go run ./cmd/dedupclasstexts/
 go run ./cmd/collapsespaces/
 go run ./cmd/splitclasstexts/
 go run ./cmd/splitbycount/
+go run ./cmd/dumpclassrooms/
+go run ./cmd/matchclassrooms/
 ```
+
 
