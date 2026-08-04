@@ -19,7 +19,7 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path != "/" {
-		fullPath := filepath.Join(global.STATIC_FILES_LOCATION, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+		fullPath := filepath.Join(global.STATIC_DIR, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		_, err := os.Stat(fullPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -30,5 +30,5 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 			r.URL.Path = "/"
 		}
 	}
-	http.FileServer(http.Dir(global.STATIC_FILES_LOCATION)).ServeHTTP(w, r)
+	http.FileServer(http.Dir(global.STATIC_DIR)).ServeHTTP(w, r)
 }

@@ -13,7 +13,7 @@ import (
 func main() {
 	global.LoadEnvVariables()
 
-	xlsxPath, err := findXlsxFile(global.TIMETABLE_CURRENT_DESTINATION)
+	xlsxPath, err := findXlsxFile(global.CURRENT_TIMETABLE_DIR)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error finding timetable file: %v\n", err)
 		os.Exit(1)

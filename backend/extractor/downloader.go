@@ -32,7 +32,7 @@ func fetchTimetableUrl() (string, error) {
 var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
 
 func getCurrentXlsxPath() (filePath string, err error) {
-	absoluteDestination, err := filepath.Abs(global.TIMETABLE_CURRENT_DESTINATION)
+	absoluteDestination, err := filepath.Abs(global.CURRENT_TIMETABLE_DIR)
 	if err != nil {
 		return "", err
 	}
@@ -65,11 +65,11 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 		return stats, err
 	}
 
-	absoluteDestination, err := filepath.Abs(global.JSON_INFO_LOCATION)
+	destination, err := filepath.Abs(global.CURRENT_TIMETABLE_STATS_PATH)
 	if err != nil {
 		return stats, err
 	}
-	destination := filepath.Join(absoluteDestination, global.TIMETABLE_CURRENT_STATS_NAME)
+
 	err = os.WriteFile(destination, jsonString, 0644)
 	if err != nil {
 		return stats, err
@@ -78,12 +78,11 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 }
 
 func getLatestTimetableInfo() (stats types.TimetableFileStats, err error) {
-	absoluteDestination, err := filepath.Abs(global.JSON_INFO_LOCATION)
+	destination, err := filepath.Abs(global.CURRENT_TIMETABLE_STATS_PATH)
 	if err != nil {
 		return types.TimetableFileStats{}, err
 	}
 
-	destination := filepath.Join(absoluteDestination, global.TIMETABLE_CURRENT_STATS_NAME)
 	jsonBytes, err := os.ReadFile(destination)
 	if err != nil {
 		return types.TimetableFileStats{}, err
@@ -132,7 +131,7 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 // Downloads the timetable from PKs website
 // Returns types.TimetableFileStats
 func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
-	destination, err := filepath.Abs(global.TIMETABLE_DOWNLOAD_DESTINATION + filepath.Base(url))
+	destination, err := filepath.Abs(filepath.Join(global.TIMETABLE_DOWNLOADS_DIR, filepath.Base(url)))
 	if err != nil {
 		return types.TimetableFileStats{}, err
 	}
@@ -174,7 +173,7 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err error) {
 	origin := stats.Path
 
-	timetableDestination, err := filepath.Abs(global.TIMETABLE_CURRENT_DESTINATION)
+	timetableDestination, err := filepath.Abs(global.CURRENT_TIMETABLE_DIR)
 	if err != nil {
 		return "", err
 	}

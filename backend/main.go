@@ -29,8 +29,7 @@ import (
 var ddl string
 
 func initializeXlsxInfo() {
-	filename := filepath.Join(global.JSON_INFO_LOCATION, global.TIMETABLE_CURRENT_STATS_NAME)
-	filename, err := filepath.Abs(filename)
+	filename, err := filepath.Abs(global.CURRENT_TIMETABLE_STATS_PATH)
 	if err != nil {
 		panic("Couldn't create stats file path")
 	}
@@ -66,7 +65,7 @@ func initializeXlsxInfo() {
 func initializeApp() (queries db.Querier) {
 	global.LoadEnvVariables()
 
-	err := utils.InitializeLogging(global.LOGS_PATH)
+	err := utils.InitializeLogging(global.LOGS_DIR)
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}

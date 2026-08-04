@@ -25,15 +25,15 @@
                         src = ./frontend;
 
                         nativeBuildInputs = [
-                            pkgs.nodejs_22
-                            pkgs.pnpm_9
+                            pkgs.nodejs
+                            pkgs.pnpm
                             pkgs.pnpmConfigHook
                         ];
 
                         pnpmDeps = pkgs.fetchPnpmDeps {
                             inherit (finalAttrs) pname version src;
-                            hash = "sha256-8NpxHH/R6dK/sRQSpFrdAp7ASOzfUpe2jAm6r4um0ng=";
-                            pnpm = pkgs.pnpm_9;
+                            hash = "sha256-TolB/R3ox3bnz4R4i22ZWzi75xy7QzSDR/XJXXJ5+gU=";
+                            pnpm = pkgs.pnpm;
                             fetcherVersion = 3;
                         };
 
@@ -78,33 +78,21 @@
                             export API_BASE_URL="''${API_BASE_URL:-http://localhost:8080}"
                             export DATABASE_DRIVER="''${DATABASE_DRIVER:-sqlite}"
 
-                            # Prepare the backend
-                            APP_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/planer-pk"
-                            mkdir -p "$APP_DIR" "$APP_DIR/data"
-
-                            export TIMETABLE_DOWNLOAD_DESTINATION="''${TIMETABLE_DOWNLOAD_DESTINATION:-$APP_DIR/data/downloads/}"
-                            export TIMETABLE_CURRENT_DESTINATION="''${TIMETABLE_CURRENT_DESTINATION:-$APP_DIR/data/current_timetable/}"
-                            export JSON_INFO_LOCATION="''${JSON_INFO_LOCATION:-$APP_DIR/data/}"
-                            export DATABASE_SOURCE="''${DATABASE_SOURCE:-file:$APP_DIR/data/database.db?cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite}"
-
-                            mkdir -p "''${TIMETABLE_DOWNLOAD_DESTINATION}" "''${TIMETABLE_CURRENT_DESTINATION}"
-
-                            CONFIG_DIR="''${XDG_CONFIG_HOME:-$HOME/.config}/planer-pk"
-                            mkdir -p "$CONFIG_DIR"
-                            export CALENDAR_CREDENTIALS_PATH="''${CALENDAR_CREDENTIALS_PATH:-$CONFIG_DIR/credentials.json}"
-
-                            STATE_DIR="''${XDG_STATE_HOME:-$HOME/.local/state}/planer-pk"
-                            mkdir -p "$STATE_DIR/logs"
-                            export LOGS_PATH="''${LOGS_PATH:-$STATE_DIR/logs/}"
-
                             # Prepare the frontend
-                            CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/planer-pk"
-                            STATIC_DIR="$CACHE_DIR/static"
+                            if [ -n "''${STATIC_DIR:-}" ]; then
+                                # STATIC_DIR is explicitly set
+                                :
+                            elif [ -n "''${APP_BASE_DIR:-}" ]; then
+                                # Use APP_BASE_DIR
+                                STATIC_DIR="''${APP_BASE_DIR}/static"
+                            else
+                                # Use XDG directory
+                                STATIC_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/planer-pk/static"
+                            fi
 
                             mkdir -p "$STATIC_DIR"
                             cp -rf ${self'.packages.frontend}/static/* "$STATIC_DIR/"
                             chmod -R u+w "$STATIC_DIR"
-                            export STATIC_FILES_LOCATION="''${STATIC_FILES_LOCATION:-$STATIC_DIR}"
 
                             for js_file in "$STATIC_DIR"/assets/*.js; do
                                 if [ -f "$js_file" ]; then
@@ -197,14 +185,10 @@
                             environment = {
                                 SERVER_PORT = toString cfg.port;
                                 API_BASE_URL = cfg.apiBaseUrl;
-                                TIMETABLE_DOWNLOAD_DESTINATION = "data/downloads/";
-                                TIMETABLE_CURRENT_DESTINATION = "data/current_timetable/";
-                                JSON_INFO_LOCATION = "data/";
-                                STATIC_FILES_LOCATION="static/";
+
+                                APP_BASE_DIR = "%S/planer-pk";
                                 CALENDAR_CREDENTIALS_PATH = "%d/credentials.json";
-                                LOGS_PATH = "%L/planer-pk/";
-                                DATABASE_SOURCE = "file:data/database.db?cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite";
-                                DATABASE_DRIVER = "sqlite";
+                                LOGS_DIR = "%L/planer-pk/";
                                 TZ = config.time.timeZone;
 
                                 HOME = "%t/planer-pk-runtime";
