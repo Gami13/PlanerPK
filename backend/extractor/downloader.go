@@ -70,7 +70,7 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 		return stats, err
 	}
 
-	err = os.WriteFile(destination, jsonString, 0644)
+	err = os.WriteFile(destination, jsonString, 0o644)
 	if err != nil {
 		return stats, err
 	}

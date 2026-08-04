@@ -44,7 +44,7 @@ func initializeXlsxInfo() {
 
 	// Create the directory if it doesn't exist
 	dir := filepath.Dir(filename)
-	err = os.MkdirAll(dir, 0755)
+	err = os.MkdirAll(dir, 0o755)
 	if err != nil {
 		panic("Could not create stats directory: " + err.Error())
 	}
@@ -53,7 +53,7 @@ func initializeXlsxInfo() {
 	if err != nil {
 		panic("Could not marshal json")
 	}
-	err = os.WriteFile(filename, jsonText, 0644)
+	err = os.WriteFile(filename, jsonText, 0o644)
 	if err != nil {
 		panic("Could not init stats file")
 	}

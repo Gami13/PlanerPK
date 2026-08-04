@@ -29,7 +29,7 @@ var (
 	APP_BASE_DIR string
 
 	// XDG directories
-    XDG_DATA_HOME   string
+	XDG_DATA_HOME   string
 	XDG_CONFIG_HOME string
 	XDG_STATE_HOME  string
 	XDG_CACHE_HOME  string
@@ -166,26 +166,26 @@ func LoadEnvVariables() {
 	if appDir := os.Getenv("APP_DIR"); appDir != "" {
 		APP_DIR = appDir
 	} else {
-		os.Mkdir(APP_DIR, 0755)
+		os.Mkdir(APP_DIR, 0o755)
 	}
 
 	if dataDir := os.Getenv("DATA_DIR"); dataDir != "" {
 		DATA_DIR = dataDir
 	} else {
-		os.Mkdir(DATA_DIR, 0755)
+		os.Mkdir(DATA_DIR, 0o755)
 	}
 
 	if configDir := os.Getenv("CONFIG_DIR"); configDir != "" {
 		CONFIG_DIR = configDir
 	} else {
-		os.Mkdir(CONFIG_DIR, 0755)
+		os.Mkdir(CONFIG_DIR, 0o755)
 	}
 
 	if stateDir := os.Getenv("STATE_DIR"); stateDir != "" {
 		STATE_DIR = stateDir
 	} else {
 		if os.Getenv("LOGS_DIR") == "" {
-			os.Mkdir(STATE_DIR, 0755)
+			os.Mkdir(STATE_DIR, 0o755)
 		}
 	}
 
@@ -193,7 +193,7 @@ func LoadEnvVariables() {
 		LOGS_DIR = val
 	} else {
 		LOGS_DIR = filepath.Join(STATE_DIR, "logs")
-		os.Mkdir(LOGS_DIR, 0755)
+		os.Mkdir(LOGS_DIR, 0o755)
 	}
 
 	if val := os.Getenv("DATABASE_SOURCE"); val != "" {
@@ -206,23 +206,23 @@ func LoadEnvVariables() {
 		STATIC_DIR = val
 	} else {
 		if APP_BASE_DIR != "" {
-			os.Mkdir(filepath.Join(XDG_CACHE_HOME, "planer-pk"), 0755)
+			os.Mkdir(filepath.Join(XDG_CACHE_HOME, "planer-pk"), 0o755)
 		}
-		os.Mkdir(STATIC_DIR, 0755)
+		os.Mkdir(STATIC_DIR, 0o755)
 	}
 
 	if val := os.Getenv("TIMETABLE_DOWNLOADS_DIR"); val != "" {
 		TIMETABLE_DOWNLOADS_DIR = val
 	} else {
 		TIMETABLE_DOWNLOADS_DIR = filepath.Join(DATA_DIR, "downloads")
-		os.Mkdir(TIMETABLE_DOWNLOADS_DIR, 0755)
+		os.Mkdir(TIMETABLE_DOWNLOADS_DIR, 0o755)
 	}
 
 	if val := os.Getenv("CURRENT_TIMETABLE_DIR"); val != "" {
 		CURRENT_TIMETABLE_DIR = val
 	} else {
 		CURRENT_TIMETABLE_DIR = filepath.Join(DATA_DIR, "current_timetable")
-		os.Mkdir(CURRENT_TIMETABLE_DIR, 0755)
+		os.Mkdir(CURRENT_TIMETABLE_DIR, 0o755)
 	}
 
 	if calendarCredentialsPath := os.Getenv("CALENDAR_CREDENTIALS_PATH"); calendarCredentialsPath != "" {
@@ -243,7 +243,8 @@ func LoadEnvVariables() {
 }
 
 func PrintEnvVariables() {
-	slog.Info("Current configuration",
+	slog.Info(
+		"Current configuration",
 		slog.String("SHEET_NAME", SHEET_NAME),
 		slog.Int("LAST_ROW", LAST_ROW),
 		slog.Int("HOUR_COLUMN", HOUR_COLUMN),
