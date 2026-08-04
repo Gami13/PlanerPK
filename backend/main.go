@@ -28,8 +28,7 @@ import (
 var ddl string
 
 func initializeXlsxInfo() {
-	filename := filepath.Join(global.JSON_INFO_LOCATION, global.TIMETABLE_CURRENT_STATS_NAME)
-	filename, err := filepath.Abs(filename)
+	filename, err := filepath.Abs(global.CURRENT_TIMETABLE_STATS_PATH)
 	if err != nil {
 		panic("Couldn't create stats file path")
 	}
@@ -45,7 +44,7 @@ func initializeXlsxInfo() {
 
 	// Create the directory if it doesn't exist
 	dir := filepath.Dir(filename)
-	err = os.MkdirAll(dir, 0755)
+	err = os.MkdirAll(dir, 0o755)
 	if err != nil {
 		panic("Could not create stats directory: " + err.Error())
 	}
@@ -54,7 +53,7 @@ func initializeXlsxInfo() {
 	if err != nil {
 		panic("Could not marshal json")
 	}
-	err = os.WriteFile(filename, jsonText, 0644)
+	err = os.WriteFile(filename, jsonText, 0o644)
 	if err != nil {
 		panic("Could not init stats file")
 	}
@@ -65,7 +64,7 @@ func initializeXlsxInfo() {
 func initializeApp() (queries db.Querier) {
 	global.LoadEnvVariables()
 
-	err := utils.InitializeLogging(global.LOGS_PATH)
+	err := utils.InitializeLogging(global.LOGS_DIR)
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}

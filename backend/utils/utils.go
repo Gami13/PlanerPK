@@ -43,7 +43,7 @@ func GetToken(u *db.User) *oauth2.Token {
 
 func InitializeLogging(logDir string) error {
 	// Create logs directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
@@ -51,7 +51,7 @@ func InitializeLogging(logDir string) error {
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
 	logFilePath := filepath.Join(logDir, fmt.Sprintf("app_%s.log", timestamp))
 
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
