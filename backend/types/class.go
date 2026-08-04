@@ -82,12 +82,24 @@ func (c Class) EndTimeRFC3339() string {
 	return c.timeOnDay(c.EndTime).Format(time.RFC3339)
 }
 
-func (c Class) ToEvent() calendar.Event {
+func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 	description := ""
 
-	building, found := BuildingsGlobalCache.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
-	if found {
-		description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s, %s</a>", building.GooglePlaceID, building.Name, building.Address)
+	if buildings != nil {
+		building, found := buildings.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
+		if found {
+			var label string
+			if building.Name != "" && building.Address != "" {
+				label = fmt.Sprintf("%s, %s", building.Name, building.Address)
+			} else if building.Name != "" {
+				label = building.Name
+			} else if building.Address != "" {
+				label = building.Address
+			} else {
+				label = "Google Maps"
+			}
+			description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s</a>", building.GooglePlaceID, label)
+		}
 	}
 
 	event := &calendar.Event{
@@ -98,7 +110,7 @@ func (c Class) ToEvent() calendar.Event {
 		End: &calendar.EventDateTime{
 			DateTime: c.EndTimeRFC3339(),
 		},
-		Location: c.Location,
+		Location:    c.Location,
 		Description: description,
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{

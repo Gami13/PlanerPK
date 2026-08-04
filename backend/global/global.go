@@ -10,19 +10,20 @@ import (
 )
 
 var (
-	SHEET_NAME                     = "2025_2026"
-	LAST_ROW                       = 365
-	HOUR_COLUMN                    = 1
-	DAY_START                      = "7.30"
-	DAY_START_TIME                 = time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
-	DAY_END                        = "21.00"
-	LAST_COLUMN                    = 40
-	DATABASE_DRIVER                = "sqlite"
-	MINUTES_BETWEEN                = 1
-	SERVER_PORT                    = "8080"
-	GENERAL_RATE_LIMIT_PER_MINUTE  = 60
-	TIMETABLE_URL                  = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-	TIME_BETWEEN_SYNC_HOURS        = 72
+	SHEET_NAME                    = "2025_2026"
+	LAST_ROW                      = 365
+	HOUR_COLUMN                   = 1
+	DAY_START                     = "7.30"
+	DAY_START_TIME                = time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
+	DAY_END                       = "21.00"
+	LAST_COLUMN                   = 40
+	DATABASE_DRIVER               = "sqlite"
+	MINUTES_BETWEEN               = 1
+	SERVER_PORT                   = "8080"
+	GENERAL_RATE_LIMIT_PER_MINUTE = 60
+	TIMETABLE_URL                 = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
+	TIME_BETWEEN_SYNC_HOURS       = 72
+	GOOGLE_PLACES_API_KEY         = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
 
 	// Override for XDG directories. If set, everything will be put into the specified directory
 	APP_BASE_DIR string
@@ -235,6 +236,10 @@ func LoadEnvVariables() {
 	} else {
 		CURRENT_TIMETABLE_STATS_PATH = filepath.Join(DATA_DIR, "current_timetable_stats.json")
 	}
+
+	if googlePlacesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY"); googlePlacesAPIKey != "" {
+		GOOGLE_PLACES_API_KEY = googlePlacesAPIKey
+	}
 }
 
 func PrintEnvVariables() {
@@ -251,6 +256,7 @@ func PrintEnvVariables() {
 		slog.Int("GENERAL_RATE_LIMIT_PER_MINUTE", GENERAL_RATE_LIMIT_PER_MINUTE),
 		slog.String("TIMETABLE_URL", TIMETABLE_URL),
 		slog.Int("TIME_BETWEEN_SYNC_HOURS", TIME_BETWEEN_SYNC_HOURS),
+		slog.String("GOOGLE_PLACES_API_KEY", GOOGLE_PLACES_API_KEY),
 
 		slog.String("APP_BASE_DIR", APP_BASE_DIR),
 

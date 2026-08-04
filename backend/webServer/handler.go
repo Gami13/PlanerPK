@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
-	"sync/atomic"
 
 	"connectrpc.com/connect"
 	"golang.org/x/oauth2"
@@ -21,17 +20,15 @@ import (
 // PKPlanerHandler implements pkplanerv1connect.PKPlanerServiceHandler.
 type PKPlanerHandler struct {
 	pkplanerv1connect.UnimplementedPKPlanerServiceHandler
-	Query           db.Querier
-	AvailableGroups *atomic.Value
-	Timetable       *atomic.Value
-	Legend          *atomic.Value
+	Query db.Querier
+	cache *types.Cache
 }
 
-func NewPKPlanerHandler(query db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) *PKPlanerHandler {
+func NewPKPlanerHandler(query db.Querier, cache *types.Cache) *PKPlanerHandler {
 	if query == nil {
 		panic("Query is nil!")
 	}
-	return &PKPlanerHandler{Query: query, AvailableGroups: availableGroups, Timetable: timetable, Legend: legend}
+	return &PKPlanerHandler{Query: query, cache: cache}
 }
 
 // GetColumns returns available column groups parsed from the Excel header rows.
@@ -39,10 +36,10 @@ func (h *PKPlanerHandler) GetColumns(
 	ctx context.Context,
 	req *connect.Request[pkplanerv1.GetColumnsRequest],
 ) (*connect.Response[pkplanerv1.GetColumnsResponse], error) {
-	groups := h.AvailableGroups.Load().([]types.ColumnGroup)
+	groups := h.cache.AvailableGroups()
 
-	pbGroups := make([]*pkplanerv1.ColumnGroup, len(groups))
-	for i, g := range groups {
+	pbGroups := make([]*pkplanerv1.ColumnGroup, len(*groups))
+	for i, g := range *groups {
 		pbGroups[i] = &pkplanerv1.ColumnGroup{
 			Column:   int32(g.Column),
 			Label:    g.Label,
@@ -75,9 +72,9 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	chosenColumn := int64(req.Msg.ChosenColumn)
 	slog.Info("Setting chosen column", slog.Int64("column", chosenColumn))
 
-	groups := h.AvailableGroups.Load().([]types.ColumnGroup)
+	groups := h.cache.AvailableGroups()
 
-	if !isValidColumn(chosenColumn, groups) {
+	if !isValidColumn(chosenColumn, *groups) {
 		slog.Warn("Invalid chosen column value", slog.Int64("column", chosenColumn))
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid chosen column value"))
 	}
@@ -93,11 +90,17 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	}
 
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
-	allTimetables := h.Timetable.Load().(types.Timetable)
+	allTimetables := h.cache.Timetable()
 	overrides, err := h.Query.GetOverridesForUser(ctx, user.ID)
 	if err != nil {
 		slog.Warn("Failed to fetch overrides for initial import, proceeding without", slog.Any("error", err))
 		overrides = nil
+	}
+	var b *types.Buildings
+	if h.cache.Buildings() != nil {
+		if loaded := h.cache.Buildings(); loaded != nil {
+			b = loaded
+		}
 	}
 	go calendar.ImportTimetable(allTimetables, chosenColumn, &oauth2.Token{
 		AccessToken:  user.AccessToken,
@@ -105,7 +108,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		RefreshToken: user.RefreshToken,
 		Expiry:       user.Expiry,
 		ExpiresIn:    user.ExpiresIn,
-	}, h.Query, overrides)
+	}, h.Query, overrides, b)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }
@@ -237,8 +240,8 @@ func (h *PKPlanerHandler) GetClasses(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("no column chosen"))
 	}
 
-	allTimetables := h.Timetable.Load().(types.Timetable)
-	timetable, ok := allTimetables[*user.ChosenColumn]
+	allTimetables := h.cache.Timetable()
+	timetable, ok := (*allTimetables)[*user.ChosenColumn]
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("timetable for chosen column not found"))
 	}

@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -107,7 +106,7 @@ func buildNewCache() ([]types.ColumnGroup, *types.Legend, types.Timetable, error
 	return newGroups, newLegend, newTimetable, nil
 }
 
-func updateTimetableAndCache(availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value, isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRun bool) (hasChanged bool, err error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -132,9 +131,25 @@ func updateTimetableAndCache(availableGroups *atomic.Value, timetable *atomic.Va
 		if err != nil {
 			return false, err
 		}
-		availableGroups.Store(newGroups)
-		legend.Store(newLegend)
-		timetable.Store(newTimetable)
+		lastUpdate := cache.LastBuildingUpdate()
+		week := 7 * 24 * time.Hour
+		if lastUpdate == nil || time.Since(*lastUpdate) >= week {
+			if err := types.UpdateBuildingsDetails(context.Background(), queries); err != nil {
+				slog.Error("Failed to update buildings details", "error", err)
+			} else {
+				now := time.Now()
+				cache.SetLastBuildingUpdate(&now)
+			}
+		}
+		newBuildings, err := types.LoadBuildings(context.Background(), queries)
+		if err != nil {
+			slog.Error("Failed to load buildings", "error", err)
+		} else {
+			cache.SetBuildings(newBuildings)
+		}
+		cache.SetAvailableGroups(&newGroups)
+		cache.SetLegend(newLegend)
+		cache.SetTimetable(&newTimetable)
 	}
 
 	return hasChanged, nil
@@ -143,11 +158,9 @@ func updateTimetableAndCache(availableGroups *atomic.Value, timetable *atomic.Va
 func main() {
 	queries := initializeApp()
 
-	var availableGroups atomic.Value
-	var timetable atomic.Value
-	var legend atomic.Value
+	var cache types.Cache
 
-	_, err := updateTimetableAndCache(&availableGroups, &timetable, &legend, true)
+	_, err := updateTimetableAndCache(queries, &cache, true)
 	if err != nil {
 		slog.Error("Failed to build initial cache", "error", err)
 		panic(err)
@@ -158,32 +171,7 @@ func main() {
 
 	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
 
-	go webServer.Start(queries, &availableGroups, &timetable, &legend)
-
-	// TODO: update once two weeks, currently it's unsafe and might cost us money
-	err = types.UpdateBuildingsDetails(context.Background(), queries)
-	if err != nil {
-		slog.Error("Failed to update buildings details", "error", err)
-	}
-
-	// Cache buildings from the database
-	buildings, err := queries.GetBuildings(context.Background())
-	if err != nil {
-		slog.Error("Failed to fetch buildings from database", "error", err)
-	}
-
-	for _, building := range buildings {
-		types.BuildingsGlobalCache.SetBuilding(building.ID, types.MapToCachedBuildings(building))
-	}
-
-	classrooms, err := queries.GetClassroomNamesWithBuildingIDs(context.Background())
-	if err != nil {
-		slog.Error("Failed to fetch classroom associations with buildings from database", "error", err)
-	}
-
-	for _, classroom := range classrooms {
-		types.BuildingsGlobalCache.SetClassroom(*classroom.Name, classroom.ID)
-	}
+	go webServer.Start(queries, &cache)
 
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
@@ -194,23 +182,28 @@ func main() {
 				return
 			case t := <-ticker.C:
 				slog.Info("Timetable update triggered", slog.Time("tick_time", t))
-				updateAllTimetables(queries, &availableGroups, &timetable, &legend)
+				updateAllTimetables(queries, &cache)
 			}
 		}
 	}()
 }
 
-func updateAllTimetables(queries db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) {
+func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
 		return
 	}
-	hasChanged, err := updateTimetableAndCache(availableGroups, timetable, legend, false)
+	hasChanged, err := updateTimetableAndCache(queries, cache, false)
 	if err != nil {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}
-	allTimetables := timetable.Load().(types.Timetable)
+	allTimetables := cache.Timetable()
+
+	var b *types.Buildings
+	if loaded := cache.Buildings(); loaded != nil {
+		b = loaded
+	}
 
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
@@ -238,6 +231,6 @@ func updateAllTimetables(queries db.Querier, availableGroups *atomic.Value, time
 				slog.Any("error", err))
 			overrides = nil
 		}
-		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides)
+		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, b)
 	}
 }

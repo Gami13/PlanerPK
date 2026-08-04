@@ -10,7 +10,7 @@ COPY frontend/ ./
 RUN pnpm build
 
 # --- Backend ---
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.25-alpine AS backend-builder
 WORKDIR /planer-pk/backend
 ARG TARGETOS
 ARG TARGETARCH

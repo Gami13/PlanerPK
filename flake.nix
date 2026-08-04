@@ -56,7 +56,7 @@
                         version = "0.1.0";
                         src = ./backend;
 
-                        vendorHash = "sha256-pJZWIDfjcyOsY7y4CoU46SjH0njJVoZsNlz/EluGHbk=";
+                        vendorHash = "sha256-QVjO2CY1tB1J0x9oQy5+6xBnX59XIlEoXsU5VUCVbi0=";
 
                         env.CGO_ENABLED = 0;
                         ldflags = [ "-s" "-w" ];

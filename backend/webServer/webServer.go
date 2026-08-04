@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync/atomic"
 
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
 	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
@@ -81,9 +81,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func Start(db db.Querier, availableGroups *atomic.Value, timetable *atomic.Value, legend *atomic.Value) {
+func Start(db db.Querier, cache *types.Cache) {
 	query := db
-	handler := NewPKPlanerHandler(query, availableGroups, timetable, legend)
+	handler := NewPKPlanerHandler(query, cache)
 
 	mux := http.NewServeMux()
 
