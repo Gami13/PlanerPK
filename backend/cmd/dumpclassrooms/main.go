@@ -99,7 +99,7 @@ func addClassroom(unique map[string]struct{}, raw string) {
 // findCurrentTimetableFile locates the single .xlsx timetable file in the current_timetable directory.
 func findCurrentTimetableFile() (string, error) {
 	dirsToSearch := []string{
-		global.TIMETABLE_CURRENT_DESTINATION,
+		global.CURRENT_TIMETABLE_DIR,
 		"data/current_timetable",
 		"../data/current_timetable",
 		"../../data/current_timetable",

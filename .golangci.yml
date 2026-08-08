@@ -1,0 +1,30 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    # Bugs
+    - errcheck
+    - staticcheck
+    - govet
+    - ineffassign
+    - unused
+
+    # Code quality
+    - gocritic
+    - revive
+
+    # Maintainability
+    - gocognit
+    - gocyclo
+    - funlen
+    - maintidx
+    - nestif
+
+    # Misc
+    - dupl
+    - unconvert
+    - prealloc

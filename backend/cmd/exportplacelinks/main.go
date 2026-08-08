@@ -43,7 +43,7 @@ func main() {
 
 	outPath := *outPathFlag
 	if outPath == "" {
-		outPath = filepath.Join(global.DATA_DIRECTORY, "place_links.txt")
+		outPath = filepath.Join(global.DATA_DIR, "place_links.txt")
 	}
 
 	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
@@ -86,6 +86,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error querying classrooms: %v\n", err)
 		os.Exit(1)
 	}
+	if err := rows.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error in rows: %v\n", err)
+		os.Exit(1)
+	}
 	defer rows.Close()
 
 	var classroomPlaces []PlaceInfo
@@ -124,7 +128,7 @@ func main() {
 		buildingPlaces = append(buildingPlaces, info)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
 	}

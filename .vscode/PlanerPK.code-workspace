@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "path": ".."
+    },
+    {
+      "path": "../backend"
+    },
+    {
+      "path": "../frontend"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "backend": true,
+      "frontend": true
+    },
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+      {
+        "previewLimit": 50,
+        "driver": "SQLite",
+        "name": "PlanerPK",
+        "database": "${workspaceFolder:GoogleCalendarTimetable}/data/database.db"
+      }
+    ]
+  }
+}

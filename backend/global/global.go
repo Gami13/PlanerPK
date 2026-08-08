@@ -18,6 +18,7 @@ var (
 	DAY_END                       = "21.00"
 	LAST_COLUMN                   = 40
 	DATABASE_DRIVER               = "sqlite"
+	DATABASE_ARGUMENTS            = "cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite"
 	MINUTES_BETWEEN               = 1
 	SERVER_PORT                   = "8080"
 	GENERAL_RATE_LIMIT_PER_MINUTE = 60
@@ -42,6 +43,7 @@ var (
 	STATIC_DIR string
 
 	LOGS_DIR                     string
+	DATABASE_PATH                string
 	DATABASE_SOURCE              string
 	TIMETABLE_DOWNLOADS_DIR      string
 	CURRENT_TIMETABLE_DIR        string
@@ -131,6 +133,10 @@ func LoadEnvVariables() {
 		DATABASE_DRIVER = val
 	}
 
+	if val := os.Getenv("DATABASE_ARGUMENTS"); val != "" {
+		DATABASE_ARGUMENTS = val
+	}
+
 	if minutesBetween := os.Getenv("MINUTES_BETWEEN"); minutesBetween != "" {
 		if minutesBetween, err := strconv.Atoi(minutesBetween); err == nil {
 			MINUTES_BETWEEN = minutesBetween
@@ -196,10 +202,16 @@ func LoadEnvVariables() {
 		os.Mkdir(LOGS_DIR, 0o755)
 	}
 
-	if val := os.Getenv("DATABASE_SOURCE"); val != "" {
-		DATABASE_SOURCE = val
+	if val := os.Getenv("DATABASE_PATH"); val != "" {
+		DATABASE_PATH = val
 	} else {
-		DATABASE_SOURCE = fmt.Sprintf("file:%s?cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite", filepath.ToSlash(filepath.Join(DATA_DIR, "database.db")))
+		DATABASE_PATH = filepath.Join(DATA_DIR, "database.db")
+	}
+
+	if DATABASE_ARGUMENTS != "" {
+		DATABASE_SOURCE = fmt.Sprintf("file:%s?%s", filepath.ToSlash(DATABASE_PATH), DATABASE_ARGUMENTS)
+	} else {
+		DATABASE_SOURCE = fmt.Sprintf("file:%s", filepath.ToSlash(DATABASE_PATH))
 	}
 
 	if val := os.Getenv("STATIC_DIR"); val != "" {
@@ -252,6 +264,7 @@ func PrintEnvVariables() {
 		slog.String("DAY_END", DAY_END),
 		slog.Int("LAST_COLUMN", LAST_COLUMN),
 		slog.String("DATABASE_DRIVER", DATABASE_DRIVER),
+		slog.String("DATABASE_ARGUMENTS", DATABASE_ARGUMENTS),
 		slog.Int("MINUTES_BETWEEN", MINUTES_BETWEEN),
 		slog.String("SERVER_PORT", SERVER_PORT),
 		slog.Int("GENERAL_RATE_LIMIT_PER_MINUTE", GENERAL_RATE_LIMIT_PER_MINUTE),
@@ -272,6 +285,7 @@ func PrintEnvVariables() {
 		slog.String("STATE_DIR", STATE_DIR),
 
 		slog.String("LOGS_DIR", LOGS_DIR),
+		slog.String("DATABASE_PATH", DATABASE_PATH),
 		slog.String("DATABASE_SOURCE", DATABASE_SOURCE),
 		slog.String("STATIC_DIR", STATIC_DIR),
 		slog.String("TIMETABLE_DOWNLOADS_DIR", TIMETABLE_DOWNLOADS_DIR),

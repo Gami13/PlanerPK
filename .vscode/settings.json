@@ -7,5 +7,5 @@
 			"name": "PlanerPK",
 			"database": "${workspaceFolder:GoogleCalendarTimetable}/data/database.db"
 		}
-	]
+	],
 }
