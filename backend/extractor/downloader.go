@@ -12,12 +12,17 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
+
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
 
 func fetchTimetableUrl() (string, error) {
 	doc, err := htmlquery.LoadURL(global.TIMETABLE_URL)
@@ -101,7 +106,7 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 		return false, "", err
 	}
 
-	response, err := http.Head(remoteTimetableUrl)
+	response, err := httpClient.Head(remoteTimetableUrl)
 	if err != nil {
 		return false, "", err
 	}
@@ -136,7 +141,7 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 		return types.TimetableFileStats{}, err
 	}
 
-	response, err := http.Get(url)
+	response, err := httpClient.Get(url)
 	if err != nil {
 		return types.TimetableFileStats{}, fmt.Errorf("failed to download the timetable: %w", err)
 	}

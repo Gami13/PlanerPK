@@ -12,17 +12,18 @@ import (
 
 func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend) types.Timetable {
 	timetable := make(types.Timetable)
+	days := getDaysStartEnd(file)
+
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend)
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, days)
 		timetable[int64(group.Column)] = groupTimetable
 
 	}
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, days []types.Day) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
-	days := getDaysStartEnd(file)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 

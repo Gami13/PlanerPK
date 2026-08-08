@@ -10,29 +10,51 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func findEventsToDelete(currentEvents []*calendar.Event, newEvents map[string]*calendar.Event) []*calendar.Event {
-	eventsToDelete := make([]*calendar.Event, 0)
+func getEventHash(event *calendar.Event) (string, bool) {
+	if event == nil || event.ExtendedProperties == nil || event.ExtendedProperties.Private == nil {
+		return "", false
+	}
+	hash, ok := event.ExtendedProperties.Private["hash"]
+	return hash, ok
+}
+
+func buildCurrentEventsMap(currentEvents []*calendar.Event) map[string]*calendar.Event {
+	currentMap := make(map[string]*calendar.Event, len(currentEvents))
 	for _, event := range currentEvents {
-		if _, ok := newEvents[event.ExtendedProperties.Private["hash"]]; !ok {
-			eventsToDelete = append(eventsToDelete, event)
+		if hash, ok := getEventHash(event); ok {
+			currentMap[hash] = event
+		} else {
+			slog.Warn("Event missing hash extended property", slog.String("summary", event.Summary))
 		}
 	}
-	return eventsToDelete
+	return currentMap
 }
 
 func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*calendar.Event) ([]*calendar.Event, []*calendar.Event, []*calendar.Event) {
-	eventsToDelete := findEventsToDelete(currentEvents, newEvents)
+	currentMap := buildCurrentEventsMap(currentEvents)
+
+	eventsToDelete := make([]*calendar.Event, 0)
+	for _, event := range currentEvents {
+		hash, ok := getEventHash(event)
+		if !ok {
+			continue
+		}
+		if _, ok := newEvents[hash]; !ok {
+			eventsToDelete = append(eventsToDelete, event)
+		}
+	}
+
 	eventsToAdd := make([]*calendar.Event, 0)
 	unchangedEvents := make([]*calendar.Event, 0)
 
-	for _, newEvent := range newEvents {
-		isNew, existingEvent := checkForExistingEvent(*newEvent, currentEvents)
-		if isNew {
+	for hash, newEvent := range newEvents {
+		if existingEvent, ok := currentMap[hash]; ok {
+			slog.Debug("Event is identical", slog.String("summary", existingEvent.Summary))
+			unchangedEvents = append(unchangedEvents, existingEvent)
+		} else {
+			slog.Debug("Event not found", slog.String("summary", newEvent.Summary))
 			eventsToAdd = append(eventsToAdd, newEvent)
-			continue
 		}
-
-		unchangedEvents = append(unchangedEvents, existingEvent)
 	}
 
 	return eventsToDelete, eventsToAdd, unchangedEvents
@@ -125,17 +147,4 @@ func buildRealEvent(class types.Class, startHour string, buildings *types.Buildi
 	shiftedClass.EndTime = shiftedEnd
 
 	return shiftedClass.ToEvent(buildings)
-}
-
-// can return that it found one and its identical, or that it found none
-// returns: (found bool, different bool, event *calendar.Event)
-func checkForExistingEvent(newEvent calendar.Event, currentEvents []*calendar.Event) (isNew bool, event *calendar.Event) {
-	for _, event := range currentEvents {
-		if event.ExtendedProperties.Private["hash"] == newEvent.ExtendedProperties.Private["hash"] {
-			slog.Debug("Event is identical", slog.String("summary", event.Summary))
-			return false, event
-		}
-	}
-	slog.Debug("Event not found", slog.String("summary", newEvent.Summary))
-	return true, nil
 }

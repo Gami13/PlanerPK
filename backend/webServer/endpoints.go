@@ -6,9 +6,22 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/woodpkrs/PlanerPK/global"
 )
+
+var (
+	staticFileServer http.Handler
+	fileServerOnce   sync.Once
+)
+
+func getFileServer() http.Handler {
+	fileServerOnce.Do(func() {
+		staticFileServer = http.FileServer(http.Dir(global.STATIC_DIR))
+	})
+	return staticFileServer
+}
 
 func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	// Prevent caching of env.js since it's dynamically generated at runtime
@@ -30,5 +43,5 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 			r.URL.Path = "/"
 		}
 	}
-	http.FileServer(http.Dir(global.STATIC_DIR)).ServeHTTP(w, r)
+	getFileServer().ServeHTTP(w, r)
 }
