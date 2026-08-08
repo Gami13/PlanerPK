@@ -24,9 +24,6 @@ func (h *PKPlanerHandler) SetUserActive(
 		AccessToken: user.AccessToken,
 		IsActive:    &isActive,
 	}); err != nil {
-		slog.Error("Failed to update user active status",
-			slog.Bool("is_active", isActive),
-			slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update user active status: %w", err))
 	}
 

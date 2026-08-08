@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/lmittmann/tint"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/global"
 	"golang.org/x/oauth2"
 )
 
@@ -41,6 +43,23 @@ func GetToken(u *db.User) *oauth2.Token {
 
 // wykład, lab., ćwiczenia
 
+func getLogLevelFromEnv() slog.Level {
+	switch strings.ToUpper(strings.TrimSpace(global.LOG_LEVEL)) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		slog.Warn("Invalid LOG_LEVEL environment variable, defaulting to INFO",
+			slog.String("LOG_LEVEL", global.LOG_LEVEL))
+		return slog.LevelInfo
+	}
+}
+
 func InitializeLogging(logDir string) error {
 	// Create logs directory if it doesn't exist
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
@@ -62,13 +81,13 @@ func InitializeLogging(logDir string) error {
 	// Create a handler with nice formatting
 
 	slog.SetDefault(slog.New(tint.NewHandler(multiWriter, &tint.Options{
-		Level:      slog.LevelDebug,
+		Level:      getLogLevelFromEnv(),
 		TimeFormat: time.Stamp,
 	})))
 
 	slog.Info("Logger initialized",
 		slog.String("log_file", logFilePath),
-		slog.String("log_level", "INFO"))
+		slog.String("log_level", global.LOG_LEVEL))
 
 	return nil
 }

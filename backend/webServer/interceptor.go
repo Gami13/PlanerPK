@@ -3,7 +3,9 @@ package webServer
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/woodpkrs/PlanerPK/gen/db"
@@ -53,4 +55,46 @@ func AuthInterceptor(query db.Querier) connect.UnaryInterceptorFunc {
 			return next(ctx, req)
 		})
 	})
+}
+
+func LoggingInterceptor() connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			start := time.Now()
+			resp, err := next(ctx, req)
+			duration := time.Since(start)
+			if err != nil {
+				code := connect.CodeOf(err)
+				switch code {
+				case connect.CodeInvalidArgument,
+					connect.CodeNotFound,
+					connect.CodeUnauthenticated,
+					connect.CodePermissionDenied,
+					connect.CodeAlreadyExists,
+					connect.CodeFailedPrecondition,
+					connect.CodeResourceExhausted,
+					connect.CodeCanceled:
+					slog.Warn("RPC Request Client Warning",
+						slog.String("procedure", req.Spec().Procedure),
+						slog.String("code", code.String()),
+						slog.Duration("duration", duration),
+						slog.Any("error", err),
+					)
+				default:
+					slog.Error("RPC Request Server Error",
+						slog.String("procedure", req.Spec().Procedure),
+						slog.String("code", code.String()),
+						slog.Duration("duration", duration),
+						slog.Any("error", err),
+					)
+				}
+			} else {
+				slog.Info("RPC Request Completed",
+					slog.String("procedure", req.Spec().Procedure),
+					slog.Duration("duration", duration),
+				)
+			}
+			return resp, err
+		}
+	}
 }

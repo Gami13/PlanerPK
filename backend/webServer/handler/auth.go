@@ -25,13 +25,11 @@ func (h *PKPlanerHandler) Authorize(
 
 	tok, err := calendar.AuthorizeFromCode(code)
 	if err != nil {
-		slog.Error("Authorization failed", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("authorization failed: %w", err))
 	}
 
 	userInfo, err := calendar.GetUserInfo(tok)
 	if err != nil {
-		slog.Error("Failed to get user info", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to get user info: %w", err))
 	}
 
@@ -48,10 +46,7 @@ func (h *PKPlanerHandler) Authorize(
 	}
 	newUser, err := h.Query.UpsertUser(ctx, user)
 	if err != nil {
-		slog.Error("Failed to save user",
-			slog.String("email", userInfo.Email),
-			slog.Any("error", err))
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to save user: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to save user (%s): %w", userInfo.Email, err))
 	}
 
 	slog.Info("User authorized successfully", slog.String("email", *newUser.Email))
@@ -73,7 +68,6 @@ func (h *PKPlanerHandler) GetAuthURL(
 	slog.Debug("Generating auth URL", slog.String("endpoint", "GetAuthURL"))
 	authURL, err := calendar.GenerateAuthURL()
 	if err != nil {
-		slog.Error("Failed to generate auth URL", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to generate auth URL: %w", err))
 	}
 

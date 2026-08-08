@@ -86,7 +86,7 @@ func Start(db db.Querier, cache *types.Cache) {
 
 	mux := http.NewServeMux()
 
-	interceptors := connect.WithInterceptors(AuthInterceptor(query))
+	interceptors := connect.WithInterceptors(LoggingInterceptor(), AuthInterceptor(query))
 	rpcPath, rpcHandler := pkplanerv1connect.NewPKPlanerServiceHandler(pkPlanerHandler, interceptors)
 
 	mux.Handle(rpcPath, rpcHandler)

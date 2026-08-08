@@ -57,7 +57,6 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	groups := h.cache.AvailableGroups()
 
 	if !isValidColumn(chosenColumn, *groups) {
-		slog.Warn("Invalid chosen column value", slog.Int64("column", chosenColumn))
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid chosen column value"))
 	}
 
@@ -65,9 +64,6 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		ChosenColumn: &chosenColumn,
 		AccessToken:  user.AccessToken,
 	}); err != nil {
-		slog.Error("Failed to update chosen column",
-			slog.Int64("column", chosenColumn),
-			slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update chosen column: %w", err))
 	}
 

@@ -25,6 +25,7 @@ var (
 	TIMETABLE_URL                 = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
 	TIME_BETWEEN_SYNC_HOURS       = 72
 	GOOGLE_PLACES_API_KEY         = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
+	LOG_LEVEL                     = "DEBUG" // OPTIONS: DEBUG, INFO, WARN, ERROR
 
 	// Override for XDG directories. If set, everything will be put into the specified directory
 	APP_BASE_DIR string
@@ -200,6 +201,10 @@ func LoadEnvVariables() {
 	} else {
 		LOGS_DIR = filepath.Join(STATE_DIR, "logs")
 		os.Mkdir(LOGS_DIR, 0o755)
+	}
+
+	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
+		LOG_LEVEL = logLevel
 	}
 
 	if val := os.Getenv("DATABASE_PATH"); val != "" {

@@ -19,7 +19,6 @@ func (h *PKPlanerHandler) GetOverrides(
 
 	rows, err := h.Query.GetOverridesForUser(ctx, user.ID)
 	if err != nil {
-		slog.Error("Failed to fetch overrides", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to fetch overrides: %w", err))
 	}
 
@@ -60,7 +59,6 @@ func (h *PKPlanerHandler) SetOverride(
 			UserID:    user.ID,
 			ClassHash: ovr.ClassHash,
 		}); err != nil {
-			slog.Error("Failed to delete override", slog.Any("error", err))
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to delete override: %w", err))
 		}
 		return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
@@ -79,7 +77,6 @@ func (h *PKPlanerHandler) SetOverride(
 		IsHidden:      ovr.IsHidden,
 		IsTransparent: ovr.IsTransparent,
 	}); err != nil {
-		slog.Error("Failed to upsert override", slog.Any("error", err))
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to upsert override: %w", err))
 	}
 

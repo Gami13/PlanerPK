@@ -59,7 +59,7 @@ func applyEventChanges(srv *calendar.Service, eventsToDelete []*calendar.Event, 
 	var deletedCount, createdCount int
 
 	for _, event := range eventsToAdd {
-		slog.Info("Creating event", slog.String("summary", event.Summary))
+		slog.Debug("Creating event", slog.String("summary", event.Summary))
 		_, err := srv.Events.Insert("primary", event).Do()
 		if err != nil {
 			slog.Error("Failed to create event",
@@ -71,7 +71,7 @@ func applyEventChanges(srv *calendar.Service, eventsToDelete []*calendar.Event, 
 	}
 
 	for _, event := range eventsToDelete {
-		slog.Info("Deleting event", slog.String("summary", event.Summary))
+		slog.Debug("Deleting event", slog.String("summary", event.Summary))
 		err := srv.Events.Delete("primary", event.Id).Do()
 		if err != nil {
 			slog.Error("Failed to delete event",
