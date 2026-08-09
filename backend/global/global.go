@@ -9,41 +9,34 @@ import (
 	"time"
 )
 
+const (
+	defaultDataDir   = "/data"
+	defaultStaticDir = "/app/static"
+)
+
 var (
-	SHEET_NAME                    = "2025_2026"
-	LAST_ROW                      = 365
-	HOUR_COLUMN                   = 1
-	DAY_START                     = "7.30"
-	DAY_START_TIME                = time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
-	DAY_END                       = "21.00"
-	LAST_COLUMN                   = 40
-	DATABASE_DRIVER               = "sqlite"
-	DATABASE_ARGUMENTS            = "cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite"
-	MINUTES_BETWEEN               = 1
-	SERVER_PORT                   = "8080"
-	GENERAL_RATE_LIMIT_PER_MINUTE = 60
-	TIMETABLE_URL                 = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-	TIME_BETWEEN_SYNC_HOURS       = 72
-	GOOGLE_PLACES_API_KEY         = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
-	LOG_LEVEL                     = "DEBUG" // OPTIONS: DEBUG, INFO, WARN, ERROR
+	SHEET_NAME              = "2025_2026"
+	HOUR_COLUMN             = 1
+	DAY_START               = "7.30"
+	DAY_START_TIME          = time.Date(0, 0, 0, 7, 30, 0, 0, time.UTC)
+	DAY_END                 = "21.00"
+	LAST_COLUMN             = 40
+	DATABASE_DRIVER         = "sqlite"
+	DATABASE_ARGUMENTS      = "cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite"
+	MINUTES_BETWEEN         = 1
+	// Fixed container port. Change the host-facing port through Docker/Compose.
+	SERVER_PORT             = "8080"
+	TIMETABLE_URL           = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
+	TIME_BETWEEN_SYNC_HOURS = 72
+	GOOGLE_PLACES_API_KEY   = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
+	LOG_LEVEL               = "DEBUG" // OPTIONS: DEBUG, INFO, WARN, ERROR
 
-	// Override for XDG directories. If set, everything will be put into the specified directory
-	APP_BASE_DIR string
-
-	// XDG directories
-	XDG_DATA_HOME   string
-	XDG_CONFIG_HOME string
-	XDG_STATE_HOME  string
-	XDG_CACHE_HOME  string
-
-	// Application main directories
-	APP_DIR    string
-	DATA_DIR   string
-	CONFIG_DIR string
+	// DATA_DIR is the only configurable root for mutable application data.
+	DATA_DIR   = defaultDataDir
 	STATE_DIR  string
-	STATIC_DIR string
+	LOGS_DIR   string
+	STATIC_DIR = defaultStaticDir
 
-	LOGS_DIR                     string
 	DATABASE_PATH                string
 	DATABASE_SOURCE              string
 	TIMETABLE_DOWNLOADS_DIR      string
@@ -53,242 +46,137 @@ var (
 )
 
 func getEnvOrDefault(key, fallback string) string {
-	if val := os.Getenv(key); val != "" {
-		return val
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
 	return fallback
 }
 
-// var LAST_ROW = 365
-// var HOUR_COLUMN = 1
-// var DAY_START = "7.30"
-// var DAY_END = "21.00"
-// var DATABASE_SOURCE = "file:database.db?cache=shared&mode=rwc&_busy_timeout=5000"
-// var DATABASE_DRIVER = "sqlite"
-// var MINUTES_BETWEEN = 5
-// var SERVER_PORT = "8080"
-// var TIMETABLE_CURRENT_DESTINATION = "./current_timetable/"
-// var TIMETABLE_URL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-// var TIMETABLE_DOWNLOAD_DESTINATION = "./downloads/"
-// Loads all environment variables from the system, if they don't exist, uses default ones
+func getIntEnv(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		slog.Warn("Invalid integer environment variable; using default",
+			slog.String("variable", key),
+			slog.String("value", value),
+			slog.Int("default", fallback),
+		)
+		return fallback
+	}
+	return parsed
+}
+
+func getClockEnv(key, fallback string) (string, time.Time) {
+	value := getEnvOrDefault(key, fallback)
+	parsed, err := time.Parse("15.04", value)
+	if err != nil {
+		slog.Warn("Invalid time environment variable; using default",
+			slog.String("variable", key),
+			slog.String("value", value),
+			slog.String("default", fallback),
+		)
+		value = fallback
+		parsed, _ = time.Parse("15.04", fallback)
+	}
+	return value, parsed
+}
+
+func ensureDirectories() {
+	for _, directory := range []string{
+		STATE_DIR,
+		LOGS_DIR,
+		TIMETABLE_DOWNLOADS_DIR,
+		CURRENT_TIMETABLE_DIR,
+	} {
+		if err := os.MkdirAll(directory, 0o755); err != nil {
+			slog.Error("Failed to create data directory",
+				slog.String("directory", directory),
+				slog.Any("error", err),
+			)
+		}
+	}
+}
+
+// LoadEnvVariables loads the small set of settings that are meaningful at
+// runtime. All mutable data paths are derived from DATA_DIR so the container
+// has one persistent data volume.
 func LoadEnvVariables() {
-	APP_BASE_DIR = os.Getenv("APP_BASE_DIR")
+	DATA_DIR = getEnvOrDefault("DATA_DIR", defaultDataDir)
 
-	if APP_BASE_DIR != "" {
-		APP_DIR = APP_BASE_DIR
-		DATA_DIR = filepath.Join(APP_DIR, "data")
-		CONFIG_DIR = filepath.Join(APP_DIR, "config")
-		STATE_DIR = filepath.Join(APP_DIR, "state")
-		STATIC_DIR = filepath.Join(APP_DIR, "static")
-	} else {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			slog.Error("Failed to determine the user home directory. You must set the `APP_BASE_DIR` environment variable to specify where data should be stored.", slog.Any("error", err))
-			panic(err)
-		}
-
-		XDG_DATA_HOME = getEnvOrDefault("XDG_DATA_HOME", filepath.Join(home, ".local", "share"))
-		XDG_CONFIG_HOME = getEnvOrDefault("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-		XDG_STATE_HOME = getEnvOrDefault("XDG_STATE_HOME", filepath.Join(home, ".local", "state"))
-		XDG_CACHE_HOME = getEnvOrDefault("XDG_CACHE_HOME", filepath.Join(home, ".cache"))
-
-		APP_DIR = filepath.Join(XDG_DATA_HOME, "planer-pk")
-		DATA_DIR = filepath.Join(APP_DIR, "data")
-		CONFIG_DIR = filepath.Join(XDG_CONFIG_HOME, "planer-pk")
-		STATE_DIR = filepath.Join(XDG_STATE_HOME, "planer-pk")
-		STATIC_DIR = filepath.Join(XDG_CACHE_HOME, "planer-pk", "static")
+	SHEET_NAME = getEnvOrDefault("SHEET_NAME", "2025_2026")
+	HOUR_COLUMN = getIntEnv("HOUR_COLUMN", 1)
+	if HOUR_COLUMN < 0 {
+		slog.Warn("HOUR_COLUMN must be non-negative; using default", slog.Int("value", HOUR_COLUMN), slog.Int("default", 1))
+		HOUR_COLUMN = 1
 	}
 
-	if val := os.Getenv("SHEET_NAME"); val != "" {
-		SHEET_NAME = val
-	}
+	var startTime time.Time
+	DAY_START, startTime = getClockEnv("DAY_START", "7.30")
+	DAY_START_TIME = time.Date(0, 0, 0, startTime.Hour(), startTime.Minute(), 0, 0, time.UTC)
 
-	if val := os.Getenv("LAST_ROW"); val != "" {
-		if val, err := strconv.Atoi(val); err == nil {
-			LAST_ROW = val
+	DAY_END, _ = getClockEnv("DAY_END", "21.00")
+
+	LAST_COLUMN = getIntEnv("LAST_COLUMN", 40)
+	if LAST_COLUMN <= HOUR_COLUMN {
+		slog.Warn("LAST_COLUMN must be greater than HOUR_COLUMN; using default", slog.Int("value", LAST_COLUMN), slog.Int("default", 40))
+		LAST_COLUMN = 40
+		if LAST_COLUMN <= HOUR_COLUMN {
+			slog.Warn("HOUR_COLUMN is outside the default timetable range; using default", slog.Int("value", HOUR_COLUMN), slog.Int("default", 1))
+			HOUR_COLUMN = 1
 		}
 	}
 
-	if val := os.Getenv("HOUR_COLUMN"); val != "" {
-		if val, err := strconv.Atoi(val); err == nil {
-			HOUR_COLUMN = val
-		}
+	MINUTES_BETWEEN = getIntEnv("MINUTES_BETWEEN", 1)
+	if MINUTES_BETWEEN <= 0 {
+		slog.Warn("MINUTES_BETWEEN must be greater than zero; using default", slog.Int("value", MINUTES_BETWEEN), slog.Int("default", 1))
+		MINUTES_BETWEEN = 1
 	}
 
-	if val := os.Getenv("DAY_START"); val != "" {
-		DAY_START = val
-		timeParsed, err := time.Parse("15.04", val)
-		if err != nil {
-			slog.Error("Failed to parse DAY_START environment variable", slog.Any("error", err))
-			panic(err)
-		}
-		DAY_START_TIME = time.Date(0, 0, 0, timeParsed.Hour(), timeParsed.Minute(), 0, 0, time.UTC)
-
+	TIMETABLE_URL = getEnvOrDefault("TIMETABLE_URL", "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/")
+	TIME_BETWEEN_SYNC_HOURS = getIntEnv("TIME_BETWEEN_SYNC_HOURS", 72)
+	if TIME_BETWEEN_SYNC_HOURS < 0 {
+		slog.Warn("TIME_BETWEEN_SYNC_HOURS must be non-negative; using default", slog.Int("value", TIME_BETWEEN_SYNC_HOURS), slog.Int("default", 72))
+		TIME_BETWEEN_SYNC_HOURS = 72
 	}
+	LOG_LEVEL = getEnvOrDefault("LOG_LEVEL", "DEBUG")
+	GOOGLE_PLACES_API_KEY = getEnvOrDefault("GOOGLE_PLACES_API_KEY", "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY")
 
-	if val := os.Getenv("DAY_END"); val != "" {
-		DAY_END = val
-	}
+	STATE_DIR = filepath.Join(DATA_DIR, "state")
+	LOGS_DIR = filepath.Join(DATA_DIR, "logs")
+	DATABASE_PATH = filepath.Join(STATE_DIR, "database.db")
+	DATABASE_SOURCE = fmt.Sprintf(
+		"file:%s?%s",
+		filepath.ToSlash(DATABASE_PATH),
+		DATABASE_ARGUMENTS,
+	)
+	TIMETABLE_DOWNLOADS_DIR = filepath.Join(DATA_DIR, "downloads")
+	CURRENT_TIMETABLE_DIR = filepath.Join(DATA_DIR, "current_timetable")
+	CALENDAR_CREDENTIALS_PATH = filepath.Join(DATA_DIR, "credentials.json")
+	CURRENT_TIMETABLE_STATS_PATH = filepath.Join(STATE_DIR, "current_timetable_stats.json")
 
-	if val := os.Getenv("DATABASE_DRIVER"); val != "" {
-		DATABASE_DRIVER = val
-	}
-
-	if val := os.Getenv("DATABASE_ARGUMENTS"); val != "" {
-		DATABASE_ARGUMENTS = val
-	}
-
-	if minutesBetween := os.Getenv("MINUTES_BETWEEN"); minutesBetween != "" {
-		if minutesBetween, err := strconv.Atoi(minutesBetween); err == nil {
-			MINUTES_BETWEEN = minutesBetween
-		}
-	}
-
-	if serverPort := os.Getenv("SERVER_PORT"); serverPort != "" {
-		SERVER_PORT = serverPort
-	}
-
-	if generalRateLimit := os.Getenv("GENERAL_RATE_LIMIT_PER_MINUTE"); generalRateLimit != "" {
-		if generalRateLimit, err := strconv.Atoi(generalRateLimit); err == nil {
-			GENERAL_RATE_LIMIT_PER_MINUTE = generalRateLimit
-		}
-	}
-
-	if timetableURL := os.Getenv("TIMETABLE_URL"); timetableURL != "" {
-		TIMETABLE_URL = timetableURL
-	}
-
-	if timeBetweenSyncHours := os.Getenv("TIME_BETWEEN_SYNC_HOURS"); timeBetweenSyncHours != "" {
-		if timeBetweenSyncHours, err := strconv.Atoi(timeBetweenSyncHours); err == nil {
-			TIME_BETWEEN_SYNC_HOURS = timeBetweenSyncHours
-		}
-	}
-
-	if lastColumn := os.Getenv("LAST_COLUMN"); lastColumn != "" {
-		if lastColumn, err := strconv.Atoi(lastColumn); err == nil {
-			LAST_COLUMN = lastColumn
-		}
-	}
-
-	if appDir := os.Getenv("APP_DIR"); appDir != "" {
-		APP_DIR = appDir
-	} else {
-		os.Mkdir(APP_DIR, 0o755)
-	}
-
-	if dataDir := os.Getenv("DATA_DIR"); dataDir != "" {
-		DATA_DIR = dataDir
-	} else {
-		os.Mkdir(DATA_DIR, 0o755)
-	}
-
-	if configDir := os.Getenv("CONFIG_DIR"); configDir != "" {
-		CONFIG_DIR = configDir
-	} else {
-		os.Mkdir(CONFIG_DIR, 0o755)
-	}
-
-	if stateDir := os.Getenv("STATE_DIR"); stateDir != "" {
-		STATE_DIR = stateDir
-	} else {
-		if os.Getenv("LOGS_DIR") == "" {
-			os.Mkdir(STATE_DIR, 0o755)
-		}
-	}
-
-	if val := os.Getenv("LOGS_DIR"); val != "" {
-		LOGS_DIR = val
-	} else {
-		LOGS_DIR = filepath.Join(STATE_DIR, "logs")
-		os.Mkdir(LOGS_DIR, 0o755)
-	}
-
-	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
-		LOG_LEVEL = logLevel
-	}
-
-	if val := os.Getenv("DATABASE_PATH"); val != "" {
-		DATABASE_PATH = val
-	} else {
-		DATABASE_PATH = filepath.Join(DATA_DIR, "database.db")
-	}
-
-	if DATABASE_ARGUMENTS != "" {
-		DATABASE_SOURCE = fmt.Sprintf("file:%s?%s", filepath.ToSlash(DATABASE_PATH), DATABASE_ARGUMENTS)
-	} else {
-		DATABASE_SOURCE = fmt.Sprintf("file:%s", filepath.ToSlash(DATABASE_PATH))
-	}
-
-	if val := os.Getenv("STATIC_DIR"); val != "" {
-		STATIC_DIR = val
-	} else {
-		if APP_BASE_DIR != "" {
-			os.Mkdir(filepath.Join(XDG_CACHE_HOME, "planer-pk"), 0o755)
-		}
-		os.Mkdir(STATIC_DIR, 0o755)
-	}
-
-	if val := os.Getenv("TIMETABLE_DOWNLOADS_DIR"); val != "" {
-		TIMETABLE_DOWNLOADS_DIR = val
-	} else {
-		TIMETABLE_DOWNLOADS_DIR = filepath.Join(DATA_DIR, "downloads")
-		os.Mkdir(TIMETABLE_DOWNLOADS_DIR, 0o755)
-	}
-
-	if val := os.Getenv("CURRENT_TIMETABLE_DIR"); val != "" {
-		CURRENT_TIMETABLE_DIR = val
-	} else {
-		CURRENT_TIMETABLE_DIR = filepath.Join(DATA_DIR, "current_timetable")
-		os.Mkdir(CURRENT_TIMETABLE_DIR, 0o755)
-	}
-
-	if calendarCredentialsPath := os.Getenv("CALENDAR_CREDENTIALS_PATH"); calendarCredentialsPath != "" {
-		CALENDAR_CREDENTIALS_PATH = calendarCredentialsPath
-	} else {
-		CALENDAR_CREDENTIALS_PATH = filepath.Join(CONFIG_DIR, "credentials.json")
-	}
-
-	if val := os.Getenv("CURRENT_TIMETABLE_STATS_PATH"); val != "" {
-		CURRENT_TIMETABLE_STATS_PATH = val
-	} else {
-		CURRENT_TIMETABLE_STATS_PATH = filepath.Join(DATA_DIR, "current_timetable_stats.json")
-	}
-
-	if googlePlacesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY"); googlePlacesAPIKey != "" {
-		GOOGLE_PLACES_API_KEY = googlePlacesAPIKey
-	}
+	ensureDirectories()
 }
 
 func PrintEnvVariables() {
 	slog.Info(
 		"Current configuration",
 		slog.String("SHEET_NAME", SHEET_NAME),
-		slog.Int("LAST_ROW", LAST_ROW),
 		slog.Int("HOUR_COLUMN", HOUR_COLUMN),
 		slog.String("DAY_START", DAY_START),
 		slog.String("DAY_END", DAY_END),
 		slog.Int("LAST_COLUMN", LAST_COLUMN),
 		slog.String("DATABASE_DRIVER", DATABASE_DRIVER),
-		slog.String("DATABASE_ARGUMENTS", DATABASE_ARGUMENTS),
 		slog.Int("MINUTES_BETWEEN", MINUTES_BETWEEN),
 		slog.String("SERVER_PORT", SERVER_PORT),
-		slog.Int("GENERAL_RATE_LIMIT_PER_MINUTE", GENERAL_RATE_LIMIT_PER_MINUTE),
 		slog.String("TIMETABLE_URL", TIMETABLE_URL),
 		slog.Int("TIME_BETWEEN_SYNC_HOURS", TIME_BETWEEN_SYNC_HOURS),
-		slog.String("GOOGLE_PLACES_API_KEY", GOOGLE_PLACES_API_KEY),
-
-		slog.String("APP_BASE_DIR", APP_BASE_DIR),
-
-		slog.String("XDG_DATA_HOME", XDG_DATA_HOME),
-		slog.String("XDG_CONFIG_HOME", XDG_CONFIG_HOME),
-		slog.String("XDG_STATE_HOME", XDG_STATE_HOME),
-		slog.String("XDG_CACHE_HOME", XDG_CACHE_HOME),
-
-		slog.String("APP_DIR", APP_DIR),
+		slog.Bool("GOOGLE_PLACES_API_KEY_SET", GOOGLE_PLACES_API_KEY != "" && GOOGLE_PLACES_API_KEY != "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"),
 		slog.String("DATA_DIR", DATA_DIR),
-		slog.String("CONFIG_DIR", CONFIG_DIR),
 		slog.String("STATE_DIR", STATE_DIR),
-
 		slog.String("LOGS_DIR", LOGS_DIR),
 		slog.String("DATABASE_PATH", DATABASE_PATH),
 		slog.String("DATABASE_SOURCE", DATABASE_SOURCE),

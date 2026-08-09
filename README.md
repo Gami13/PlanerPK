@@ -1,16 +1,32 @@
 # GoogleCalendarTimetable
 
-## Docker Workflow
+## Docker workflow
 
-The repository now ships with a multi-stage `Dockerfile` that mirrors the native `build.ps1`/`build.sh` steps: it builds the SolidJS frontend with PNPM, compiles the Go backend, installs LibreOffice Calc for headless `.xls → .xlsx` conversions, and exposes the unified binary.
+The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS frontend, compiles the Go backend, and installs LibreOffice Calc for headless `.xls` to `.xlsx` conversion.
 
-### Prerequisites
+The container has two filesystem areas:
 
-- Docker Engine or Docker Desktop 4.27+
-- The OAuth `credentials.json` file present at the project root (it is bind-mounted at runtime, so it never becomes part of the image).
-- Protobuf generation is run from repo root with `buf generate --template buf.gen.yaml` and writes to `backend/gen` and `frontend/src/gen`.
+- `/app` contains the application and compiled static assets.
+- `/data` contains all mutable runtime data and should be mounted as one persistent volume.
 
-### Build the Image
+Because this project is deployed only in Docker, it uses `/app` and `/data` instead of the XDG directory hierarchy. XDG remains useful for native installations, but here the internal paths are derived from one `DATA_DIR` rather than exposed as separate environment variables, preventing inconsistent layouts while keeping all persistent state under `/data`.
+
+The data directory has this layout:
+
+```text
+/data/
+├── credentials.json
+├── state/
+│   ├── database.db
+│   └── current_timetable_stats.json
+├── logs/
+├── current_timetable/
+└── downloads/
+```
+
+The OAuth `credentials.json` file should be mounted read-only. It is never included in the image.
+
+### Build the image
 
 ```sh
 docker build -t google-calendar-timetable .
@@ -19,6 +35,7 @@ docker build -t google-calendar-timetable .
 ### Run with Docker Compose
 
 Example `docker-compose.yml` configuration:
+
 ```yaml
 services:
   app:
@@ -30,39 +47,37 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SERVER_PORT: "8080"
-      API_BASE_URL: "http://localhost:8080/api" #base URL for the API that the frontend will communicate with. It should point to your backend server.
-      SHEET_NAME: "2025_2026" #name of the sheet inside of the xls file
-      HOUR_COLUMN : 1 #column that contains the hour of the lesson
-      DAY_START : "7.30" #time when the first lesson starts
-      DAY_END : "21.00" #time when the last lesson ends
-      LAST_COLUMN : "40" #last column of the sheet that contains data
-      MINUTES_BETWEEN : "5" #minutes between checking for new data
-      GENERAL_RATE_LIMIT_PER_MINUT: "60" #general rate limit per minute for API requests
-      TIMETABLE_URL : "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/" #URL of the timetable, should be a valid URL that points to the website with the timetable
-      TIME_BETWEEN_SYNC_HOURS : "72" #time between syncing the calendar, in hours, if nothing changed
-      TZ: "Europe/Warsaw" #timezone for the application
-      
+      API_BASE_URL: "http://localhost:8080/api"
+      LOG_LEVEL: "INFO"
+      MINUTES_BETWEEN: "5"
+      TIME_BETWEEN_SYNC_HOURS: "72"
+      GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY}"
     volumes:
       - ./data:/data
       - ./credentials.json:/data/credentials.json:ro
     restart: unless-stopped
 ```
 
-
-`docker-compose.yml` keeps everything under a single `./data` directory (downloads, current timetables, logs, database) in sync with the container, rewrites `static/env.js` at runtime so the frontend points to the correct API base, and exposes the HTTP API via the `SERVER_PORT` environment variable (defaults to `8080` if unset):
+Start the application with:
 
 ```sh
 docker compose up --build
 ```
 
-Key mounts defined in the Compose file:
+The backend uses `/data` by default. `DATA_DIR` can be changed if a different mount point is required, but all derived data paths remain inside that directory. Static assets remain in `/app/static` and are not part of the persistent data volume.
 
-- `./data:/app/data` → hosts the entire mutable state tree; the container creates the required subdirectories (`current_timetable`, `downloads`, `logs`, `database.db`) on startup if they are missing.
-- `./credentials.json:/app/credentials.json:ro` → place your Google OAuth credentials file next to `docker-compose.yml`; it is mounted read-only inside the container.
+### Runtime settings
 
-During startup the entrypoint writes `/app/static/env.js` with the value of `API_BASE_URL` (defaulting to `http://localhost:8080/api`), so you can point the compiled frontend at different backend URLs without rebuilding the image.
+The backend supports these environment variables:
 
-Customize runtime settings by exporting environment variables (for example `SERVER_PORT`, `MINUTES_BETWEEN`, etc.) before running `docker compose` or by editing the `environment` block inside `docker-compose.yml`. Any variable supported by `src/global/global.go` can be overridden this way.
+- `DATA_DIR` — mutable data root; defaults to `/data`.
+- `LOG_LEVEL` — `DEBUG`, `INFO`, `WARN`, or `ERROR`.
+- `MINUTES_BETWEEN` — timetable update interval.
+- `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
+- `TIMETABLE_URL` — source timetable page.
+- `SHEET_NAME`, `HOUR_COLUMN`, `DAY_START`, `DAY_END`, and `LAST_COLUMN` — timetable spreadsheet layout settings.
+- `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
 
+The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment; the container does not invent a development URL. The static asset directory is fixed at `/app/static`.
 
+Protobuf generation is run from the repository root with `buf generate --template buf.gen.yaml` and writes to `backend/gen` and `frontend/src/gen`.

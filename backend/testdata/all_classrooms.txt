@@ -1,0 +1,61 @@
+114 GIL
+131
+135
+136
+138
+149b
+150
+151
+152
+Działownia 1/15
+N
+S1
+S2
+S3
+ZDALNIE
+s. 1/15 Działownia
+s. 114 GIL
+s. 114 GIL/Działownia 1/15
+s. 114 GIL/ZDALNIE
+s. 131
+s. 135
+s. 135(L2)
+s. 135/ZDALNIE
+s. 136
+s. 136(L1,)
+s. 136/ZDALNIE
+s. 136/ZDALNIE
+s. 138
+s. 139 SJO
+s. 149b
+s. 150
+s. 151
+s. 151 /ZDALNIE
+s. 151(L3)
+s. 151/ZDALNIE
+s. 152
+s. 152 SJO
+s. 216
+s. 216 WIŚiE/ZDALNIE
+s. 305 WIŚiE/ZDALNIE
+s. 5 WIŚiE/ZDALNIE
+s. Działowia 1/15
+s. Działownia 1/15
+s. F020
+s. N
+s. N/s.151
+s. S1
+s. S2
+s. S3
+s. SJO
+s. ZDALNIE
+s. wykładowa KI
+s. wykładowa KI/135, 136 bis
+s. wykładowa KI/135, 136 bis/ZDALNIE
+s. wykładowa KI/135,136
+s. wykładowa KI/135,136 bis
+s. wykładowa/135,136/ZDALNIE
+s. wykładowa/135136
+s.151/ZDALNIE
+s.wykładowa KI/135,136/ZDALNIE
+wykładowa KI

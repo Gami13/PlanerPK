@@ -1,0 +1,153 @@
+================================================================================
+                         DATABASE PLACE HYPERLINKS                              
+================================================================================
+
+--------------------------------------------------------------------------------
+ 1. UNIQUE CLASSROOMS AND THEIR ATTACHED HYPERLINKS (15 found)
+--------------------------------------------------------------------------------
+
+[Classroom #1] 114 GIL
+  Building Key    : GGIL
+  Google Place ID : ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  Label           : Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM">Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #2] 131
+  Building Key    : HOUS
+  Google Place ID : ChIJF7aaXgBbFkcRlAzBvmSHoRc
+  Label           : Transport i Logistyka, Warszawska 24, Kraków, Polska Budynek Houston, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJF7aaXgBbFkcRlAzBvmSHoRc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJF7aaXgBbFkcRlAzBvmSHoRc">Transport i Logistyka, Warszawska 24, Kraków, Polska Budynek Houston, 31-155 Kraków, Polska</a>
+
+[Classroom #3] 135
+  Building Key    : CHEM
+  Google Place ID : ChIJD6D2gARbFkcROkHrxYrK1Xc
+  Label           : Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc">Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #4] 136
+  Building Key    : CHEM
+  Google Place ID : ChIJD6D2gARbFkcROkHrxYrK1Xc
+  Label           : Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc">Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #5] 138
+  Building Key    : SJOP
+  Google Place ID : ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  Label           : Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8">Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #6] 149b
+  Building Key    : SJOP
+  Google Place ID : ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  Label           : Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8">Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #7] 150
+  Building Key    : SJOP
+  Google Place ID : ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  Label           : Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8">Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #8] 151
+  Building Key    : CHEM
+  Google Place ID : ChIJD6D2gARbFkcROkHrxYrK1Xc
+  Label           : Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc">Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #9] 152
+  Building Key    : SJOP
+  Google Place ID : ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  Label           : Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8">Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #10] Działownia 1/15
+  Building Key    : DZAL
+  Google Place ID : ChIJ26n3dQRbFkcRcSq8i7pOAxY
+  Label           : Międzywydziałowe Centrum Edukacyjno-Badawcze PK „Działownia”, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ26n3dQRbFkcRcSq8i7pOAxY
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ26n3dQRbFkcRcSq8i7pOAxY">Międzywydziałowe Centrum Edukacyjno-Badawcze PK „Działownia”, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #11] N
+  Building Key    : ARCH
+  Google Place ID : ChIJVanSewNbFkcRis321uI90wQ
+  Label           : Wydział Architektury PK, Wydział Architektury PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJVanSewNbFkcRis321uI90wQ
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJVanSewNbFkcRis321uI90wQ">Wydział Architektury PK, Wydział Architektury PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #12] S1
+  Building Key    : GGIL
+  Google Place ID : ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  Label           : Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM">Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #13] S2
+  Building Key    : GGIL
+  Google Place ID : ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  Label           : Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM">Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #14] S3
+  Building Key    : GGIL
+  Google Place ID : ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  Label           : Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM">Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Classroom #15] wykładowa KI
+  Building Key    : CHEM
+  Google Place ID : ChIJD6D2gARbFkcROkHrxYrK1Xc
+  Label           : Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc">Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+--------------------------------------------------------------------------------
+ 2. UNIQUE BUILDINGS IN DATABASE (6 found)
+--------------------------------------------------------------------------------
+
+[Building #1] Wydział Architektury PK, Wydział Architektury PK, Warszawska 24, 31-155 Kraków, Polska (Key: ARCH)
+  Google Place ID : ChIJVanSewNbFkcRis321uI90wQ
+  Address         : Wydział Architektury PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJVanSewNbFkcRis321uI90wQ
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJVanSewNbFkcRis321uI90wQ">Wydział Architektury PK, Wydział Architektury PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Building #2] Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska (Key: CHEM)
+  Google Place ID : ChIJD6D2gARbFkcROkHrxYrK1Xc
+  Address         : Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJD6D2gARbFkcROkHrxYrK1Xc">Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Building #3] Międzywydziałowe Centrum Edukacyjno-Badawcze PK „Działownia”, Warszawska 24, 31-155 Kraków, Polska (Key: DZAL)
+  Google Place ID : ChIJ26n3dQRbFkcRcSq8i7pOAxY
+  Address         : Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ26n3dQRbFkcRcSq8i7pOAxY
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ26n3dQRbFkcRcSq8i7pOAxY">Międzywydziałowe Centrum Edukacyjno-Badawcze PK „Działownia”, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Building #4] Transport i Logistyka, Warszawska 24, Kraków, Polska Budynek Houston, 31-155 Kraków, Polska (Key: HOUS)
+  Google Place ID : ChIJF7aaXgBbFkcRlAzBvmSHoRc
+  Address         : Warszawska 24, Kraków, Polska Budynek Houston, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJF7aaXgBbFkcRlAzBvmSHoRc
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJF7aaXgBbFkcRlAzBvmSHoRc">Transport i Logistyka, Warszawska 24, Kraków, Polska Budynek Houston, 31-155 Kraków, Polska</a>
+
+[Building #5] Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska (Key: GGIL)
+  Google Place ID : ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  Address         : Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJoYVxbQNbFkcRLVeU6GMG0ZM">Galeria GIL PK, Galeria GIL PK, Warszawska 24, 31-155 Kraków, Polska</a>
+
+[Building #6] Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska (Key: SJOP)
+  Google Place ID : ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  Address         : Warszawska 24, 31-155 Kraków, Polska
+  Maps URL        : https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8
+  HTML Hyperlink  : <a href="https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=ChIJ5bx6WwNbFkcREw-iUfxzr_8">Studium Języków Obcych Politechniki Krakowskiej, Warszawska 24, 31-155 Kraków, Polska</a>
+
