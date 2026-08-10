@@ -18,7 +18,7 @@ var (
 
 func getFileServer() http.Handler {
 	fileServerOnce.Do(func() {
-		staticFileServer = http.FileServer(http.Dir(global.STATIC_DIR))
+		staticFileServer = http.FileServer(http.Dir(global.StaticDir()))
 	})
 	return staticFileServer
 }
@@ -32,7 +32,7 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path != "/" {
-		fullPath := filepath.Join(global.STATIC_DIR, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+		fullPath := filepath.Join(global.StaticDir(), strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		_, err := os.Stat(fullPath)
 		if err != nil {
 			if !os.IsNotExist(err) {

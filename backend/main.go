@@ -28,7 +28,7 @@ import (
 var ddl string
 
 func initializeXlsxInfo() {
-	filename, err := filepath.Abs(global.CURRENT_TIMETABLE_STATS_PATH)
+	filename, err := filepath.Abs(global.CurrentTimetableStatsPath())
 	if err != nil {
 		panic("Couldn't create stats file path")
 	}
@@ -64,7 +64,7 @@ func initializeXlsxInfo() {
 func initializeApp() (queries db.Querier) {
 	global.LoadEnvVariables()
 
-	err := utils.InitializeLogging(global.LOGS_DIR)
+	err := utils.InitializeLogging(global.LogsDir())
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}
@@ -73,7 +73,7 @@ func initializeApp() (queries db.Querier) {
 
 	global.PrintEnvVariables()
 
-	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
+	database, err := sql.Open(global.DatabaseDriver(), global.DatabaseSource())
 	if err != nil {
 		panic(err)
 	}
@@ -166,15 +166,15 @@ func main() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(time.Duration(global.MINUTES_BETWEEN) * time.Minute)
+	ticker := time.NewTicker(global.TimetableUpdateInterval())
 	done := make(chan bool)
 
-	slog.Info("Starting web server", slog.String("port", global.SERVER_PORT))
+	slog.Info("Starting web server", slog.String("port", global.ServerPort()))
 
 	go webServer.Start(queries, &cache)
 
 	slog.Info("Starting timetable update ticker",
-		slog.Int("interval_minutes", global.MINUTES_BETWEEN))
+		slog.Int("interval_minutes", int(global.TimetableUpdateInterval()/time.Minute)))
 	func() {
 		for {
 			select {
@@ -214,7 +214,7 @@ func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 			continue
 		}
 		timeSinceSync := time.Since(user.LastSynced)
-		if !hasChanged && timeSinceSync.Hours() < float64(global.TIME_BETWEEN_SYNC_HOURS) {
+		if !hasChanged && timeSinceSync < global.TimeBetweenSync() {
 			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
 				slog.String("email", *user.Email),
 				slog.Int64("column", *user.ChosenColumn))

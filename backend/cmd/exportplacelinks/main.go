@@ -34,10 +34,10 @@ func main() {
 
 	outPath := *outPathFlag
 	if outPath == "" {
-		outPath = filepath.Join(global.STATE_DIR, "place_links.txt")
+		outPath = filepath.Join(global.StateDir(), "place_links.txt")
 	}
 
-	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
+	database, err := sql.Open(global.DatabaseDriver(), global.DatabaseSource())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening database: %v\n", err)
 		os.Exit(1)

@@ -16,7 +16,7 @@ import (
 )
 
 func createConfig() (*oauth2.Config, error) {
-	b, err := os.ReadFile(global.CALENDAR_CREDENTIALS_PATH)
+	b, err := os.ReadFile(global.CalendarCredentialsPath())
 	if err != nil {
 		slog.Error("Failed to read credentials file", slog.Any("error", err))
 		return nil, err

@@ -44,7 +44,7 @@ func GetToken(u *db.User) *oauth2.Token {
 // wykład, lab., ćwiczenia
 
 func getLogLevelFromEnv() slog.Level {
-	switch strings.ToUpper(strings.TrimSpace(global.LOG_LEVEL)) {
+	switch strings.ToUpper(strings.TrimSpace(global.LogLevel())) {
 	case "DEBUG":
 		return slog.LevelDebug
 	case "INFO":
@@ -55,7 +55,7 @@ func getLogLevelFromEnv() slog.Level {
 		return slog.LevelError
 	default:
 		slog.Warn("Invalid LOG_LEVEL environment variable, defaulting to INFO",
-			slog.String("LOG_LEVEL", global.LOG_LEVEL))
+			slog.String("LOG_LEVEL", global.LogLevel()))
 		return slog.LevelInfo
 	}
 }
@@ -87,7 +87,7 @@ func InitializeLogging(logDir string) error {
 
 	slog.Info("Logger initialized",
 		slog.String("log_file", logFilePath),
-		slog.String("log_level", global.LOG_LEVEL))
+		slog.String("log_level", global.LogLevel()))
 
 	return nil
 }

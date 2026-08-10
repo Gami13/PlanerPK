@@ -1,5 +1,14 @@
 # GoogleCalendarTimetable
 
+## Deployment model
+
+PlanerPK is intended to run inside a container only. Supported deployments are:
+
+- a Docker container built from the repository `Dockerfile`;
+- a Nix container that provides the same runtime filesystem contract.
+
+Running the Go binary, `go run`, `nix run`, or the NixOS systemd module directly on the host is not supported. The container must provide `/app/static` for frontend assets, a writable `/data` directory for persistent state, and the OAuth file at `/data/credentials.json`.
+
 ## Docker workflow
 
 The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS frontend, compiles the Go backend, and installs LibreOffice Calc for headless `.xls` to `.xlsx` conversion.
@@ -9,7 +18,7 @@ The container has two filesystem areas:
 - `/app` contains the application and compiled static assets.
 - `/data` contains all mutable runtime data and should be mounted as one persistent volume.
 
-Because this project is deployed only in Docker, it uses `/app` and `/data` instead of the XDG directory hierarchy. XDG remains useful for native installations, but here the internal paths are derived from one `DATA_DIR` rather than exposed as separate environment variables, preventing inconsistent layouts while keeping all persistent state under `/data`.
+The runtime uses `/app` and `/data` instead of the XDG directory hierarchy. XDG is designed around per-user desktop applications and distributes files across host-specific locations, which is a poor fit for containerized deployments with explicit mounts. All mutable paths are therefore derived from `DATA_DIR`, keeping persistent state under `/data`.
 
 The data directory has this layout:
 
