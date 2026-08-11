@@ -91,7 +91,7 @@ func initializeApp() (queries db.Querier) {
 	return queries
 }
 
-func buildNewCache() ([]types.ColumnGroup, *types.Legend, *types.Buildings, types.Timetable, error) {
+func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *types.Legend, *types.Buildings, types.Timetable, error) {
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
 		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
@@ -103,6 +103,9 @@ func buildNewCache() ([]types.ColumnGroup, *types.Legend, *types.Buildings, type
 	}
 	newLegend := extractor.ExtractLegend(file)
 	newBuildings := types.BuildBuildingsFromLegend(newLegend)
+	if err := types.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
+		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
+	}
 	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend, newBuildings)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
@@ -128,7 +131,7 @@ func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRu
 
 	}
 	if isInitialRun || hasChanged {
-		newGroups, newLegend, newBuildings, newTimetable, err := buildNewCache()
+		newGroups, newLegend, newBuildings, newTimetable, err := buildNewCache(queries)
 		if err != nil {
 			return false, err
 		}

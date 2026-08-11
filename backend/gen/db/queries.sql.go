@@ -10,9 +10,28 @@ import (
 	"time"
 )
 
+const clearBuildingPlace = `-- name: ClearBuildingPlace :exec
+UPDATE building_places
+SET place_id = NULL, display_name = NULL, address = NULL, confidence = 0, verified_at = NULL, expires_at = NULL
+WHERE building_key = ?1
+`
+
+func (q *Queries) ClearBuildingPlace(ctx context.Context, buildingKey string) error {
+	_, err := q.db.ExecContext(ctx, clearBuildingPlace, buildingKey)
+	return err
+}
+
+const clearClassroomBuildings = `-- name: ClearClassroomBuildings :exec
+DELETE FROM classroom_buildings
+`
+
+func (q *Queries) ClearClassroomBuildings(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, clearClassroomBuildings)
+	return err
+}
+
 const deleteOverride = `-- name: DeleteOverride :exec
-DELETE FROM overrides
-WHERE user_id = ?1 AND class_hash = ?2
+DELETE FROM overrides WHERE user_id = ?1 AND class_hash = ?2
 `
 
 type DeleteOverrideParams struct {
@@ -67,104 +86,29 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
-const getBuildingByClassroomName = `-- name: GetBuildingByClassroomName :one
-SELECT p.id, p."key", p.google_place_id, p.name, p.address
-FROM buildings p
-JOIN building_classrooms pc ON p.id = pc.building_id
-JOIN classrooms c ON c.id = pc.classroom_id
-WHERE c.name = ?1
+const getBuildingPlaces = `-- name: GetBuildingPlaces :many
+SELECT building_key, canonical_name, place_id, display_name, address, confidence, verified_at, expires_at
+FROM building_places ORDER BY building_key
 `
 
-func (q *Queries) GetBuildingByClassroomName(ctx context.Context, classroomName *string) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingByClassroomName, classroomName)
-	var i Building
-	err := row.Scan(
-		&i.ID,
-		&i.Key,
-		&i.GooglePlaceID,
-		&i.Name,
-		&i.Address,
-	)
-	return i, err
-}
-
-const getBuildingByGooglePlaceID = `-- name: GetBuildingByGooglePlaceID :one
-SELECT id, "key", google_place_id, name, address
-FROM buildings
-WHERE google_place_id = ?1
-`
-
-func (q *Queries) GetBuildingByGooglePlaceID(ctx context.Context, googlePlaceID *string) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingByGooglePlaceID, googlePlaceID)
-	var i Building
-	err := row.Scan(
-		&i.ID,
-		&i.Key,
-		&i.GooglePlaceID,
-		&i.Name,
-		&i.Address,
-	)
-	return i, err
-}
-
-const getBuildingByID = `-- name: GetBuildingByID :one
-SELECT id, "key", google_place_id, name, address
-FROM buildings
-WHERE id = ?1
-`
-
-func (q *Queries) GetBuildingByID(ctx context.Context, id int64) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingByID, id)
-	var i Building
-	err := row.Scan(
-		&i.ID,
-		&i.Key,
-		&i.GooglePlaceID,
-		&i.Name,
-		&i.Address,
-	)
-	return i, err
-}
-
-const getBuildingByKey = `-- name: GetBuildingByKey :one
-SELECT id, "key", google_place_id, name, address
-FROM buildings
-WHERE key = ?1
-`
-
-func (q *Queries) GetBuildingByKey(ctx context.Context, key *string) (Building, error) {
-	row := q.db.QueryRowContext(ctx, getBuildingByKey, key)
-	var i Building
-	err := row.Scan(
-		&i.ID,
-		&i.Key,
-		&i.GooglePlaceID,
-		&i.Name,
-		&i.Address,
-	)
-	return i, err
-}
-
-const getBuildings = `-- name: GetBuildings :many
-SELECT id, "key", google_place_id, name, address
-FROM buildings
-`
-
-func (q *Queries) GetBuildings(ctx context.Context) ([]Building, error) {
-	rows, err := q.db.QueryContext(ctx, getBuildings)
+func (q *Queries) GetBuildingPlaces(ctx context.Context) ([]BuildingPlace, error) {
+	rows, err := q.db.QueryContext(ctx, getBuildingPlaces)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Building
+	var items []BuildingPlace
 	for rows.Next() {
-		var i Building
+		var i BuildingPlace
 		if err := rows.Scan(
-			&i.ID,
-			&i.Key,
-			&i.GooglePlaceID,
-			&i.Name,
+			&i.BuildingKey,
+			&i.CanonicalName,
+			&i.PlaceID,
+			&i.DisplayName,
 			&i.Address,
+			&i.Confidence,
+			&i.VerifiedAt,
+			&i.ExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -179,45 +123,8 @@ func (q *Queries) GetBuildings(ctx context.Context) ([]Building, error) {
 	return items, nil
 }
 
-const getClassroomNamesWithBuildingIDs = `-- name: GetClassroomNamesWithBuildingIDs :many
-SELECT c.name, p.id
-FROM buildings p
-JOIN building_classrooms pc ON p.id = pc.building_id
-JOIN classrooms c ON c.id = pc.classroom_id
-`
-
-type GetClassroomNamesWithBuildingIDsRow struct {
-	Name *string `json:"name"`
-	ID   int64   `json:"id"`
-}
-
-func (q *Queries) GetClassroomNamesWithBuildingIDs(ctx context.Context) ([]GetClassroomNamesWithBuildingIDsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getClassroomNamesWithBuildingIDs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetClassroomNamesWithBuildingIDsRow
-	for rows.Next() {
-		var i GetClassroomNamesWithBuildingIDsRow
-		if err := rows.Scan(&i.Name, &i.ID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getOverridesForUser = `-- name: GetOverridesForUser :many
-SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent
-FROM overrides
-WHERE user_id = ?1
+SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent FROM overrides WHERE user_id = ?1
 `
 
 func (q *Queries) GetOverridesForUser(ctx context.Context, userID int64) ([]Override, error) {
@@ -251,9 +158,7 @@ func (q *Queries) GetOverridesForUser(ctx context.Context, userID int64) ([]Over
 }
 
 const getTokenByAccessToken = `-- name: GetTokenByAccessToken :one
-SELECT access_token, token_type, refresh_token, expiry, expires_in
-FROM users
-WHERE access_token = ?1
+SELECT access_token, token_type, refresh_token, expiry, expires_in FROM users WHERE access_token = ?1
 `
 
 type GetTokenByAccessTokenRow struct {
@@ -279,8 +184,7 @@ func (q *Queries) GetTokenByAccessToken(ctx context.Context, accessToken string)
 
 const getUserByAccessToken = `-- name: GetUserByAccessToken :one
 SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
-FROM users
-WHERE access_token = ?1
+FROM users WHERE access_token = ?1
 `
 
 func (q *Queries) GetUserByAccessToken(ctx context.Context, accessToken string) (User, error) {
@@ -331,27 +235,38 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (User, erro
 	return i, err
 }
 
-const updateBuilding = `-- name: UpdateBuilding :exec
-UPDATE buildings
-SET name = ?1, address = ?2
-WHERE id = ?3
+const updateBuildingPlace = `-- name: UpdateBuildingPlace :exec
+UPDATE building_places
+SET place_id = ?1, display_name = ?2, address = ?3,
+    confidence = ?4, verified_at = ?5, expires_at = ?6
+WHERE building_key = ?7
 `
 
-type UpdateBuildingParams struct {
-	Name    *string `json:"name"`
-	Address *string `json:"address"`
-	ID      int64   `json:"id"`
+type UpdateBuildingPlaceParams struct {
+	PlaceID     *string    `json:"place_id"`
+	DisplayName *string    `json:"display_name"`
+	Address     *string    `json:"address"`
+	Confidence  float64    `json:"confidence"`
+	VerifiedAt  *time.Time `json:"verified_at"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+	BuildingKey string     `json:"building_key"`
 }
 
-func (q *Queries) UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) error {
-	_, err := q.db.ExecContext(ctx, updateBuilding, arg.Name, arg.Address, arg.ID)
+func (q *Queries) UpdateBuildingPlace(ctx context.Context, arg UpdateBuildingPlaceParams) error {
+	_, err := q.db.ExecContext(ctx, updateBuildingPlace,
+		arg.PlaceID,
+		arg.DisplayName,
+		arg.Address,
+		arg.Confidence,
+		arg.VerifiedAt,
+		arg.ExpiresAt,
+		arg.BuildingKey,
+	)
 	return err
 }
 
 const updateChosenColumn = `-- name: UpdateChosenColumn :exec
-UPDATE users
-SET chosen_column = ?1
-WHERE access_token = ?2
+UPDATE users SET chosen_column = ?1 WHERE access_token = ?2
 `
 
 type UpdateChosenColumnParams struct {
@@ -365,9 +280,7 @@ func (q *Queries) UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumn
 }
 
 const updateUserActive = `-- name: UpdateUserActive :exec
-UPDATE users
-SET is_active = ?1
-WHERE access_token = ?2
+UPDATE users SET is_active = ?1 WHERE access_token = ?2
 `
 
 type UpdateUserActiveParams struct {
@@ -381,9 +294,7 @@ func (q *Queries) UpdateUserActive(ctx context.Context, arg UpdateUserActivePara
 }
 
 const updateUserSyncTime = `-- name: UpdateUserSyncTime :exec
-UPDATE users
-SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))
-WHERE access_token = ?1
+UPDATE users SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now')) WHERE access_token = ?1
 `
 
 func (q *Queries) UpdateUserSyncTime(ctx context.Context, accessToken string) error {
@@ -391,13 +302,42 @@ func (q *Queries) UpdateUserSyncTime(ctx context.Context, accessToken string) er
 	return err
 }
 
+const upsertBuildingPlace = `-- name: UpsertBuildingPlace :exec
+INSERT INTO building_places (building_key, canonical_name)
+VALUES (?1, ?2)
+ON CONFLICT(building_key) DO UPDATE SET canonical_name = excluded.canonical_name
+`
+
+type UpsertBuildingPlaceParams struct {
+	BuildingKey   string `json:"building_key"`
+	CanonicalName string `json:"canonical_name"`
+}
+
+func (q *Queries) UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPlaceParams) error {
+	_, err := q.db.ExecContext(ctx, upsertBuildingPlace, arg.BuildingKey, arg.CanonicalName)
+	return err
+}
+
+const upsertClassroomBuilding = `-- name: UpsertClassroomBuilding :exec
+INSERT INTO classroom_buildings (classroom_key, building_key)
+VALUES (?1, ?2)
+ON CONFLICT(classroom_key) DO UPDATE SET building_key = excluded.building_key
+`
+
+type UpsertClassroomBuildingParams struct {
+	ClassroomKey string `json:"classroom_key"`
+	BuildingKey  string `json:"building_key"`
+}
+
+func (q *Queries) UpsertClassroomBuilding(ctx context.Context, arg UpsertClassroomBuildingParams) error {
+	_, err := q.db.ExecContext(ctx, upsertClassroomBuilding, arg.ClassroomKey, arg.BuildingKey)
+	return err
+}
+
 const upsertOverride = `-- name: UpsertOverride :exec
 INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent)
 VALUES (?1, ?2, ?3, ?4, ?5)
-ON CONFLICT(user_id, class_hash) DO UPDATE SET
-    start_hour     = excluded.start_hour,
-    is_hidden      = excluded.is_hidden,
-    is_transparent = excluded.is_transparent
+ON CONFLICT(user_id, class_hash) DO UPDATE SET start_hour = excluded.start_hour, is_hidden = excluded.is_hidden, is_transparent = excluded.is_transparent
 `
 
 type UpsertOverrideParams struct {

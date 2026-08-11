@@ -1,6 +1,9 @@
 package types
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestBuildingsResolveAndLookupUsesLegendOnly(t *testing.T) {
 	buildings := BuildBuildingsFromLegend(&Legend{Locations: map[string]Location{
@@ -62,5 +65,23 @@ func TestToEventKeepsRawLocationAndDoesNotUseLegacyPlaceData(t *testing.T) {
 	}
 	if event.Description != "" {
 		t.Errorf("event description = %q, want no legacy map link", event.Description)
+	}
+}
+
+func TestToEventAddsUniqueConfirmedBuildingLinks(t *testing.T) {
+	buildings := &Buildings{
+		Classrooms: map[string]string{"135": "Chemia", "136": "Chemia", "114": "GIL"},
+		Buildings: map[string]Building{
+			"Chemia": {Key: "Chemia", GooglePlaceID: "chem", Name: "Chemia", Address: "Kraków"},
+			"GIL":    {Key: "GIL", GooglePlaceID: "gil", Name: "GIL", Address: "Kraków"},
+		},
+	}
+	class := Class{Location: "s. 135/136, s. 114", ResolvedClassroomKeys: []string{"135", "136", "114"}}
+	event := class.ToEvent(buildings)
+	if event.Location != class.Location {
+		t.Fatalf("location = %q, want original %q", event.Location, class.Location)
+	}
+	if strings.Count(event.Description, "query_place_id=chem") != 1 || strings.Count(event.Description, "query_place_id=gil") != 1 {
+		t.Fatalf("description = %q, want one link per building", event.Description)
 	}
 }

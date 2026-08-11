@@ -46,25 +46,19 @@ func main() {
 	queries := db.New(database)
 	ctx := context.Background()
 
-	allBuildings, err := queries.GetBuildings(ctx)
+	allBuildings, err := queries.GetBuildingPlaces(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching buildings from DB: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error fetching building places from DB: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Query distinct classrooms and their associated building details
+	// Query normalized classrooms and their associated building-place details.
 	rows, err := database.QueryContext(ctx, `
-		SELECT DISTINCT 
-			c.id, 
-			c.name, 
-			COALESCE(b.key, ''), 
-			COALESCE(b.google_place_id, ''), 
-			COALESCE(b.name, ''), 
-			COALESCE(b.address, '')
-		FROM classrooms c
-		LEFT JOIN building_classrooms bc ON c.id = bc.classroom_id
-		LEFT JOIN buildings b ON bc.building_id = b.id
-		ORDER BY c.name ASC
+		SELECT cb.classroom_key, cb.building_key, COALESCE(bp.place_id, ''),
+			COALESCE(bp.display_name, ''), COALESCE(bp.address, '')
+		FROM classroom_buildings cb
+		JOIN building_places bp ON bp.building_key = cb.building_key
+		ORDER BY cb.classroom_key ASC
 	`)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error querying classrooms: %v\n", err)
@@ -78,9 +72,8 @@ func main() {
 
 	var classroomPlaces []PlaceInfo
 	for rows.Next() {
-		var id int64
 		var cName, bKey, placeID, bName, bAddr string
-		if err := rows.Scan(&id, &cName, &bKey, &placeID, &bName, &bAddr); err != nil {
+		if err := rows.Scan(&cName, &bKey, &placeID, &bName, &bAddr); err != nil {
 			fmt.Fprintf(os.Stderr, "Error scanning row: %v\n", err)
 			continue
 		}
@@ -91,24 +84,20 @@ func main() {
 
 	var buildingPlaces []PlaceInfo
 	for _, b := range allBuildings {
-		key := ""
-		if b.Key != nil {
-			key = *b.Key
-		}
 		placeID := ""
-		if b.GooglePlaceID != nil {
-			placeID = *b.GooglePlaceID
+		if b.PlaceID != nil {
+			placeID = *b.PlaceID
 		}
 		name := ""
-		if b.Name != nil {
-			name = *b.Name
+		if b.DisplayName != nil {
+			name = *b.DisplayName
 		}
 		addr := ""
 		if b.Address != nil {
 			addr = *b.Address
 		}
 
-		info := buildPlaceInfo("", key, placeID, name, addr)
+		info := buildPlaceInfo("", b.BuildingKey, placeID, name, addr)
 		buildingPlaces = append(buildingPlaces, info)
 	}
 

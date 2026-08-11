@@ -8,23 +8,20 @@ import (
 	"time"
 )
 
-type Building struct {
-	ID            int64   `json:"id"`
-	Key           *string `json:"key"`
-	GooglePlaceID *string `json:"google_place_id"`
-	Name          *string `json:"name"`
-	Address       *string `json:"address"`
+type BuildingPlace struct {
+	BuildingKey   string     `json:"building_key"`
+	CanonicalName string     `json:"canonical_name"`
+	PlaceID       *string    `json:"place_id"`
+	DisplayName   *string    `json:"display_name"`
+	Address       *string    `json:"address"`
+	Confidence    float64    `json:"confidence"`
+	VerifiedAt    *time.Time `json:"verified_at"`
+	ExpiresAt     *time.Time `json:"expires_at"`
 }
 
-type BuildingClassroom struct {
-	ID          int64 `json:"id"`
-	BuildingID  int64 `json:"building_id"`
-	ClassroomID int64 `json:"classroom_id"`
-}
-
-type Classroom struct {
-	ID   int64   `json:"id"`
-	Name *string `json:"name"`
+type ClassroomBuilding struct {
+	ClassroomKey string `json:"classroom_key"`
+	BuildingKey  string `json:"building_key"`
 }
 
 type Override struct {

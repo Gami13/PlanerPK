@@ -27,13 +27,28 @@ The data directory has this layout:
 ├── credentials.json
 ├── state/
 │   ├── database.db
-│   └── current_timetable_stats.json
+│   ├── current_timetable_stats.json
+│   └── building_place_review.json
 ├── logs/
 ├── current_timetable/
 └── downloads/
 ```
 
 The OAuth `credentials.json` file should be mounted read-only. It is never included in the image.
+
+### Building-place cache upgrade
+
+The building-place resolver uses a fresh database schema. Before deploying a
+version containing this change, remove the existing `/data/state/database.db`;
+the legacy seeded building/classroom tables are not migrated. The resolver
+recreates the cache from the timetable legend and only adds Google Maps links
+after confirming a Google Places result.
+
+Unresolved or low-confidence results are stored in
+`/data/state/building_place_review.json`. An administrator may edit an item to
+`approved` with an `approved_place_id` from its `candidates`, `rejected` to
+suppress further automatic attempts, or `invalidated` to clear a cached place
+and search again on the next qualifying timetable import.
 
 ### Build the image
 
@@ -86,6 +101,7 @@ The backend supports these environment variables:
 - `TIMETABLE_URL` — source timetable page.
 - `SHEET_NAME`, `HOUR_COLUMN`, `DAY_START`, `DAY_END`, and `LAST_COLUMN` — timetable spreadsheet layout settings.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
+- `BUILDING_REVIEW_WEBHOOK_URL` — optional endpoint that receives JSON when a new building-place review item is created.
 
 The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment; the container does not invent a development URL. The static asset directory is fixed at `/app/static`.
 

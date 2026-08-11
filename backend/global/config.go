@@ -70,7 +70,8 @@ type serverConfig struct {
 }
 
 type integrationConfig struct {
-	googlePlacesAPIKey string
+	googlePlacesAPIKey       string
+	buildingReviewWebhookURL string
 }
 
 type loggingConfig struct {
@@ -214,7 +215,8 @@ func LoadEnvVariables() {
 			port: defaultServerPort,
 		},
 		integrations: integrationConfig{
-			googlePlacesAPIKey: getEnvOrDefault("GOOGLE_PLACES_API_KEY", defaultPlacesAPIKey),
+			googlePlacesAPIKey:       getEnvOrDefault("GOOGLE_PLACES_API_KEY", defaultPlacesAPIKey),
+			buildingReviewWebhookURL: getEnvOrDefault("BUILDING_REVIEW_WEBHOOK_URL", ""),
 		},
 		logging: loggingConfig{
 			level: getEnvOrDefault("LOG_LEVEL", defaultLogLevel),
@@ -244,8 +246,10 @@ func TimetableDownloadsDir() string          { return current.paths.timetableDow
 func CurrentTimetableDir() string            { return current.paths.currentTimetableDir }
 func CalendarCredentialsPath() string        { return current.paths.calendarCredentialsPath }
 func CurrentTimetableStatsPath() string      { return current.paths.timetableStatsPath }
+func BuildingReviewPath() string             { return filepath.Join(StateDir(), "building_place_review.json") }
 func ServerPort() string                     { return current.server.port }
 func GooglePlacesAPIKey() string             { return current.integrations.googlePlacesAPIKey }
+func BuildingReviewWebhookURL() string       { return current.integrations.buildingReviewWebhookURL }
 func LogLevel() string                       { return current.logging.level }
 
 func PrintEnvVariables() {

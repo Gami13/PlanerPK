@@ -1,20 +1,12 @@
 package types
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
 	"sort"
 	"strings"
 	"unicode"
 
-	places "cloud.google.com/go/maps/places/apiv1"
-	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 	"github.com/woodpkrs/PlanerPK/classroommatch"
-	"github.com/woodpkrs/PlanerPK/gen/db"
-	"github.com/woodpkrs/PlanerPK/global"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc/metadata"
 )
 
 type Building struct {
@@ -29,11 +21,11 @@ type Buildings struct {
 	Buildings  map[string]Building
 	Classrooms map[string]string
 	matcher    *classroommatch.Matcher
+	reviews    *BuildingReviewQueue
 }
 
-// BuildBuildingsFromLegend creates the in-memory classroom-to-building cache
-// for one timetable import. It intentionally does not read legacy database
-// mappings.
+// BuildBuildingsFromLegend creates the legend-derived classroom-to-building
+// cache for one timetable import. Persistent place details are hydrated later.
 func BuildBuildingsFromLegend(legend *Legend) *Buildings {
 	result := &Buildings{
 		Buildings:  make(map[string]Building),
@@ -154,6 +146,9 @@ func (b *Buildings) ResolveClassroomKeys(location string) []string {
 	keys := make([]string, 0)
 	seen := make(map[string]struct{})
 	for _, match := range b.matcher.Resolve(location) {
+		if (match.Kind == classroommatch.MatchAmbiguous || match.Kind == classroommatch.MatchUnmatched) && b.reviews != nil {
+			b.reviews.RecordClassroomMatch(match)
+		}
 		if match.Kind != classroommatch.MatchExact && match.Kind != classroommatch.MatchCorrected {
 			continue
 		}
@@ -190,102 +185,4 @@ func (b *Buildings) GetBuildingsByClassroomKeys(classroomKeys []string) []Buildi
 		buildings = append(buildings, building)
 	}
 	return buildings
-}
-
-type BuildingDetails struct {
-	Name    string
-	Address string
-}
-
-func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlaceID string) (*BuildingDetails, error) {
-	slog.Debug("Fetching building details from Google Places API", slog.String("google_place_id", googlePlaceID))
-	reqCtx := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "displayName,formattedAddress")
-
-	req := &placespb.GetPlaceRequest{
-		Name:         fmt.Sprintf("places/%s", googlePlaceID),
-		LanguageCode: "pl",
-	}
-
-	resp, err := client.GetPlace(reqCtx, req)
-	if err != nil {
-		slog.Error("Google Places API call failed", slog.String("google_place_id", googlePlaceID), slog.Any("error", err))
-		return nil, fmt.Errorf("Google Places API error for place ID %s: %w", googlePlaceID, err)
-	}
-
-	var name string
-	if resp.GetDisplayName() != nil {
-		name = resp.GetDisplayName().GetText()
-	}
-
-	details := &BuildingDetails{
-		Name:    name,
-		Address: resp.GetFormattedAddress(),
-	}
-	slog.Debug("Successfully fetched building details from Google Places API",
-		slog.String("google_place_id", googlePlaceID),
-		slog.String("name", details.Name),
-		slog.String("address", details.Address))
-
-	return details, nil
-}
-
-func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
-	slog.Info("Starting update of building details")
-	client, err := places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
-	if err != nil {
-		slog.Error("Failed to create Google Places client", slog.Any("error", err))
-		return fmt.Errorf("failed to create Google Places client: %w", err)
-	}
-	defer client.Close()
-
-	buildings, err := queries.GetBuildings(ctx)
-	if err != nil {
-		slog.Error("Failed to fetch buildings for details update", slog.Any("error", err))
-		return err
-	}
-
-	updatedCount := 0
-	skippedCount := 0
-	for _, building := range buildings {
-		if building.GooglePlaceID == nil || *building.GooglePlaceID == "" {
-			skippedCount++
-			slog.Debug("Skipping building without Google Place ID", slog.Int64("building_id", building.ID))
-			continue
-		}
-
-		slog.Info("Updating details for building",
-			slog.Int64("building_id", building.ID),
-			slog.String("google_place_id", *building.GooglePlaceID))
-
-		buildingDetails, err := fetchBuildingDetails(ctx, client, *building.GooglePlaceID)
-		if err != nil {
-			slog.Error("Failed to fetch building details",
-				slog.Int64("building_id", building.ID),
-				slog.String("google_place_id", *building.GooglePlaceID),
-				slog.Any("error", err))
-			return err
-		}
-
-		if err := queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
-			ID:      building.ID,
-			Name:    &buildingDetails.Name,
-			Address: &buildingDetails.Address,
-		}); err != nil {
-			slog.Error("Failed to update building in database",
-				slog.Int64("building_id", building.ID),
-				slog.Any("error", err))
-			return err
-		}
-		updatedCount++
-		slog.Info("Successfully updated building details in database",
-			slog.Int64("building_id", building.ID),
-			slog.String("name", buildingDetails.Name),
-			slog.String("address", buildingDetails.Address))
-	}
-
-	slog.Info("Finished updating building details",
-		slog.Int("updated_count", updatedCount),
-		slog.Int("skipped_count", skippedCount))
-
-	return nil
 }
