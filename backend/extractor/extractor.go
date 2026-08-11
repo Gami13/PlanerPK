@@ -3,6 +3,7 @@ package extractor
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/global"
@@ -10,25 +11,25 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend, buildings *types.Buildings) types.Timetable {
 	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
 
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, days)
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, buildings, days)
 		timetable[int64(group.Column)] = groupTimetable
 
 	}
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, days []types.Day) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, buildings *types.Buildings, days []types.Day) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := traverseDay(file, day, groupColumn, legend)
+		classes := traverseDay(file, day, groupColumn, legend, buildings)
 		timetable[day.WeekDay] = classes
 		slog.Debug("Processed day",
 			slog.String("day", day.WeekDay.String()),
@@ -67,7 +68,7 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 
 const slotDuration = 15 * time.Minute
 
-func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend) []types.Class {
+func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend, buildings *types.Buildings) []types.Class {
 	var classes []types.Class
 
 	currentTime := global.DayStartTime()
@@ -79,6 +80,7 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 			classEndTime := currentTime.Add(slotDuration)
 
 			class := parseClassText(classText, currentTime, classEndTime, day, legend)
+			resolveClassroomLocation(&class, buildings)
 
 			isNewClass := len(classes) == 0 || class.Name != classes[len(classes)-1].Name || class.Level != classes[len(classes)-1].Level || class.Teacher != classes[len(classes)-1].Teacher || class.Location != classes[len(classes)-1].Location
 
@@ -102,6 +104,7 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 
 	// Log the final classes for the day
 	for _, class := range result {
+		logClassroomBuildingMatch(class, buildings)
 		slog.Debug("Final class for day",
 			slog.String("name", class.Name),
 			slog.String("type", class.Type),
@@ -114,6 +117,33 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 			slog.String("end_time", class.EndTime.Format("15:04")))
 	}
 	return result
+}
+
+func logClassroomBuildingMatch(class types.Class, buildings *types.Buildings) {
+	if class.Location == "" {
+		return
+	}
+	buildingNames := make([]string, 0)
+	if buildings != nil {
+		for _, building := range buildings.GetBuildingsByClassroomKeys(class.ResolvedClassroomKeys) {
+			buildingNames = append(buildingNames, building.CanonicalName)
+		}
+	}
+	target := "<unresolved>"
+	if len(buildingNames) > 0 {
+		target = strings.Join(buildingNames, "; ")
+	}
+	slog.Debug("classroom_resolution.classroom_to_building",
+		slog.String("mapping", fmt.Sprintf("%s -> %s", class.Location, target)),
+		slog.Any("classroom_keys", class.ResolvedClassroomKeys),
+		slog.String("source", "timetable"))
+}
+
+func resolveClassroomLocation(class *types.Class, buildings *types.Buildings) {
+	if class == nil || buildings == nil || class.Location == "" {
+		return
+	}
+	class.ResolvedClassroomKeys = buildings.ResolveClassroomKeys(class.Location)
 }
 
 func getCell(file *excelize.File, sheet string, row int, col int) string {

@@ -12,7 +12,6 @@ import (
 
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/global"
-	"github.com/woodpkrs/PlanerPK/types"
 )
 
 type PlaceInfo struct {
@@ -46,12 +45,6 @@ func main() {
 
 	queries := db.New(database)
 	ctx := context.Background()
-
-	loadedBuildings, err := types.LoadBuildings(ctx, queries)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading buildings: %v\n", err)
-		os.Exit(1)
-	}
 
 	allBuildings, err := queries.GetBuildings(ctx)
 	if err != nil {
@@ -92,7 +85,7 @@ func main() {
 			continue
 		}
 
-		info := buildPlaceInfo(cName, bKey, placeID, bName, bAddr, loadedBuildings)
+		info := buildPlaceInfo(cName, bKey, placeID, bName, bAddr)
 		classroomPlaces = append(classroomPlaces, info)
 	}
 
@@ -115,7 +108,7 @@ func main() {
 			addr = *b.Address
 		}
 
-		info := buildPlaceInfo("", key, placeID, name, addr, nil)
+		info := buildPlaceInfo("", key, placeID, name, addr)
 		buildingPlaces = append(buildingPlaces, info)
 	}
 
@@ -170,24 +163,13 @@ func main() {
 		len(classroomPlaces), len(buildingPlaces), outPath)
 }
 
-func buildPlaceInfo(classroomName, bKey, placeID, bName, bAddr string, buildings *types.Buildings) PlaceInfo {
+func buildPlaceInfo(classroomName, bKey, placeID, bName, bAddr string) PlaceInfo {
 	info := PlaceInfo{
 		ClassroomName: classroomName,
 		BuildingKey:   bKey,
 		BuildingName:  bName,
 		Address:       bAddr,
 		GooglePlaceID: placeID,
-	}
-
-	// Try resolving via buildings model if classroomName is provided
-	if classroomName != "" && buildings != nil {
-		b, found := buildings.GetBuildingByClassroom(classroomName)
-		if found {
-			info.BuildingKey = b.Key
-			info.GooglePlaceID = b.GooglePlaceID
-			info.BuildingName = b.Name
-			info.Address = b.Address
-		}
 	}
 
 	if info.GooglePlaceID != "" {

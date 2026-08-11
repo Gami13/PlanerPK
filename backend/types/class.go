@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/utils"
@@ -10,16 +9,19 @@ import (
 )
 
 type Class struct {
-	Name           string
-	Type           string
-	Day            time.Weekday
-	StartTime      time.Time
-	EndTime        time.Time
-	Location       string
-	Teacher        string
-	AdditionalInfo string
-	Level          string
-	TotalHours     string
+	Name      string
+	Type      string
+	Day       time.Weekday
+	StartTime time.Time
+	EndTime   time.Time
+	Location  string
+	// ResolvedClassroomKeys are precomputed while the timetable is imported.
+	// Location remains the original text shown in the calendar.
+	ResolvedClassroomKeys []string
+	Teacher               string
+	AdditionalInfo        string
+	Level                 string
+	TotalHours            string
 }
 
 func (c Class) String() string {
@@ -86,8 +88,10 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 	description := ""
 
 	if buildings != nil {
-		building, found := buildings.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
-		if found {
+		for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
+			if building.GooglePlaceID == "" {
+				continue
+			}
 			var label string
 			if building.Name != "" && building.Address != "" {
 				label = fmt.Sprintf("%s, %s", building.Name, building.Address)
@@ -98,7 +102,12 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 			} else {
 				label = "Google Maps"
 			}
-			description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s</a>", building.GooglePlaceID, label)
+			link := fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s</a>", building.GooglePlaceID, label)
+			if description == "" {
+				description = link
+			} else {
+				description += "<br>" + link
+			}
 		}
 	}
 

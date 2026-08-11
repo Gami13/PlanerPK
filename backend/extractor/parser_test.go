@@ -259,6 +259,24 @@ func TestParseClassText(t *testing.T) {
 	}
 }
 
+func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
+	buildings := types.BuildBuildingsFromLegend(&types.Legend{Locations: map[string]types.Location{
+		"s. 1/15 Działownia": {
+			Shorthand: "s. 1/15 Działownia",
+			FullName:  "budynek Działownia",
+		},
+	}})
+	class := types.Class{Location: "s. Działowia 1/15"}
+	resolveClassroomLocation(&class, buildings)
+
+	if class.Location != "s. Działowia 1/15" {
+		t.Errorf("Location = %q, want original value", class.Location)
+	}
+	if len(class.ResolvedClassroomKeys) != 1 || class.ResolvedClassroomKeys[0] != "1 15 działownia" {
+		t.Errorf("ResolvedClassroomKeys = %#v, want normalized Działownia key", class.ResolvedClassroomKeys)
+	}
+}
+
 func TestSplitSlashClasses(t *testing.T) {
 	legend := mockLegend()
 

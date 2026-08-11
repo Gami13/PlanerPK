@@ -10,6 +10,7 @@ import (
 
 	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -34,6 +35,7 @@ func main() {
 
 	// A. Extract from Legend section ("Sale")
 	legend := extractor.ExtractLegend(file)
+	buildings := types.BuildBuildingsFromLegend(legend)
 	if legend != nil {
 		for _, loc := range legend.Locations {
 			if loc.Shorthand != "" {
@@ -47,7 +49,7 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error building groups for %s: %v\n", xlsxPath, err)
 	} else {
-		timetable := extractor.BuildTimetable(groups, file, nil)
+		timetable := extractor.BuildTimetable(groups, file, legend, buildings)
 		for _, groupTimetable := range timetable {
 			for _, classes := range groupTimetable {
 				for _, class := range classes {

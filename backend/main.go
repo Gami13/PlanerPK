@@ -91,19 +91,20 @@ func initializeApp() (queries db.Querier) {
 	return queries
 }
 
-func buildNewCache() ([]types.ColumnGroup, *types.Legend, types.Timetable, error) {
+func buildNewCache() ([]types.ColumnGroup, *types.Legend, *types.Buildings, types.Timetable, error) {
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
-		return []types.ColumnGroup{}, &types.Legend{}, types.Timetable{}, err
+		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
 	}
 	defer extractor.CloseFile(file)
 	newGroups, err := extractor.BuildAvailableGroups(file)
 	if err != nil {
-		return []types.ColumnGroup{}, &types.Legend{}, types.Timetable{}, err
+		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
 	}
 	newLegend := extractor.ExtractLegend(file)
-	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend)
-	return newGroups, newLegend, newTimetable, nil
+	newBuildings := types.BuildBuildingsFromLegend(newLegend)
+	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend, newBuildings)
+	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
 
 func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRun bool) (hasChanged bool, err error) {
@@ -127,26 +128,11 @@ func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRu
 
 	}
 	if isInitialRun || hasChanged {
-		newGroups, newLegend, newTimetable, err := buildNewCache()
+		newGroups, newLegend, newBuildings, newTimetable, err := buildNewCache()
 		if err != nil {
 			return false, err
 		}
-		lastUpdate := cache.LastBuildingUpdate()
-		week := 7 * 24 * time.Hour
-		if lastUpdate == nil || time.Since(*lastUpdate) >= week {
-			if err := types.UpdateBuildingsDetails(context.Background(), queries); err != nil {
-				slog.Error("Failed to update buildings details", "error", err)
-			} else {
-				now := time.Now()
-				cache.SetLastBuildingUpdate(&now)
-			}
-		}
-		newBuildings, err := types.LoadBuildings(context.Background(), queries)
-		if err != nil {
-			slog.Error("Failed to load buildings", "error", err)
-		} else {
-			cache.SetBuildings(newBuildings)
-		}
+		cache.SetBuildings(newBuildings)
 		cache.SetAvailableGroups(&newGroups)
 		cache.SetLegend(newLegend)
 		cache.SetTimetable(&newTimetable)
