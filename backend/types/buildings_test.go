@@ -15,10 +15,10 @@ func TestBuildingsResolveAndLookupUsesLegendOnly(t *testing.T) {
 		"s. 138":             {Shorthand: "s. 138", FullName: "budynek SJO ul. Warszawska"},
 	}})
 
-	if buildingKey := buildings.Classrooms["135"]; buildingKey != "budynek Chemii" {
+	if buildingKey := buildings.BuildingKeyByClassroomKey["135"]; buildingKey != "budynek Chemii" {
 		t.Errorf("135 building key = %q, want budynek Chemii", buildingKey)
 	}
-	if buildingKey := buildings.Classrooms["sjo"]; buildingKey != "budynek SJO ul. Warszawska" {
+	if buildingKey := buildings.BuildingKeyByClassroomKey["sjo"]; buildingKey != "budynek SJO ul. Warszawska" {
 		t.Errorf("SJO building key = %q, want SJO building", buildingKey)
 	}
 	if keys := buildings.ResolveClassroomKeys("s. SJO"); len(keys) != 1 || keys[0] != "sjo" {
@@ -48,8 +48,8 @@ func TestBuildingsResolveAndLookupUsesLegendOnly(t *testing.T) {
 
 func TestToEventKeepsRawLocationAndDoesNotUseLegacyPlaceData(t *testing.T) {
 	buildings := &Buildings{
-		Classrooms: map[string]string{"131": "Houston"},
-		Buildings: map[string]Building{
+		BuildingKeyByClassroomKey: map[string]string{"131": "Houston"},
+		BuildingsByKey: map[string]Building{
 			"Houston": {},
 		},
 	}
@@ -65,8 +65,8 @@ func TestToEventKeepsRawLocationAndDoesNotUseLegacyPlaceData(t *testing.T) {
 
 func TestToEventAddsUniqueConfirmedBuildingLinks(t *testing.T) {
 	buildings := &Buildings{
-		Classrooms: map[string]string{"135": "Chemia", "136": "Chemia", "114": "GIL"},
-		Buildings: map[string]Building{
+		BuildingKeyByClassroomKey: map[string]string{"135": "Chemia", "136": "Chemia", "114": "GIL"},
+		BuildingsByKey: map[string]Building{
 			"Chemia": {GooglePlaceID: "chem", Name: "Chemia", Address: "Kraków"},
 			"GIL":    {GooglePlaceID: "gil", Name: "GIL", Address: "Kraków"},
 		},

@@ -18,21 +18,21 @@ type Building struct {
 }
 
 type Buildings struct {
-	Buildings  map[string]Building
-	Classrooms map[string]string
-	matcher    *classroommatch.Matcher
-	reviews    *BuildingReviewQueue
+	BuildingsByKey            map[string]Building
+	BuildingKeyByClassroomKey map[string]string
+	matcher                   *classroommatch.Matcher
+	reviews                   *BuildingReviewQueue
 }
 
 // BuildBuildingsFromLegend creates the legend-derived classroom-to-building
 // cache for one timetable import. Persistent place details are hydrated later.
 func BuildBuildingsFromLegend(legend *Legend) *Buildings {
-	result := &Buildings{
-		Buildings:  make(map[string]Building),
-		Classrooms: make(map[string]string),
+	buildings := &Buildings{
+		BuildingsByKey:            make(map[string]Building),
+		BuildingKeyByClassroomKey: make(map[string]string),
 	}
 	if legend == nil {
-		return result
+		return buildings
 	}
 
 	locationKeys := slices.Sorted(maps.Keys(legend.Locations))
@@ -56,23 +56,23 @@ func BuildBuildingsFromLegend(legend *Legend) *Buildings {
 			continue
 		}
 
-		result.Buildings[buildingKey] = Building{CanonicalName: buildingKey}
+		buildings.BuildingsByKey[buildingKey] = Building{CanonicalName: buildingKey}
 		candidates = append(candidates, classroommatch.Candidate{
 			ClassroomKey: classroomKey,
 			BuildingKey:  buildingKey,
 		})
 	}
 
-	buildingKeys := slices.Sorted(maps.Keys(result.Buildings))
+	buildingKeys := slices.Sorted(maps.Keys(buildings.BuildingsByKey))
 	var buildingAliases []classroommatch.Candidate
 	for _, buildingKey := range buildingKeys {
 		if alias, ok := buildingAcronymAlias(buildingKey); ok {
 			buildingAliases = append(buildingAliases, classroommatch.Candidate{ClassroomKey: alias, BuildingKey: buildingKey})
 		}
 	}
-	result.matcher = classroommatch.New(candidates, buildingAliases)
-	result.Classrooms = result.matcher.ClassroomBuildings()
-	return result
+	buildings.matcher = classroommatch.New(candidates, buildingAliases)
+	buildings.BuildingKeyByClassroomKey = buildings.matcher.ClassroomBuildings()
+	return buildings
 }
 
 // buildingAcronymAlias returns an explicit building shorthand only when the
@@ -116,17 +116,17 @@ func (b *Buildings) ResolveClassroomKeys(location string) []string {
 	var keys []string
 	seen := make(map[string]struct{})
 	for _, match := range b.matcher.Resolve(location) {
-		if (match.Kind == classroommatch.MatchAmbiguous || match.Kind == classroommatch.MatchUnmatched) && b.reviews != nil {
-			b.reviews.RecordClassroomMatch(match)
+		switch match.Kind {
+		case classroommatch.MatchExact, classroommatch.MatchCorrected:
+			if _, exists := seen[match.ClassroomKey]; !exists {
+				seen[match.ClassroomKey] = struct{}{}
+				keys = append(keys, match.ClassroomKey)
+			}
+		case classroommatch.MatchAmbiguous, classroommatch.MatchUnmatched:
+			if b.reviews != nil {
+				b.reviews.RecordClassroomMatch(match)
+			}
 		}
-		if match.Kind != classroommatch.MatchExact && match.Kind != classroommatch.MatchCorrected {
-			continue
-		}
-		if _, exists := seen[match.ClassroomKey]; exists {
-			continue
-		}
-		seen[match.ClassroomKey] = struct{}{}
-		keys = append(keys, match.ClassroomKey)
 	}
 	return keys
 }
@@ -134,20 +134,20 @@ func (b *Buildings) ResolveClassroomKeys(location string) []string {
 // GetBuildingsByClassroomKeys performs an exact lookup of keys that were
 // precomputed while parsing a timetable.
 func (b *Buildings) GetBuildingsByClassroomKeys(classroomKeys []string) []Building {
-	if b == nil || b.Classrooms == nil || b.Buildings == nil {
+	if b == nil || b.BuildingKeyByClassroomKey == nil || b.BuildingsByKey == nil {
 		return nil
 	}
 	var buildings []Building
 	seen := make(map[string]struct{})
 	for _, classroomKey := range classroomKeys {
-		buildingKey, exists := b.Classrooms[classroomKey]
+		buildingKey, exists := b.BuildingKeyByClassroomKey[classroomKey]
 		if !exists {
 			continue
 		}
 		if _, exists := seen[buildingKey]; exists {
 			continue
 		}
-		building, exists := b.Buildings[buildingKey]
+		building, exists := b.BuildingsByKey[buildingKey]
 		if !exists {
 			continue
 		}

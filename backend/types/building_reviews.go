@@ -145,29 +145,30 @@ func (q *BuildingReviewQueue) MarkPlaceResolved(buildingKey string) {
 
 func (q *BuildingReviewQueue) record(item BuildingReviewItem) {
 	q.mu.Lock()
+	recordedItem, created, err := q.recordLocked(item, time.Now().UTC())
+	q.mu.Unlock()
+	if err != nil {
+		slog.Error("building_place_review.save_failed", slog.Any("error", err))
+		return
+	}
+	if created {
+		q.notify(recordedItem)
+	}
+}
+
+func (q *BuildingReviewQueue) recordLocked(item BuildingReviewItem, now time.Time) (BuildingReviewItem, bool, error) {
 	item.ID = reviewID(item.Kind, item.OriginalText, item.NormalizedParts, item.BuildingKey)
-	now := time.Now().UTC()
 	for i := range q.items {
 		if q.items[i].ID != item.ID {
 			continue
 		}
 		q.items[i].LastSeen = now
 		q.items[i].Occurrences++
-		if err := q.saveLocked(); err != nil {
-			slog.Error("building_place_review.save_failed", slog.Any("error", err))
-		}
-		q.mu.Unlock()
-		return
+		return q.items[i], false, q.saveLocked()
 	}
 	item.FirstSeen, item.LastSeen, item.Occurrences = now, now, 1
 	q.items = append(q.items, item)
-	err := q.saveLocked()
-	q.mu.Unlock()
-	if err != nil {
-		slog.Error("building_place_review.save_failed", slog.Any("error", err))
-		return
-	}
-	q.notify(item)
+	return item, true, q.saveLocked()
 }
 
 func reviewID(kind BuildingReviewKind, text string, normalized []string, buildingKey string) string {
@@ -233,31 +234,7 @@ func (q *BuildingReviewQueue) ApplyDecisions(ctx context.Context, queries db.Que
 		if item.BuildingKey == "" {
 			continue
 		}
-		switch item.Status {
-		case ReviewStatusRejected:
-			suppressed[item.BuildingKey] = true
-		case ReviewStatusInvalidated:
-			if err := queries.ClearBuildingPlace(ctx, item.BuildingKey); err != nil {
-				slog.Warn("building_place_review.clear_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
-				continue
-			}
-			item.Status = ReviewStatusPending
-			item.LastSeen = now
-			changed = true
-		case ReviewStatusApproved:
-			candidate, ok := reviewCandidate(*item, item.ApprovedPlaceID)
-			if !ok {
-				slog.Warn("building_place_review.invalid_approval", slog.String("id", item.ID), slog.String("building_key", item.BuildingKey))
-				continue
-			}
-			if err := storePlace(ctx, queries, item.BuildingKey, candidate, 1, now); err != nil {
-				slog.Warn("building_place_review.approval_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
-				continue
-			}
-			item.Status = ReviewStatusResolved
-			item.LastSeen = now
-			changed = true
-		}
+		changed = applyReviewDecisionLocked(ctx, queries, item, suppressed, now) || changed
 	}
 	if changed {
 		if err := q.saveLocked(); err != nil {
@@ -265,6 +242,49 @@ func (q *BuildingReviewQueue) ApplyDecisions(ctx context.Context, queries db.Que
 		}
 	}
 	return suppressed
+}
+
+// applyReviewDecisionLocked is called while q.mu is held. Database writes stay
+// in this critical section to preserve the queue's existing synchronization.
+func applyReviewDecisionLocked(ctx context.Context, queries db.Querier, item *BuildingReviewItem, suppressed map[string]bool, now time.Time) bool {
+	switch item.Status {
+	case ReviewStatusRejected:
+		applyRejectedReview(*item, suppressed)
+	case ReviewStatusInvalidated:
+		return applyInvalidatedReview(ctx, queries, item, now)
+	case ReviewStatusApproved:
+		return applyApprovedReview(ctx, queries, item, now)
+	}
+	return false
+}
+
+func applyRejectedReview(item BuildingReviewItem, suppressed map[string]bool) {
+	suppressed[item.BuildingKey] = true
+}
+
+func applyInvalidatedReview(ctx context.Context, queries db.Querier, item *BuildingReviewItem, now time.Time) bool {
+	if err := queries.ClearBuildingPlace(ctx, item.BuildingKey); err != nil {
+		slog.Warn("building_place_review.clear_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
+		return false
+	}
+	item.Status = ReviewStatusPending
+	item.LastSeen = now
+	return true
+}
+
+func applyApprovedReview(ctx context.Context, queries db.Querier, item *BuildingReviewItem, now time.Time) bool {
+	candidate, ok := reviewCandidate(*item, item.ApprovedPlaceID)
+	if !ok {
+		slog.Warn("building_place_review.invalid_approval", slog.String("id", item.ID), slog.String("building_key", item.BuildingKey))
+		return false
+	}
+	if err := storePlace(ctx, queries, item.BuildingKey, candidate, 1, now); err != nil {
+		slog.Warn("building_place_review.approval_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
+		return false
+	}
+	item.Status = ReviewStatusResolved
+	item.LastSeen = now
+	return true
 }
 
 func reviewCandidate(item BuildingReviewItem, placeID string) (*placespb.Place, bool) {

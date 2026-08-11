@@ -70,9 +70,9 @@ func main() {
 	}
 
 	var classroomPlaces []PlaceInfo
-	classroomKeys := slices.Sorted(maps.Keys(legendBuildings.Classrooms))
+	classroomKeys := slices.Sorted(maps.Keys(legendBuildings.BuildingKeyByClassroomKey))
 	for _, classroomKey := range classroomKeys {
-		buildingKey := legendBuildings.Classrooms[classroomKey]
+		buildingKey := legendBuildings.BuildingKeyByClassroomKey[classroomKey]
 		classroomPlaces = append(classroomPlaces, buildPlaceInfo(classroomKey, buildingKey, placesByBuildingKey[buildingKey]))
 	}
 

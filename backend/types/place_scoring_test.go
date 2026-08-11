@@ -61,15 +61,15 @@ func TestChoosePlace(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			best, _, _, accepted := choosePlace(tt.canonicalName, tt.places)
-			if accepted != tt.wantAccepted {
-				t.Fatalf("accepted = %v, want %v; winner = %#v", accepted, tt.wantAccepted, best)
+			resolution := choosePlace(tt.canonicalName, tt.places)
+			if resolution.Accepted != tt.wantAccepted {
+				t.Fatalf("accepted = %v, want %v; winner = %#v", resolution.Accepted, tt.wantAccepted, resolution.Best)
 			}
-			if tt.wantID != "" && best.Place.GetId() != tt.wantID {
-				t.Fatalf("winner ID = %q, want %q", best.Place.GetId(), tt.wantID)
+			if tt.wantID != "" && resolution.Best.Place.GetId() != tt.wantID {
+				t.Fatalf("winner ID = %q, want %q", resolution.Best.Place.GetId(), tt.wantID)
 			}
-			if tt.name == "low confidence" && best.Score >= minimumPlaceScore {
-				t.Fatalf("low-confidence result scored %.2f, want below %.2f", best.Score, minimumPlaceScore)
+			if tt.name == "low confidence" && resolution.Best.Score >= minimumPlaceScore {
+				t.Fatalf("low-confidence result scored %.2f, want below %.2f", resolution.Best.Score, minimumPlaceScore)
 			}
 		})
 	}

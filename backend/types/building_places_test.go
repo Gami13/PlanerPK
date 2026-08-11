@@ -84,11 +84,11 @@ func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, nil, queue, now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	building := buildings.Buildings["budynek Chemii"]
+	building := buildings.BuildingsByKey["budynek Chemii"]
 	if building.GooglePlaceID != "chem" || building.Name != "Wydział Chemii PK" {
 		t.Fatalf("hydrated building = %#v", building)
 	}
-	if got := buildings.Classrooms["135"]; got != "budynek Chemii" {
+	if got := buildings.BuildingKeyByClassroomKey["135"]; got != "budynek Chemii" {
 		t.Fatalf("classroom mapping = %q", got)
 	}
 }

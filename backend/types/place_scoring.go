@@ -1,9 +1,11 @@
 package types
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 )
@@ -11,8 +13,24 @@ import (
 const (
 	minimumPlaceScore         = 0.70
 	minimumPlaceScoreLead     = 0.15
+	buildingEvidenceWeight    = 0.70
+	campusContextWeight       = 0.15
+	cityContextWeight         = 0.15
 	subBuildingAddressPenalty = 0.35
 )
+
+var buildingNameIgnoredTokens = map[string]struct{}{
+	"budynek":      {},
+	"budynku":      {},
+	"building":     {},
+	"ul":           {},
+	"ulica":        {},
+	"warszawska":   {},
+	"krakow":       {},
+	"politechnika": {},
+	"krakowska":    {},
+	"pk":           {},
+}
 
 type scoredPlace struct {
 	Place   *placespb.Place
@@ -20,7 +38,14 @@ type scoredPlace struct {
 	Reasons []string
 }
 
-func choosePlace(canonicalName string, candidates []*placespb.Place) (scoredPlace, []scoredPlace, []string, bool) {
+type placeResolution struct {
+	Best     scoredPlace
+	Ranked   []scoredPlace
+	Reasons  []string
+	Accepted bool
+}
+
+func choosePlace(canonicalName string, candidates []*placespb.Place) placeResolution {
 	ranked := make([]scoredPlace, 0, len(candidates))
 	for _, candidate := range candidates {
 		if candidate == nil || candidate.GetId() == "" {
@@ -36,34 +61,34 @@ func choosePlace(canonicalName string, candidates []*placespb.Place) (scoredPlac
 		return ranked[i].Score > ranked[j].Score
 	})
 	if len(ranked) == 0 {
-		return scoredPlace{}, ranked, []string{"Google Text Search returned no candidates"}, false
+		return placeResolution{Ranked: ranked, Reasons: []string{"Google Text Search returned no candidates"}}
 	}
 	best := ranked[0]
 	if best.Score < minimumPlaceScore {
-		return best, ranked, append(best.Reasons, "candidate confidence is below 0.70"), false
+		return placeResolution{Best: best, Ranked: ranked, Reasons: append(best.Reasons, fmt.Sprintf("candidate confidence is below %.2f", minimumPlaceScore))}
 	}
 	if len(ranked) > 1 && best.Score-ranked[1].Score < minimumPlaceScoreLead {
-		return best, ranked, append(best.Reasons, "best candidate does not lead runner-up by 0.15"), false
+		return placeResolution{Best: best, Ranked: ranked, Reasons: append(best.Reasons, fmt.Sprintf("best candidate does not lead runner-up by %.2f", minimumPlaceScoreLead))}
 	}
-	return best, ranked, best.Reasons, true
+	return placeResolution{Best: best, Ranked: ranked, Reasons: best.Reasons, Accepted: true}
 }
 
 func scorePlace(canonicalName string, place *placespb.Place) (float64, []string) {
-	text := foldPlaceText(placeDisplayName(place) + " " + place.GetFormattedAddress())
+	text := paddedFoldPlaceSearchText(placeDisplayName(place) + " " + place.GetFormattedAddress())
 	var score float64
 	reasons := make([]string, 0, 3)
 	if hasBuildingNameEvidence(canonicalName, text) || hasBuildingInitialismEvidence(canonicalName, placeDisplayName(place)) {
-		score += 0.70
+		score += buildingEvidenceWeight
 		reasons = append(reasons, "canonical building-name evidence")
 	} else {
 		reasons = append(reasons, "no canonical building-name evidence")
 	}
 	if strings.Contains(text, "politechnika") || strings.Contains(text, " pk ") {
-		score += 0.15
+		score += campusContextWeight
 		reasons = append(reasons, "Politechnika Krakowska context")
 	}
 	if strings.Contains(text, "krakow") {
-		score += 0.15
+		score += cityContextWeight
 		reasons = append(reasons, "Krakow context")
 	}
 	if isSubBuildingLocation(canonicalName, place.GetFormattedAddress()) {
@@ -80,9 +105,11 @@ func placeDisplayName(place *placespb.Place) string {
 	return place.GetDisplayName().GetText()
 }
 
-func hasBuildingNameEvidence(canonicalName, candidateText string) bool {
+// hasBuildingNameEvidence expects candidateSearchText to be padded with one
+// space at each end, as returned by paddedFoldPlaceSearchText.
+func hasBuildingNameEvidence(canonicalName, candidateSearchText string) bool {
 	for _, token := range buildingNameTokens(canonicalName) {
-		if strings.Contains(candidateText, " "+token+" ") {
+		if strings.Contains(candidateSearchText, " "+token+" ") {
 			return true
 		}
 	}
@@ -108,18 +135,16 @@ func hasBuildingInitialismEvidence(canonicalName, displayName string) bool {
 func displayNameInitialism(displayName string) string {
 	var result strings.Builder
 	for _, word := range strings.Fields(displayName) {
-		for _, r := range word {
-			if unicode.IsUpper(r) {
-				result.WriteRune(r)
-			}
-			break
+		r, _ := utf8.DecodeRuneInString(word)
+		if unicode.IsUpper(r) {
+			result.WriteRune(r)
 		}
 	}
 	return result.String()
 }
 
 func isSubBuildingLocation(canonicalName, address string) bool {
-	foldedAddress := foldPlaceText(address)
+	foldedAddress := paddedFoldPlaceSearchText(address)
 	for _, token := range buildingNameTokens(canonicalName) {
 		if start := strings.Index(foldedAddress, " "+token+" "); start >= 0 {
 			remainder := foldedAddress[start+len(token)+2:]
@@ -134,17 +159,19 @@ func isSubBuildingLocation(canonicalName, address string) bool {
 }
 
 func buildingNameTokens(canonicalName string) []string {
-	ignored := map[string]struct{}{"budynek": {}, "budynku": {}, "building": {}, "ul": {}, "ulica": {}, "warszawska": {}, "krakow": {}, "politechnika": {}, "krakowska": {}, "pk": {}}
 	var tokens []string
-	for _, token := range strings.Fields(foldPlaceText(canonicalName)) {
-		if _, skip := ignored[token]; !skip && len([]rune(token)) >= 3 {
+	for _, token := range strings.Fields(paddedFoldPlaceSearchText(canonicalName)) {
+		if _, skip := buildingNameIgnoredTokens[token]; !skip && len([]rune(token)) >= 3 {
 			tokens = append(tokens, token)
 		}
 	}
 	return tokens
 }
 
-func foldPlaceText(value string) string {
+// paddedFoldPlaceSearchText folds case and Polish diacritics, replaces
+// punctuation with spaces, and pads the result for whole-token substring
+// searches.
+func paddedFoldPlaceSearchText(value string) string {
 	var result strings.Builder
 	for _, r := range strings.ToLower(value) {
 		switch r {

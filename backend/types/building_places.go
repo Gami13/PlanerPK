@@ -48,41 +48,59 @@ func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *B
 	if err := syncLegendBuildingCache(ctx, queries, buildings); err != nil {
 		return err
 	}
+
 	suppressed := reviews.ApplyDecisions(ctx, queries, now)
+	records, err := loadBuildingPlaceRecords(ctx, queries)
+	if err != nil {
+		return err
+	}
+	resolveBuildingPlaceCandidates(ctx, queries, buildings, client, reviews, records, suppressed, now)
+
+	records, err = loadBuildingPlaceRecords(ctx, queries)
+	if err != nil {
+		return err
+	}
+	hydrateBuildingDetails(buildings, records)
+	buildings.reviews = reviews
+	return nil
+}
+
+func loadBuildingPlaceRecords(ctx context.Context, queries db.Querier) ([]db.BuildingPlace, error) {
 	records, err := queries.GetBuildingPlaces(ctx)
 	if err != nil {
-		return fmt.Errorf("get building places: %w", err)
+		return nil, fmt.Errorf("get building places: %w", err)
 	}
+	return records, nil
+}
+
+func resolveBuildingPlaceCandidates(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, reviews *BuildingReviewQueue, records []db.BuildingPlace, suppressed map[string]bool, now time.Time) {
 	byKey := make(map[string]db.BuildingPlace, len(records))
 	for _, record := range records {
 		byKey[record.BuildingKey] = record
 	}
-	keys := slices.Sorted(maps.Keys(buildings.Buildings))
+	keys := slices.Sorted(maps.Keys(buildings.BuildingsByKey))
 	for _, key := range keys {
-		record := byKey[key]
 		if suppressed[key] {
 			continue
 		}
+		record := byKey[key]
 		if record.PlaceID == nil || *record.PlaceID == "" {
 			resolveMissingPlace(ctx, queries, client, reviews, record, now)
 			continue
 		}
 		if record.ExpiresAt != nil && !record.ExpiresAt.After(now) {
-			refreshPlace(ctx, queries, client, reviews, record, now)
+			refreshPlace(ctx, queries, client, record, now)
 		}
 	}
-	records, err = queries.GetBuildingPlaces(ctx)
-	if err != nil {
-		return fmt.Errorf("reload building places: %w", err)
-	}
+}
+
+func hydrateBuildingDetails(buildings *Buildings, records []db.BuildingPlace) {
 	for _, record := range records {
-		if _, exists := buildings.Buildings[record.BuildingKey]; !exists || record.PlaceID == nil || *record.PlaceID == "" {
+		if _, exists := buildings.BuildingsByKey[record.BuildingKey]; !exists || record.PlaceID == nil || *record.PlaceID == "" {
 			continue
 		}
-		buildings.Buildings[record.BuildingKey] = BuildingFromPlace(record)
+		buildings.BuildingsByKey[record.BuildingKey] = BuildingFromPlace(record)
 	}
-	buildings.reviews = reviews
-	return nil
 }
 
 // ResolveBuildingPlacesForImport is the production entry point. Google and
@@ -112,9 +130,12 @@ func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, bui
 }
 
 func syncLegendBuildingCache(ctx context.Context, queries db.Querier, buildings *Buildings) error {
-	keys := slices.Sorted(maps.Keys(buildings.Buildings))
+	keys := slices.Sorted(maps.Keys(buildings.BuildingsByKey))
 	for _, key := range keys {
-		if err := queries.UpsertBuildingPlace(ctx, db.UpsertBuildingPlaceParams{BuildingKey: key, CanonicalName: buildings.Buildings[key].CanonicalName}); err != nil {
+		if err := queries.UpsertBuildingPlace(ctx, db.UpsertBuildingPlaceParams{
+			BuildingKey:   key,
+			CanonicalName: buildings.BuildingsByKey[key].CanonicalName,
+		}); err != nil {
 			return fmt.Errorf("upsert building place %q: %w", key, err)
 		}
 	}
@@ -132,12 +153,12 @@ func resolveMissingPlace(ctx context.Context, queries db.Querier, client *places
 		slog.Error("building_place_resolution.search_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
-	best, ranked, reasons, ok := choosePlace(building.CanonicalName, response.GetPlaces())
-	if !ok {
-		reviews.RecordPlaceResolution(building.BuildingKey, best.Score, ranked, reasons)
+	resolution := choosePlace(building.CanonicalName, response.GetPlaces())
+	if !resolution.Accepted {
+		reviews.RecordPlaceResolution(building.BuildingKey, resolution.Best.Score, resolution.Ranked, resolution.Reasons)
 		return
 	}
-	if err := storePlace(ctx, queries, building.BuildingKey, best.Place, best.Score, now); err != nil {
+	if err := storePlace(ctx, queries, building.BuildingKey, resolution.Best.Place, resolution.Best.Score, now); err != nil {
 		slog.Error("building_place_resolution.store_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
@@ -153,7 +174,7 @@ func buildingPlaceSearchRequest(canonicalName string) *placespb.SearchTextReques
 	}
 }
 
-func refreshPlace(ctx context.Context, queries db.Querier, client *places.Client, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
+func refreshPlace(ctx context.Context, queries db.Querier, client *places.Client, building db.BuildingPlace, now time.Time) {
 	if client == nil || building.PlaceID == nil {
 		return
 	}
@@ -175,11 +196,17 @@ func storePlace(ctx context.Context, queries db.Querier, buildingKey string, pla
 	if place == nil || place.GetId() == "" {
 		return errors.New("Google Place has no ID")
 	}
-	placeID, displayName, address := place.GetId(), placeDisplayName(place), place.GetFormattedAddress()
+	placeID := place.GetId()
+	displayName := placeDisplayName(place)
+	address := place.GetFormattedAddress()
+	expiresAt := now.Add(buildingPlaceExpiry)
 	return queries.UpdateBuildingPlace(ctx, db.UpdateBuildingPlaceParams{
-		PlaceID: &placeID, DisplayName: &displayName, Address: &address,
-		Confidence: confidence, VerifiedAt: &now, ExpiresAt: timePointer(now.Add(buildingPlaceExpiry)), BuildingKey: buildingKey,
+		BuildingKey: buildingKey,
+		PlaceID:     &placeID,
+		DisplayName: &displayName,
+		Address:     &address,
+		Confidence:  confidence,
+		VerifiedAt:  &now,
+		ExpiresAt:   &expiresAt,
 	})
 }
-
-func timePointer(value time.Time) *time.Time { return &value }

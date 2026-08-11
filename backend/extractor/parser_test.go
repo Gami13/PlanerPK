@@ -267,7 +267,11 @@ func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
 		},
 	}})
 	class := types.Class{Location: "s. Działowia 1/15"}
-	resolveClassroomLocation(&class, buildings)
+	resolved := finalizeClasses([]types.Class{class}, buildings)
+	if len(resolved) != 1 {
+		t.Fatalf("finalizeClasses returned %d classes, want 1", len(resolved))
+	}
+	class = resolved[0]
 
 	if class.Location != "s. Działowia 1/15" {
 		t.Errorf("Location = %q, want original value", class.Location)

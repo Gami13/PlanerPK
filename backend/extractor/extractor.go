@@ -123,18 +123,13 @@ func finalizeClasses(classes []types.Class, buildings *types.Buildings) []types.
 	var result []types.Class
 	for _, class := range classes {
 		for _, finalClass := range splitSlashClasses(class) {
-			resolveClassroomLocation(&finalClass, buildings)
+			if buildings != nil && finalClass.Location != "" {
+				finalClass.ResolvedClassroomKeys = buildings.ResolveClassroomKeys(finalClass.Location)
+			}
 			result = append(result, finalClass)
 		}
 	}
 	return result
-}
-
-func resolveClassroomLocation(class *types.Class, buildings *types.Buildings) {
-	if class == nil || buildings == nil || class.Location == "" {
-		return
-	}
-	class.ResolvedClassroomKeys = buildings.ResolveClassroomKeys(class.Location)
 }
 
 func getCell(file *excelize.File, sheet string, row int, col int) string {
