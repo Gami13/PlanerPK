@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 
 	_ "modernc.org/sqlite"
 
@@ -69,11 +70,7 @@ func main() {
 	}
 
 	var classroomPlaces []PlaceInfo
-	classroomKeys := make([]string, 0, len(legendBuildings.Classrooms))
-	for classroomKey := range legendBuildings.Classrooms {
-		classroomKeys = append(classroomKeys, classroomKey)
-	}
-	sort.Strings(classroomKeys)
+	classroomKeys := slices.Sorted(maps.Keys(legendBuildings.Classrooms))
 	for _, classroomKey := range classroomKeys {
 		buildingKey := legendBuildings.Classrooms[classroomKey]
 		classroomPlaces = append(classroomPlaces, buildPlaceInfo(classroomKey, buildingKey, placesByBuildingKey[buildingKey]))

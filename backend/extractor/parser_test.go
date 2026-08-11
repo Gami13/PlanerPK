@@ -277,6 +277,28 @@ func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
 	}
 }
 
+func TestFinalizeClassesResolvesEachSlashSplitLocation(t *testing.T) {
+	buildings := types.BuildBuildingsFromLegend(&types.Legend{Locations: map[string]types.Location{
+		"s. SJO": {Shorthand: "s. SJO", FullName: "budynek SJO"},
+		"s. N":   {Shorthand: "s. N", FullName: "budynek N"},
+	}})
+	parsed := parseClassText(
+		"J. niemiecki/J.angielski C1\nćw.\nmgr D. Guzik/mgr E. Szabat     s. SJO/s. N",
+		testStartTime, testEndTime, testDay, mockLegend(),
+	)
+
+	classes := finalizeClasses([]types.Class{parsed}, buildings)
+	if len(classes) != 2 {
+		t.Fatalf("finalizeClasses returned %d classes, want 2", len(classes))
+	}
+	wantKeys := []string{"sjo", "n"}
+	for i, want := range wantKeys {
+		if len(classes[i].ResolvedClassroomKeys) != 1 || classes[i].ResolvedClassroomKeys[0] != want {
+			t.Errorf("class %d resolved keys = %#v, want [%s]", i, classes[i].ResolvedClassroomKeys, want)
+		}
+	}
+}
+
 func TestSplitSlashClasses(t *testing.T) {
 	legend := mockLegend()
 

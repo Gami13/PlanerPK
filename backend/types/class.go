@@ -60,9 +60,6 @@ func (c Class) Summary() string {
 	if len(c.Teacher) > 0 {
 		summary += fmt.Sprintf(" - %s", c.Teacher)
 	}
-	// if len(c.Location) > 0 {
-	// 	summary += fmt.Sprintf(" | %s", c.Location)
-	// }
 	if len(c.TotalHours) > 0 {
 		summary += fmt.Sprintf(" | %s", c.TotalHours)
 	}
@@ -86,17 +83,14 @@ func (c Class) EndTimeRFC3339() string {
 }
 
 func (c Class) ToEvent(buildings *Buildings) calendar.Event {
-	links := make([]string, 0)
-
-	if buildings != nil {
-		for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
-			if link := building.MapHTMLAnchor(); link != "" {
-				links = append(links, link)
-			}
+	var links []string
+	for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
+		if link := building.MapHTMLAnchor(); link != "" {
+			links = append(links, link)
 		}
 	}
 
-	event := &calendar.Event{
+	return calendar.Event{
 		Summary: c.Summary(),
 		Start: &calendar.EventDateTime{
 			DateTime: c.StartTimeRFC3339(),
@@ -113,5 +107,4 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 			},
 		},
 	}
-	return *event
 }

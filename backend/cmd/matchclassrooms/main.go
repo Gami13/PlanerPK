@@ -13,7 +13,7 @@ import (
 // readLines resolves filename across default directories and returns non-empty, trimmed lines.
 func readLines(filename string) ([]string, error) {
 	path := filename
-	for _, dir := range []string{"data", "../data", "../../data", "."} {
+	for _, dir := range []string{"testdata", "data", "../data", "../../data", "."} {
 		p := filepath.Join(dir, filename)
 		if _, err := os.Stat(p); err == nil {
 			path = p
@@ -57,7 +57,7 @@ func main() {
 			BuildingKey:  classroom,
 		})
 	}
-	matcher := classroommatch.New(candidates)
+	matcher := classroommatch.New(candidates, nil)
 	for _, input := range inputs {
 		matches := matcher.Resolve(input)
 		output := make([]string, 0, len(matches))

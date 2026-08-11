@@ -21,16 +21,18 @@ func TestBuildingReviewDecisionsApproveRejectAndInvalidate(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	queue := &BuildingReviewQueue{items: []BuildingReviewItem{
-		{BuildingKey: "approved", Status: "approved", ApprovedPlaceID: "p1", Candidates: []BuildingReviewCandidate{{PlaceID: "p1", Name: "Approved", Address: "Kraków"}}},
-		{BuildingKey: "rejected", Status: "rejected"},
-		{BuildingKey: "invalidated", Status: "invalidated"},
+	path := filepath.Join(t.TempDir(), "reviews.json")
+	queue := &BuildingReviewQueue{path: path, items: []BuildingReviewItem{
+		{BuildingKey: "approved", Status: ReviewStatusApproved, ApprovedPlaceID: "p1", Candidates: []BuildingReviewCandidate{{PlaceID: "p1", Name: "Approved", Address: "Kraków"}}},
+		{BuildingKey: "rejected", Status: ReviewStatusRejected},
+		{BuildingKey: "invalidated", Status: ReviewStatusInvalidated},
 	}}
 	oldID := "old"
 	if err := queries.UpdateBuildingPlace(ctx, db.UpdateBuildingPlaceParams{PlaceID: &oldID, BuildingKey: "invalidated"}); err != nil {
 		t.Fatal(err)
 	}
-	suppressed := queue.ApplyDecisions(ctx, queries, time.Now().UTC())
+	now := time.Now().UTC()
+	suppressed := queue.ApplyDecisions(ctx, queries, now)
 	if !suppressed["rejected"] {
 		t.Fatal("rejected building was not suppressed")
 	}
@@ -47,6 +49,52 @@ func TestBuildingReviewDecisionsApproveRejectAndInvalidate(t *testing.T) {
 	}
 	if byKey["invalidated"].PlaceID != nil {
 		t.Fatalf("invalidation not applied: %#v", byKey["invalidated"])
+	}
+	if queue.items[0].Status != ReviewStatusResolved || queue.items[2].Status != ReviewStatusPending {
+		t.Fatalf("decision statuses were not consumed: %#v", queue.items)
+	}
+
+	if err := storePlace(ctx, queries, "approved", googlePlace("p2", "New approval", "Kraków"), 1, now.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err := storePlace(ctx, queries, "invalidated", googlePlace("fresh", "Fresh result", "Kraków"), 1, now.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if suppressed := queue.ApplyDecisions(ctx, queries, now.Add(2*time.Hour)); !suppressed["rejected"] {
+		t.Fatal("rejected building was not suppressed on the second import")
+	}
+	records, err = queries.GetBuildingPlaces(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byKey = map[string]db.BuildingPlace{}
+	for _, record := range records {
+		byKey[record.BuildingKey] = record
+	}
+	if byKey["approved"].PlaceID == nil || *byKey["approved"].PlaceID != "p2" {
+		t.Fatalf("consumed approval was reapplied: %#v", byKey["approved"])
+	}
+	if byKey["invalidated"].PlaceID == nil || *byKey["invalidated"].PlaceID != "fresh" {
+		t.Fatalf("consumed invalidation cleared a fresh place: %#v", byKey["invalidated"])
+	}
+
+	reloaded, err := LoadBuildingReviewQueue(path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.items[0].Status != ReviewStatusResolved || reloaded.items[2].Status != ReviewStatusPending {
+		t.Fatalf("consumed statuses were not persisted: %#v", reloaded.items)
+	}
+}
+
+func TestLoadBuildingReviewQueueReturnsUsableQueueOnParseError(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "reviews.json")
+	if err := os.WriteFile(path, []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	queue, err := LoadBuildingReviewQueue(path, "")
+	if err == nil || queue == nil || queue.httpClient == nil {
+		t.Fatalf("LoadBuildingReviewQueue() = (%#v, %v), want initialized queue and parse error", queue, err)
 	}
 }
 

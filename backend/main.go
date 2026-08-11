@@ -94,17 +94,17 @@ func initializeApp() (queries db.Querier) {
 func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *types.Legend, *types.Buildings, types.Timetable, error) {
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
-		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
+		return nil, nil, nil, nil, err
 	}
 	defer extractor.CloseFile(file)
 	newGroups, err := extractor.BuildAvailableGroups(file)
 	if err != nil {
-		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
+		return nil, nil, nil, nil, err
 	}
 	newLegend := extractor.ExtractLegend(file)
 	newBuildings := types.BuildBuildingsFromLegend(newLegend)
 	if err := types.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
-		return []types.ColumnGroup{}, &types.Legend{}, &types.Buildings{}, types.Timetable{}, err
+		return nil, nil, nil, nil, err
 	}
 	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend, newBuildings)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
@@ -156,7 +156,7 @@ func main() {
 	}
 
 	ticker := time.NewTicker(global.TimetableUpdateInterval())
-	done := make(chan bool)
+	defer ticker.Stop()
 
 	slog.Info("Starting web server", slog.String("port", global.ServerPort()))
 
@@ -164,17 +164,10 @@ func main() {
 
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", int(global.TimetableUpdateInterval()/time.Minute)))
-	func() {
-		for {
-			select {
-			case <-done:
-				return
-			case t := <-ticker.C:
-				slog.Info("Timetable update triggered", slog.Time("tick_time", t))
-				updateAllTimetables(queries, &cache)
-			}
-		}
-	}()
+	for t := range ticker.C {
+		slog.Info("Timetable update triggered", slog.Time("tick_time", t))
+		updateAllTimetables(queries, &cache)
+	}
 }
 
 func updateAllTimetables(queries db.Querier, cache *types.Cache) {
@@ -188,11 +181,6 @@ func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}
 	allTimetables := cache.Timetable()
-
-	var b *types.Buildings
-	if loaded := cache.Buildings(); loaded != nil {
-		b = loaded
-	}
 
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
@@ -220,6 +208,6 @@ func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 				slog.Any("error", err))
 			overrides = nil
 		}
-		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, b)
+		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, cache.Buildings())
 	}
 }

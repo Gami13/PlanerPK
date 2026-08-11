@@ -2,7 +2,8 @@ package types
 
 import (
 	"log/slog"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -34,14 +35,9 @@ func BuildBuildingsFromLegend(legend *Legend) *Buildings {
 		return result
 	}
 
-	locationKeys := make([]string, 0, len(legend.Locations))
-	for key := range legend.Locations {
-		locationKeys = append(locationKeys, key)
-	}
-	sort.Strings(locationKeys)
+	locationKeys := slices.Sorted(maps.Keys(legend.Locations))
 
 	candidates := make([]classroommatch.Candidate, 0, len(locationKeys))
-	buildingAliases := make(map[string]struct{})
 	for _, locationKey := range locationKeys {
 		location := legend.Locations[locationKey]
 		classroomKey := strings.TrimSpace(location.Shorthand)
@@ -65,40 +61,26 @@ func BuildBuildingsFromLegend(legend *Legend) *Buildings {
 			ClassroomKey: classroomKey,
 			BuildingKey:  buildingKey,
 		})
-		for _, alias := range buildingAcronymAliases(buildingKey) {
-			aliasKey := alias + "\x00" + buildingKey
-			if _, exists := buildingAliases[aliasKey]; exists {
-				continue
-			}
-			buildingAliases[aliasKey] = struct{}{}
-			candidates = append(candidates, classroommatch.Candidate{
-				ClassroomKey:  alias,
-				BuildingKey:   buildingKey,
-				BuildingAlias: true,
-			})
-		}
 	}
 
-	result.matcher = classroommatch.New(candidates)
-	result.Classrooms = result.matcher.ClassroomBuildings()
-	buildingKeys := make([]string, 0, len(result.Buildings))
-	for buildingKey := range result.Buildings {
-		buildingKeys = append(buildingKeys, buildingKey)
+	buildingKeys := slices.Sorted(maps.Keys(result.Buildings))
+	var buildingAliases []classroommatch.Candidate
+	for _, buildingKey := range buildingKeys {
+		if alias, ok := buildingAcronymAlias(buildingKey); ok {
+			buildingAliases = append(buildingAliases, classroommatch.Candidate{ClassroomKey: alias, BuildingKey: buildingKey})
+		}
 	}
-	sort.Strings(buildingKeys)
-	slog.Debug("classroom_resolution.index_data",
-		slog.Any("classrooms", result.Classrooms),
-		slog.Any("building_keys", buildingKeys),
-		slog.String("source", "legend"))
+	result.matcher = classroommatch.New(candidates, buildingAliases)
+	result.Classrooms = result.matcher.ClassroomBuildings()
 	return result
 }
 
-// buildingAcronymAliases adds an explicit building shorthand only when the
+// buildingAcronymAlias returns an explicit building shorthand only when the
 // legend names it as an uppercase acronym, for example "budynek SJO".
-func buildingAcronymAliases(buildingKey string) []string {
+func buildingAcronymAlias(buildingKey string) (string, bool) {
 	fields := strings.Fields(buildingKey)
 	if len(fields) < 2 {
-		return nil
+		return "", false
 	}
 	for i, field := range fields[:len(fields)-1] {
 		if !strings.EqualFold(strings.Trim(field, "\"'(),."), "budynek") {
@@ -106,10 +88,10 @@ func buildingAcronymAliases(buildingKey string) []string {
 		}
 		candidate := strings.Trim(fields[i+1], "\"'(),.")
 		if isUppercaseAcronym(candidate) {
-			return []string{candidate}
+			return candidate, true
 		}
 	}
-	return nil
+	return "", false
 }
 
 func isUppercaseAcronym(value string) bool {
@@ -131,7 +113,7 @@ func (b *Buildings) ResolveClassroomKeys(location string) []string {
 	if b == nil || b.matcher == nil {
 		return nil
 	}
-	keys := make([]string, 0)
+	var keys []string
 	seen := make(map[string]struct{})
 	for _, match := range b.matcher.Resolve(location) {
 		if (match.Kind == classroommatch.MatchAmbiguous || match.Kind == classroommatch.MatchUnmatched) && b.reviews != nil {
@@ -155,7 +137,7 @@ func (b *Buildings) GetBuildingsByClassroomKeys(classroomKeys []string) []Buildi
 	if b == nil || b.Classrooms == nil || b.Buildings == nil {
 		return nil
 	}
-	buildings := make([]Building, 0, len(classroomKeys))
+	var buildings []Building
 	seen := make(map[string]struct{})
 	for _, classroomKey := range classroomKeys {
 		buildingKey, exists := b.Classrooms[classroomKey]

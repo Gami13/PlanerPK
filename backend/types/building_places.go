@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/http"
-	"sort"
+	"maps"
+	"slices"
 	"time"
 
 	places "cloud.google.com/go/maps/places/apiv1"
@@ -57,11 +57,7 @@ func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *B
 	for _, record := range records {
 		byKey[record.BuildingKey] = record
 	}
-	keys := make([]string, 0, len(buildings.Buildings))
-	for key := range buildings.Buildings {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(buildings.Buildings))
 	for _, key := range keys {
 		record := byKey[key]
 		if suppressed[key] {
@@ -96,10 +92,9 @@ func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, bui
 	reviews, err := LoadBuildingReviewQueue(global.BuildingReviewPath(), global.BuildingReviewWebhookURL())
 	if err != nil {
 		slog.Error("building_place_review.load_failed", slog.Any("error", err))
-		reviews = &BuildingReviewQueue{path: global.BuildingReviewPath(), webhookURL: global.BuildingReviewWebhookURL(), httpClient: &http.Client{Timeout: 5 * time.Second}}
 	}
 	var client *places.Client
-	if global.GooglePlacesAPIKey() != "" && global.GooglePlacesAPIKey() != "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY" {
+	if global.GooglePlacesConfigured() {
 		client, err = places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
 		if err != nil {
 			slog.Error("building_place_resolution.client_failed", slog.Any("error", err))
@@ -117,11 +112,7 @@ func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, bui
 }
 
 func syncLegendBuildingCache(ctx context.Context, queries db.Querier, buildings *Buildings) error {
-	keys := make([]string, 0, len(buildings.Buildings))
-	for key := range buildings.Buildings {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(buildings.Buildings))
 	for _, key := range keys {
 		if err := queries.UpsertBuildingPlace(ctx, db.UpsertBuildingPlaceParams{BuildingKey: key, CanonicalName: buildings.Buildings[key].CanonicalName}); err != nil {
 			return fmt.Errorf("upsert building place %q: %w", key, err)

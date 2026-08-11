@@ -121,18 +121,13 @@ func displayNameInitialism(displayName string) string {
 func isSubBuildingLocation(canonicalName, address string) bool {
 	foldedAddress := foldPlaceText(address)
 	for _, token := range buildingNameTokens(canonicalName) {
-		for start := strings.Index(foldedAddress, " "+token+" "); start >= 0; {
+		if start := strings.Index(foldedAddress, " "+token+" "); start >= 0 {
 			remainder := foldedAddress[start+len(token)+2:]
 			for _, marker := range []string{" pietro ", " pokoj ", " sala ", " gabinet ", " lokal "} {
 				if strings.Contains(remainder, marker) {
 					return true
 				}
 			}
-			next := strings.Index(foldedAddress[start+len(token)+2:], " "+token+" ")
-			if next < 0 {
-				break
-			}
-			start += len(token) + 2 + next
 		}
 	}
 	return false

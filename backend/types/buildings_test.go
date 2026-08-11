@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -30,24 +31,18 @@ func TestBuildingsResolveAndLookupUsesLegendOnly(t *testing.T) {
 	}
 	keys := buildings.ResolveClassroomKeys("s. 114 GIL/Działowia 1/15, 135/136 bis")
 	wantKeys := []string{"114 gil", "1 15 działownia", "135", "136"}
-	if len(keys) != len(wantKeys) {
-		t.Fatalf("resolved %d keys, want %d: %#v", len(keys), len(wantKeys), keys)
-	}
-	for i, want := range wantKeys {
-		if keys[i] != want {
-			t.Errorf("key %d = %q, want %q", i, keys[i], want)
-		}
+	if !slices.Equal(keys, wantKeys) {
+		t.Fatalf("resolved keys = %#v, want %#v", keys, wantKeys)
 	}
 
 	resolvedBuildings := buildings.GetBuildingsByClassroomKeys(keys)
 	wantBuildings := []string{"budynek GIL", "budynek Działownia", "budynek Chemii"}
-	if len(resolvedBuildings) != len(wantBuildings) {
-		t.Fatalf("resolved %d buildings, want %d", len(resolvedBuildings), len(wantBuildings))
+	gotBuildings := make([]string, len(resolvedBuildings))
+	for i := range resolvedBuildings {
+		gotBuildings[i] = resolvedBuildings[i].CanonicalName
 	}
-	for i, want := range wantBuildings {
-		if resolvedBuildings[i].CanonicalName != want {
-			t.Errorf("building %d = %q, want %q", i, resolvedBuildings[i].CanonicalName, want)
-		}
+	if !slices.Equal(gotBuildings, wantBuildings) {
+		t.Fatalf("resolved buildings = %#v, want %#v", gotBuildings, wantBuildings)
 	}
 }
 

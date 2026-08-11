@@ -3,7 +3,6 @@ package extractor
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/global"
@@ -80,7 +79,6 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 			classEndTime := currentTime.Add(slotDuration)
 
 			class := parseClassText(classText, currentTime, classEndTime, day, legend)
-			resolveClassroomLocation(&class, buildings)
 
 			isNewClass := len(classes) == 0 || class.Name != classes[len(classes)-1].Name || class.Level != classes[len(classes)-1].Level || class.Teacher != classes[len(classes)-1].Teacher || class.Location != classes[len(classes)-1].Location
 
@@ -97,14 +95,14 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 	}
 
 	// Post-process: split any slash-delimited class names into separate classes
-	var result []types.Class
-	for _, class := range classes {
-		result = append(result, splitSlashClasses(class)...)
-	}
+	result := finalizeClasses(classes, buildings)
 
 	// Log the final classes for the day
 	for _, class := range result {
-		logClassroomBuildingMatch(class, buildings)
+		var buildingNames []string
+		for _, building := range buildings.GetBuildingsByClassroomKeys(class.ResolvedClassroomKeys) {
+			buildingNames = append(buildingNames, building.CanonicalName)
+		}
 		slog.Debug("Final class for day",
 			slog.String("name", class.Name),
 			slog.String("type", class.Type),
@@ -113,30 +111,23 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 			slog.String("additional_info", class.AdditionalInfo),
 			slog.String("level", class.Level),
 			slog.String("total_hours", class.TotalHours),
+			slog.Any("classroom_keys", class.ResolvedClassroomKeys),
+			slog.Any("buildings", buildingNames),
 			slog.String("start_time", class.StartTime.Format("15:04")),
 			slog.String("end_time", class.EndTime.Format("15:04")))
 	}
 	return result
 }
 
-func logClassroomBuildingMatch(class types.Class, buildings *types.Buildings) {
-	if class.Location == "" {
-		return
-	}
-	buildingNames := make([]string, 0)
-	if buildings != nil {
-		for _, building := range buildings.GetBuildingsByClassroomKeys(class.ResolvedClassroomKeys) {
-			buildingNames = append(buildingNames, building.CanonicalName)
+func finalizeClasses(classes []types.Class, buildings *types.Buildings) []types.Class {
+	var result []types.Class
+	for _, class := range classes {
+		for _, finalClass := range splitSlashClasses(class) {
+			resolveClassroomLocation(&finalClass, buildings)
+			result = append(result, finalClass)
 		}
 	}
-	target := "<unresolved>"
-	if len(buildingNames) > 0 {
-		target = strings.Join(buildingNames, "; ")
-	}
-	slog.Debug("classroom_resolution.classroom_to_building",
-		slog.String("mapping", fmt.Sprintf("%s -> %s", class.Location, target)),
-		slog.Any("classroom_keys", class.ResolvedClassroomKeys),
-		slog.String("source", "timetable"))
+	return result
 }
 
 func resolveClassroomLocation(class *types.Class, buildings *types.Buildings) {

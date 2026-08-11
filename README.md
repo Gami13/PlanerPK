@@ -38,17 +38,16 @@ The OAuth `credentials.json` file should be mounted read-only. It is never inclu
 
 ### Building-place cache upgrade
 
-The building-place resolver uses a fresh database schema. Before deploying a
-version containing this change, remove the existing `/data/state/database.db`;
-the legacy seeded building/classroom tables are not migrated. The resolver
-recreates the cache from the timetable legend and only adds Google Maps links
-after confirming a Google Places result.
+The resolver rebuilds classroom mappings from the current timetable legend and
+only adds Google Maps links after confirming a Google Places result. Unresolved
+cases and administrator decisions live in
+`/data/state/building_place_review.json`. See
+[Building place resolution](docs/building-place-resolution.md) for matching,
+cache, and review-state behavior.
 
-Unresolved or low-confidence results are stored in
-`/data/state/building_place_review.json`. An administrator may edit an item to
-`approved` with an `approved_place_id` from its `candidates`, `rejected` to
-suppress further automatic attempts, or `invalidated` to clear a cached place
-and search again on the next qualifying timetable import.
+When upgrading from the legacy seeded building/classroom schema, remove
+`/data/state/database.db` once before starting this version; the cache is
+recreated from the imported legend.
 
 ### Build the image
 

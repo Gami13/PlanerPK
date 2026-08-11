@@ -30,9 +30,27 @@ type BuildingReviewCandidate struct {
 	Score   float64 `json:"score"`
 }
 
+type BuildingReviewKind string
+
+const (
+	ReviewKindClassroomAmbiguous BuildingReviewKind = "classroom_ambiguous"
+	ReviewKindClassroomUnmatched BuildingReviewKind = "classroom_unmatched"
+	ReviewKindPlaceResolution    BuildingReviewKind = "place_resolution"
+)
+
+type BuildingReviewStatus string
+
+const (
+	ReviewStatusPending     BuildingReviewStatus = "pending"
+	ReviewStatusResolved    BuildingReviewStatus = "resolved"
+	ReviewStatusApproved    BuildingReviewStatus = "approved"
+	ReviewStatusRejected    BuildingReviewStatus = "rejected"
+	ReviewStatusInvalidated BuildingReviewStatus = "invalidated"
+)
+
 type BuildingReviewItem struct {
 	ID                string                    `json:"id"`
-	Kind              string                    `json:"kind"`
+	Kind              BuildingReviewKind        `json:"kind"`
 	OriginalText      string                    `json:"original_text,omitempty"`
 	NormalizedParts   []string                  `json:"normalized_parts,omitempty"`
 	ClassroomKey      string                    `json:"classroom_key,omitempty"`
@@ -40,7 +58,7 @@ type BuildingReviewItem struct {
 	Confidence        float64                   `json:"confidence"`
 	Candidates        []BuildingReviewCandidate `json:"candidates,omitempty"`
 	ValidationReasons []string                  `json:"validation_reasons,omitempty"`
-	Status            string                    `json:"status"`
+	Status            BuildingReviewStatus      `json:"status"`
 	ApprovedPlaceID   string                    `json:"approved_place_id,omitempty"`
 	FirstSeen         time.Time                 `json:"first_seen"`
 	LastSeen          time.Time                 `json:"last_seen"`
@@ -64,14 +82,16 @@ func LoadBuildingReviewQueue(path, webhookURL string) (*BuildingReviewQueue, err
 		return queue, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read building review queue: %w", err)
+		return queue, fmt.Errorf("read building review queue: %w", err)
 	}
 	if len(contents) == 0 {
 		return queue, nil
 	}
-	if err := json.Unmarshal(contents, &queue.items); err != nil {
-		return nil, fmt.Errorf("parse building review queue: %w", err)
+	var items []BuildingReviewItem
+	if err := json.Unmarshal(contents, &items); err != nil {
+		return queue, fmt.Errorf("parse building review queue: %w", err)
 	}
+	queue.items = items
 	return queue, nil
 }
 
@@ -79,7 +99,16 @@ func (q *BuildingReviewQueue) RecordClassroomMatch(match classroommatch.Result) 
 	if q == nil {
 		return
 	}
-	q.record(BuildingReviewItem{Kind: "classroom_" + string(match.Kind), OriginalText: match.Input, NormalizedParts: []string{match.Normalized}, ClassroomKey: match.ClassroomKey, BuildingKey: match.BuildingKey, Confidence: match.Score, Status: "pending"})
+	var kind BuildingReviewKind
+	switch match.Kind {
+	case classroommatch.MatchAmbiguous:
+		kind = ReviewKindClassroomAmbiguous
+	case classroommatch.MatchUnmatched:
+		kind = ReviewKindClassroomUnmatched
+	default:
+		return
+	}
+	q.record(BuildingReviewItem{Kind: kind, OriginalText: match.Input, NormalizedParts: []string{match.Normalized}, ClassroomKey: match.ClassroomKey, BuildingKey: match.BuildingKey, Confidence: match.Score, Status: ReviewStatusPending})
 }
 
 func (q *BuildingReviewQueue) RecordPlaceResolution(buildingKey string, confidence float64, candidates []scoredPlace, reasons []string) {
@@ -90,7 +119,7 @@ func (q *BuildingReviewQueue) RecordPlaceResolution(buildingKey string, confiden
 	for _, candidate := range candidates {
 		reviewCandidates = append(reviewCandidates, BuildingReviewCandidate{PlaceID: candidate.Place.GetId(), Name: placeDisplayName(candidate.Place), Address: candidate.Place.GetFormattedAddress(), Score: candidate.Score})
 	}
-	q.record(BuildingReviewItem{Kind: "place_resolution", BuildingKey: buildingKey, Confidence: confidence, Candidates: reviewCandidates, ValidationReasons: reasons, Status: "pending"})
+	q.record(BuildingReviewItem{Kind: ReviewKindPlaceResolution, BuildingKey: buildingKey, Confidence: confidence, Candidates: reviewCandidates, ValidationReasons: reasons, Status: ReviewStatusPending})
 }
 
 func (q *BuildingReviewQueue) MarkPlaceResolved(buildingKey string) {
@@ -101,8 +130,8 @@ func (q *BuildingReviewQueue) MarkPlaceResolved(buildingKey string) {
 	defer q.mu.Unlock()
 	changed := false
 	for i := range q.items {
-		if q.items[i].Kind == "place_resolution" && q.items[i].BuildingKey == buildingKey && q.items[i].Status == "pending" {
-			q.items[i].Status = "resolved"
+		if q.items[i].Kind == ReviewKindPlaceResolution && q.items[i].BuildingKey == buildingKey && q.items[i].Status == ReviewStatusPending {
+			q.items[i].Status = ReviewStatusResolved
 			q.items[i].LastSeen = time.Now().UTC()
 			changed = true
 		}
@@ -116,7 +145,6 @@ func (q *BuildingReviewQueue) MarkPlaceResolved(buildingKey string) {
 
 func (q *BuildingReviewQueue) record(item BuildingReviewItem) {
 	q.mu.Lock()
-	defer q.mu.Unlock()
 	item.ID = reviewID(item.Kind, item.OriginalText, item.NormalizedParts, item.BuildingKey)
 	now := time.Now().UTC()
 	for i := range q.items {
@@ -128,19 +156,22 @@ func (q *BuildingReviewQueue) record(item BuildingReviewItem) {
 		if err := q.saveLocked(); err != nil {
 			slog.Error("building_place_review.save_failed", slog.Any("error", err))
 		}
+		q.mu.Unlock()
 		return
 	}
 	item.FirstSeen, item.LastSeen, item.Occurrences = now, now, 1
 	q.items = append(q.items, item)
-	if err := q.saveLocked(); err != nil {
+	err := q.saveLocked()
+	q.mu.Unlock()
+	if err != nil {
 		slog.Error("building_place_review.save_failed", slog.Any("error", err))
 		return
 	}
 	q.notify(item)
 }
 
-func reviewID(kind, text string, normalized []string, buildingKey string) string {
-	sum := sha256.Sum256([]byte(strings.Join([]string{kind, text, strings.Join(normalized, "\x00"), buildingKey}, "\x00")))
+func reviewID(kind BuildingReviewKind, text string, normalized []string, buildingKey string) string {
+	sum := sha256.Sum256([]byte(strings.Join([]string{string(kind), text, strings.Join(normalized, "\x00"), buildingKey}, "\x00")))
 	return hex.EncodeToString(sum[:])
 }
 
@@ -173,7 +204,11 @@ func (q *BuildingReviewQueue) notify(item BuildingReviewItem) {
 		return
 	}
 	request.Header.Set("Content-Type", "application/json")
-	response, err := q.httpClient.Do(request)
+	client := q.httpClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		slog.Warn("building_place_review.webhook_failed", slog.Any("error", err))
 		return
@@ -192,26 +227,41 @@ func (q *BuildingReviewQueue) ApplyDecisions(ctx context.Context, queries db.Que
 	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	for _, item := range q.items {
+	changed := false
+	for i := range q.items {
+		item := &q.items[i]
 		if item.BuildingKey == "" {
 			continue
 		}
 		switch item.Status {
-		case "rejected":
+		case ReviewStatusRejected:
 			suppressed[item.BuildingKey] = true
-		case "invalidated", "pending":
+		case ReviewStatusInvalidated:
 			if err := queries.ClearBuildingPlace(ctx, item.BuildingKey); err != nil {
 				slog.Warn("building_place_review.clear_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
+				continue
 			}
-		case "approved":
-			candidate, ok := reviewCandidate(item, item.ApprovedPlaceID)
+			item.Status = ReviewStatusPending
+			item.LastSeen = now
+			changed = true
+		case ReviewStatusApproved:
+			candidate, ok := reviewCandidate(*item, item.ApprovedPlaceID)
 			if !ok {
 				slog.Warn("building_place_review.invalid_approval", slog.String("id", item.ID), slog.String("building_key", item.BuildingKey))
 				continue
 			}
 			if err := storePlace(ctx, queries, item.BuildingKey, candidate, 1, now); err != nil {
 				slog.Warn("building_place_review.approval_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
+				continue
 			}
+			item.Status = ReviewStatusResolved
+			item.LastSeen = now
+			changed = true
+		}
+	}
+	if changed {
+		if err := q.saveLocked(); err != nil {
+			slog.Error("building_place_review.save_failed", slog.Any("error", err))
 		}
 	}
 	return suppressed

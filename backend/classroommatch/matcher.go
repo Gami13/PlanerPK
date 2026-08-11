@@ -14,9 +14,8 @@ import (
 
 // Candidate identifies one canonical classroom and the building it belongs to.
 type Candidate struct {
-	ClassroomKey  string
-	BuildingKey   string
-	BuildingAlias bool
+	ClassroomKey string
+	BuildingKey  string
 }
 
 // MatchKind describes the outcome for one physical location part.
@@ -42,14 +41,16 @@ type Result struct {
 
 // Matcher indexes legend classrooms and resolves raw timetable location text.
 type Matcher struct {
-	byAlias map[string]Candidate
-	ordered []Candidate
+	exactAliases    map[string]Candidate
+	buildingAliases map[string]Candidate
+	ordered         []Candidate
 }
 
-// New creates a deterministic matcher. Aliases that belong to different
-// buildings are excluded so they can never silently select an arbitrary one.
-func New(candidates []Candidate) *Matcher {
+// New creates a deterministic matcher with separate classroom and building
+// alias indexes. Conflicting aliases are excluded rather than chosen by order.
+func New(candidates, buildingAliases []Candidate) *Matcher {
 	ordered := slices.Clone(candidates)
+	buildingAliases = slices.Clone(buildingAliases)
 	sort.Slice(ordered, func(i, j int) bool {
 		if ordered[i].ClassroomKey == ordered[j].ClassroomKey {
 			return ordered[i].BuildingKey < ordered[j].BuildingKey
@@ -58,8 +59,9 @@ func New(candidates []Candidate) *Matcher {
 	})
 
 	m := &Matcher{
-		byAlias: make(map[string]Candidate),
-		ordered: make([]Candidate, 0, len(ordered)),
+		exactAliases:    make(map[string]Candidate),
+		buildingAliases: make(map[string]Candidate),
+		ordered:         make([]Candidate, 0, len(ordered)),
 	}
 	conflicts := make(map[string]struct{})
 	for _, candidate := range ordered {
@@ -75,13 +77,13 @@ func New(candidates []Candidate) *Matcher {
 			if _, conflict := conflicts[alias]; conflict {
 				continue
 			}
-			existing, exists := m.byAlias[alias]
+			existing, exists := m.exactAliases[alias]
 			if !exists || existing.BuildingKey == candidate.BuildingKey {
-				m.byAlias[alias] = candidate
+				m.exactAliases[alias] = candidate
 				continue
 			}
 
-			delete(m.byAlias, alias)
+			delete(m.exactAliases, alias)
 			conflicts[alias] = struct{}{}
 			slog.Warn("classroom_resolution.collision",
 				slog.String("classroom_key", alias),
@@ -91,21 +93,65 @@ func New(candidates []Candidate) *Matcher {
 		}
 	}
 
+	buildingAliasConflicts := make(map[string]struct{})
+	sort.Slice(buildingAliases, func(i, j int) bool {
+		if buildingAliases[i].ClassroomKey == buildingAliases[j].ClassroomKey {
+			return buildingAliases[i].BuildingKey < buildingAliases[j].BuildingKey
+		}
+		return buildingAliases[i].ClassroomKey < buildingAliases[j].ClassroomKey
+	})
+	for _, candidate := range buildingAliases {
+		alias := Normalize(candidate.ClassroomKey)
+		buildingKey := strings.TrimSpace(candidate.BuildingKey)
+		if alias == "" || buildingKey == "" {
+			continue
+		}
+		if _, conflict := buildingAliasConflicts[alias]; conflict {
+			continue
+		}
+		if exact, exists := m.exactAliases[alias]; exists && exact.BuildingKey != buildingKey {
+			delete(m.buildingAliases, alias)
+			buildingAliasConflicts[alias] = struct{}{}
+			slog.Warn("classroom_resolution.collision",
+				slog.String("classroom_key", alias),
+				slog.String("first_building_key", exact.BuildingKey),
+				slog.String("second_building_key", buildingKey),
+				slog.String("source", "building_alias"))
+			continue
+		}
+		if existing, exists := m.buildingAliases[alias]; exists && existing.BuildingKey != buildingKey {
+			delete(m.buildingAliases, alias)
+			buildingAliasConflicts[alias] = struct{}{}
+			slog.Warn("classroom_resolution.collision",
+				slog.String("classroom_key", alias),
+				slog.String("first_building_key", existing.BuildingKey),
+				slog.String("second_building_key", buildingKey),
+				slog.String("source", "building_alias"))
+			continue
+		}
+		m.buildingAliases[alias] = Candidate{ClassroomKey: alias, BuildingKey: buildingKey}
+	}
+
 	slog.Info("classroom_resolution.index_built",
 		slog.Int("candidates_count", len(m.ordered)),
-		slog.Int("classroom_keys_count", len(m.byAlias)),
-		slog.Int("collisions_count", len(conflicts)),
+		slog.Int("classroom_keys_count", len(m.exactAliases)),
+		slog.Int("building_aliases_count", len(m.buildingAliases)),
+		slog.Int("collisions_count", len(conflicts)+len(buildingAliasConflicts)),
 		slog.String("source", "legend"))
 	return m
 }
 
-// ClassroomBuildings returns the exact normalized classroom-to-building map.
+// ClassroomBuildings returns the normalized keys emitted by exact classroom
+// and building-alias matches.
 func (m *Matcher) ClassroomBuildings() map[string]string {
 	if m == nil {
 		return nil
 	}
-	result := make(map[string]string, len(m.byAlias))
-	for key, candidate := range m.byAlias {
+	result := make(map[string]string, len(m.exactAliases)+len(m.buildingAliases))
+	for key, candidate := range m.buildingAliases {
+		result[key] = candidate.BuildingKey
+	}
+	for key, candidate := range m.exactAliases {
 		result[key] = candidate.BuildingKey
 	}
 	return result
@@ -135,7 +181,7 @@ func (m *Matcher) resolvePart(input string) Result {
 	}
 
 	for _, alias := range aliases(normalized) {
-		if candidate, ok := m.byAlias[alias]; ok {
+		if candidate, ok := m.exactAliases[alias]; ok {
 			result.ClassroomKey = alias
 			result.BuildingKey = candidate.BuildingKey
 			result.Kind = MatchExact
@@ -213,8 +259,8 @@ func (m *Matcher) buildingAliasIn(normalized string) (Candidate, bool) {
 	var result Candidate
 	found := false
 	for _, word := range strings.Fields(normalized) {
-		candidate, exists := m.byAlias[word]
-		if !exists || !candidate.BuildingAlias {
+		candidate, exists := m.buildingAliases[word]
+		if !exists {
 			continue
 		}
 		if found && result.BuildingKey != candidate.BuildingKey {
