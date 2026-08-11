@@ -57,14 +57,6 @@ ON CONFLICT(building_key) DO UPDATE SET canonical_name = excluded.canonical_name
 SELECT building_key, canonical_name, place_id, display_name, address, confidence, verified_at, expires_at
 FROM building_places ORDER BY building_key;
 
--- name: UpsertClassroomBuilding :exec
-INSERT INTO classroom_buildings (classroom_key, building_key)
-VALUES (sqlc.arg(classroom_key), sqlc.arg(building_key))
-ON CONFLICT(classroom_key) DO UPDATE SET building_key = excluded.building_key;
-
--- name: ClearClassroomBuildings :exec
-DELETE FROM classroom_buildings;
-
 -- name: UpdateBuildingPlace :exec
 UPDATE building_places
 SET place_id = sqlc.arg(place_id), display_name = sqlc.arg(display_name), address = sqlc.arg(address),

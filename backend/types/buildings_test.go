@@ -45,8 +45,8 @@ func TestBuildingsResolveAndLookupUsesLegendOnly(t *testing.T) {
 		t.Fatalf("resolved %d buildings, want %d", len(resolvedBuildings), len(wantBuildings))
 	}
 	for i, want := range wantBuildings {
-		if resolvedBuildings[i].Key != want {
-			t.Errorf("building %d = %q, want %q", i, resolvedBuildings[i].Key, want)
+		if resolvedBuildings[i].CanonicalName != want {
+			t.Errorf("building %d = %q, want %q", i, resolvedBuildings[i].CanonicalName, want)
 		}
 	}
 }
@@ -55,7 +55,7 @@ func TestToEventKeepsRawLocationAndDoesNotUseLegacyPlaceData(t *testing.T) {
 	buildings := &Buildings{
 		Classrooms: map[string]string{"131": "Houston"},
 		Buildings: map[string]Building{
-			"Houston": {Key: "Houston"},
+			"Houston": {},
 		},
 	}
 	class := Class{Location: "s. 131", ResolvedClassroomKeys: []string{"131"}}
@@ -72,8 +72,8 @@ func TestToEventAddsUniqueConfirmedBuildingLinks(t *testing.T) {
 	buildings := &Buildings{
 		Classrooms: map[string]string{"135": "Chemia", "136": "Chemia", "114": "GIL"},
 		Buildings: map[string]Building{
-			"Chemia": {Key: "Chemia", GooglePlaceID: "chem", Name: "Chemia", Address: "Kraków"},
-			"GIL":    {Key: "GIL", GooglePlaceID: "gil", Name: "GIL", Address: "Kraków"},
+			"Chemia": {GooglePlaceID: "chem", Name: "Chemia", Address: "Kraków"},
+			"GIL":    {GooglePlaceID: "gil", Name: "GIL", Address: "Kraków"},
 		},
 	}
 	class := Class{Location: "s. 135/136, s. 114", ResolvedClassroomKeys: []string{"135", "136", "114"}}

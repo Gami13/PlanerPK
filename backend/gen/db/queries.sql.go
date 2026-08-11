@@ -21,15 +21,6 @@ func (q *Queries) ClearBuildingPlace(ctx context.Context, buildingKey string) er
 	return err
 }
 
-const clearClassroomBuildings = `-- name: ClearClassroomBuildings :exec
-DELETE FROM classroom_buildings
-`
-
-func (q *Queries) ClearClassroomBuildings(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, clearClassroomBuildings)
-	return err
-}
-
 const deleteOverride = `-- name: DeleteOverride :exec
 DELETE FROM overrides WHERE user_id = ?1 AND class_hash = ?2
 `
@@ -315,22 +306,6 @@ type UpsertBuildingPlaceParams struct {
 
 func (q *Queries) UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPlaceParams) error {
 	_, err := q.db.ExecContext(ctx, upsertBuildingPlace, arg.BuildingKey, arg.CanonicalName)
-	return err
-}
-
-const upsertClassroomBuilding = `-- name: UpsertClassroomBuilding :exec
-INSERT INTO classroom_buildings (classroom_key, building_key)
-VALUES (?1, ?2)
-ON CONFLICT(classroom_key) DO UPDATE SET building_key = excluded.building_key
-`
-
-type UpsertClassroomBuildingParams struct {
-	ClassroomKey string `json:"classroom_key"`
-	BuildingKey  string `json:"building_key"`
-}
-
-func (q *Queries) UpsertClassroomBuilding(ctx context.Context, arg UpsertClassroomBuildingParams) error {
-	_, err := q.db.ExecContext(ctx, upsertClassroomBuilding, arg.ClassroomKey, arg.BuildingKey)
 	return err
 }
 

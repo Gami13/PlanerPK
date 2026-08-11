@@ -19,11 +19,6 @@ type BuildingPlace struct {
 	ExpiresAt     *time.Time `json:"expires_at"`
 }
 
-type ClassroomBuilding struct {
-	ClassroomKey string `json:"classroom_key"`
-	BuildingKey  string `json:"building_key"`
-}
-
 type Override struct {
 	ID            int64  `json:"id"`
 	UserID        int64  `json:"user_id"`

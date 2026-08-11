@@ -10,7 +10,6 @@ import (
 
 type Querier interface {
 	ClearBuildingPlace(ctx context.Context, buildingKey string) error
-	ClearClassroomBuildings(ctx context.Context) error
 	DeleteOverride(ctx context.Context, arg DeleteOverrideParams) error
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetBuildingPlaces(ctx context.Context) ([]BuildingPlace, error)
@@ -23,7 +22,6 @@ type Querier interface {
 	UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
 	UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPlaceParams) error
-	UpsertClassroomBuilding(ctx context.Context, arg UpsertClassroomBuildingParams) error
 	UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error
 	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }

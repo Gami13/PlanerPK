@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	_ "modernc.org/sqlite"
 
+	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 type PlaceInfo struct {
@@ -52,53 +55,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Query normalized classrooms and their associated building-place details.
-	rows, err := database.QueryContext(ctx, `
-		SELECT cb.classroom_key, cb.building_key, COALESCE(bp.place_id, ''),
-			COALESCE(bp.display_name, ''), COALESCE(bp.address, '')
-		FROM classroom_buildings cb
-		JOIN building_places bp ON bp.building_key = cb.building_key
-		ORDER BY cb.classroom_key ASC
-	`)
+	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error querying classrooms: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error opening current timetable: %v\n", err)
 		os.Exit(1)
 	}
-	if err := rows.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error in rows: %v\n", err)
-		os.Exit(1)
+	defer extractor.CloseFile(file)
+
+	legendBuildings := types.BuildBuildingsFromLegend(extractor.ExtractLegend(file))
+	placesByBuildingKey := make(map[string]db.BuildingPlace, len(allBuildings))
+	for _, building := range allBuildings {
+		placesByBuildingKey[building.BuildingKey] = building
 	}
-	defer rows.Close()
 
 	var classroomPlaces []PlaceInfo
-	for rows.Next() {
-		var cName, bKey, placeID, bName, bAddr string
-		if err := rows.Scan(&cName, &bKey, &placeID, &bName, &bAddr); err != nil {
-			fmt.Fprintf(os.Stderr, "Error scanning row: %v\n", err)
-			continue
-		}
-
-		info := buildPlaceInfo(cName, bKey, placeID, bName, bAddr)
-		classroomPlaces = append(classroomPlaces, info)
+	classroomKeys := make([]string, 0, len(legendBuildings.Classrooms))
+	for classroomKey := range legendBuildings.Classrooms {
+		classroomKeys = append(classroomKeys, classroomKey)
+	}
+	sort.Strings(classroomKeys)
+	for _, classroomKey := range classroomKeys {
+		buildingKey := legendBuildings.Classrooms[classroomKey]
+		classroomPlaces = append(classroomPlaces, buildPlaceInfo(classroomKey, buildingKey, placesByBuildingKey[buildingKey]))
 	}
 
 	var buildingPlaces []PlaceInfo
 	for _, b := range allBuildings {
-		placeID := ""
-		if b.PlaceID != nil {
-			placeID = *b.PlaceID
-		}
-		name := ""
-		if b.DisplayName != nil {
-			name = *b.DisplayName
-		}
-		addr := ""
-		if b.Address != nil {
-			addr = *b.Address
-		}
-
-		info := buildPlaceInfo("", b.BuildingKey, placeID, name, addr)
-		buildingPlaces = append(buildingPlaces, info)
+		buildingPlaces = append(buildingPlaces, buildPlaceInfo("", b.BuildingKey, b))
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
@@ -114,7 +97,7 @@ func main() {
 	defer outFile.Close()
 
 	fmt.Fprintf(outFile, "================================================================================\n")
-	fmt.Fprintf(outFile, "                         DATABASE PLACE HYPERLINKS                              \n")
+	fmt.Fprintf(outFile, "                          LEGEND PLACE HYPERLINKS                               \n")
 	fmt.Fprintf(outFile, "================================================================================\n\n")
 
 	fmt.Fprintf(outFile, "--------------------------------------------------------------------------------\n")
@@ -152,36 +135,17 @@ func main() {
 		len(classroomPlaces), len(buildingPlaces), outPath)
 }
 
-func buildPlaceInfo(classroomName, bKey, placeID, bName, bAddr string) PlaceInfo {
+func buildPlaceInfo(classroomName, buildingKey string, place db.BuildingPlace) PlaceInfo {
+	building := types.BuildingFromPlace(place)
 	info := PlaceInfo{
 		ClassroomName: classroomName,
-		BuildingKey:   bKey,
-		BuildingName:  bName,
-		Address:       bAddr,
-		GooglePlaceID: placeID,
+		BuildingKey:   buildingKey,
+		BuildingName:  building.Name,
+		Address:       building.Address,
+		GooglePlaceID: building.GooglePlaceID,
+		Label:         building.MapLabel(),
+		MapsURL:       building.MapURL(),
+		HTMLAnchor:    building.MapHTMLAnchor(),
 	}
-
-	if info.GooglePlaceID != "" {
-		label := "Google Maps"
-		if info.BuildingName != "" && info.Address != "" {
-			label = fmt.Sprintf("%s, %s", info.BuildingName, info.Address)
-		} else if info.BuildingName != "" {
-			label = info.BuildingName
-		} else if info.Address != "" {
-			label = info.Address
-		}
-		info.Label = label
-		info.MapsURL = fmt.Sprintf("https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s", info.GooglePlaceID)
-		info.HTMLAnchor = fmt.Sprintf("<a href=\"%s\">%s</a>", info.MapsURL, info.Label)
-	} else if info.BuildingName != "" || info.Address != "" {
-		if info.BuildingName != "" && info.Address != "" {
-			info.Label = fmt.Sprintf("%s, %s", info.BuildingName, info.Address)
-		} else if info.BuildingName != "" {
-			info.Label = info.BuildingName
-		} else {
-			info.Label = info.Address
-		}
-	}
-
 	return info
 }

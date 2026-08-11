@@ -10,7 +10,6 @@ import (
 )
 
 type Building struct {
-	Key           string
 	CanonicalName string
 	GooglePlaceID string
 	Name          string
@@ -61,10 +60,7 @@ func BuildBuildingsFromLegend(legend *Legend) *Buildings {
 			continue
 		}
 
-		result.Buildings[buildingKey] = Building{
-			Key:           buildingKey,
-			CanonicalName: buildingKey,
-		}
+		result.Buildings[buildingKey] = Building{CanonicalName: buildingKey}
 		candidates = append(candidates, classroommatch.Candidate{
 			ClassroomKey: classroomKey,
 			BuildingKey:  buildingKey,
@@ -127,14 +123,6 @@ func isUppercaseAcronym(value string) bool {
 		}
 	}
 	return true
-}
-
-func (b *Buildings) GetBuilding(key string) (Building, bool) {
-	if b == nil || b.Buildings == nil {
-		return Building{}, false
-	}
-	building, exists := b.Buildings[key]
-	return building, exists
 }
 
 // ResolveClassroomKeys performs the only fuzzy matching in the runtime flow:

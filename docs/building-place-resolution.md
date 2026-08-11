@@ -24,7 +24,7 @@ For now, treat classroom numbers as globally unique between buildings. During le
 
 ## Cache and refresh policy
 
-- Use a two-level cache so Google place data is stored once per building rather than repeated for every classroom:
+- Use an in-memory legend mapping plus a persistent cache so Google place data is stored once per building rather than repeated for every classroom:
 
   ```go
   type PlaceCache struct {
@@ -52,9 +52,9 @@ For now, treat classroom numbers as globally unique between buildings. During le
 - Refresh stale place details during timetable import rather than on every application startup.
 - If a refresh fails, retain the last known valid place and log the failure. Remove an existing place link only after a confirmed invalid result or manual rejection.
 
-### Initial database design
+### Persistent database design
 
-The existing building, classroom, and join tables may be replaced because the current schema has not yet been migrated to production. Keep the first database version small and close to the cache structs. Two tables are enough:
+The existing building, classroom, and join tables may be replaced because the current schema has not yet been migrated to production. Persist only the Google place cache; the classroom-to-building mapping is rebuilt from the current Excel legend on every import:
 
 ```sql
 CREATE TABLE building_places (
@@ -68,13 +68,9 @@ CREATE TABLE building_places (
     expires_at TIMESTAMP
 );
 
-CREATE TABLE classroom_buildings (
-    classroom_key TEXT PRIMARY KEY,
-    building_key TEXT NOT NULL REFERENCES building_places(building_key)
-);
 ```
 
-This stores Google data once per building while allowing multiple classroom aliases to point to it. `building_key` is the stable internal identity and `place_id` is the durable Google identity.
+This stores Google data once per building. The in-memory legend mapping connects normalized classroom aliases to `building_key`; `place_id` is the durable Google identity.
 
 ## Review queue
 
@@ -105,8 +101,9 @@ Send best-effort webhook notifications when a review item is created or an error
 
 ### Stage 2 complete — persistent Google Places resolution
 
-- The legacy seeded schema has been replaced by the `building_places` and
-  `classroom_buildings` cache. This is a fresh database version: deployments
+- The legacy seeded schema has been replaced by the `building_places` cache.
+  Classroom-to-building mappings are rebuilt from the imported legend. This is
+  a fresh database version: deployments
   remove the prior `state/database.db` rather than migrate it.
 - Cache construction at startup and after a changed timetable import syncs the
   legend mappings, resolves missing buildings with Google Places Text Search,

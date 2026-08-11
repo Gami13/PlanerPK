@@ -36,8 +36,3 @@ CREATE TABLE IF NOT EXISTS building_places (
     verified_at TIMESTAMP,
     expires_at TIMESTAMP
 );
-
-CREATE TABLE IF NOT EXISTS classroom_buildings (
-    classroom_key TEXT PRIMARY KEY,
-    building_key TEXT NOT NULL REFERENCES building_places(building_key) ON DELETE CASCADE
-);

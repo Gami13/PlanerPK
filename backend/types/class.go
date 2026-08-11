@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/utils"
@@ -85,28 +86,12 @@ func (c Class) EndTimeRFC3339() string {
 }
 
 func (c Class) ToEvent(buildings *Buildings) calendar.Event {
-	description := ""
+	links := make([]string, 0)
 
 	if buildings != nil {
 		for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
-			if building.GooglePlaceID == "" {
-				continue
-			}
-			var label string
-			if building.Name != "" && building.Address != "" {
-				label = fmt.Sprintf("%s, %s", building.Name, building.Address)
-			} else if building.Name != "" {
-				label = building.Name
-			} else if building.Address != "" {
-				label = building.Address
-			} else {
-				label = "Google Maps"
-			}
-			link := fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s</a>", building.GooglePlaceID, label)
-			if description == "" {
-				description = link
-			} else {
-				description += "<br>" + link
+			if link := building.MapHTMLAnchor(); link != "" {
+				links = append(links, link)
 			}
 		}
 	}
@@ -120,7 +105,7 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 			DateTime: c.EndTimeRFC3339(),
 		},
 		Location:    c.Location,
-		Description: description,
+		Description: strings.Join(links, "<br>"),
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{
 				"added_by": ADDED_BY,

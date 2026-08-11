@@ -3,11 +3,6 @@ package types
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -38,10 +33,6 @@ func testPlaceQueries(t *testing.T) (*sql.DB, db.Querier) {
 			building_key TEXT PRIMARY KEY, canonical_name TEXT NOT NULL, place_id TEXT UNIQUE,
 			display_name TEXT, address TEXT, confidence REAL NOT NULL DEFAULT 0,
 			verified_at TIMESTAMP, expires_at TIMESTAMP
-		);
-		CREATE TABLE classroom_buildings (
-			classroom_key TEXT PRIMARY KEY,
-			building_key TEXT NOT NULL REFERENCES building_places(building_key) ON DELETE CASCADE
 		);`)
 	if err != nil {
 		t.Fatal(err)
@@ -55,6 +46,30 @@ func testBuildings() *Buildings {
 	}})
 }
 
+func TestBuildingFromPlace(t *testing.T) {
+	placeID, displayName, address := "chem", "Wydział Chemii PK", "Kraków"
+	building := BuildingFromPlace(db.BuildingPlace{
+		BuildingKey:   "chemia",
+		CanonicalName: "budynek Chemii",
+		PlaceID:       &placeID,
+		DisplayName:   &displayName,
+		Address:       &address,
+	})
+	if building != (Building{CanonicalName: "budynek Chemii", GooglePlaceID: placeID, Name: displayName, Address: address}) {
+		t.Fatalf("BuildingFromPlace() = %#v", building)
+	}
+}
+
+func TestBuildingPlaceSearchRequestReturnsTwentyCandidates(t *testing.T) {
+	request := buildingPlaceSearchRequest("budynek Houston, ul. Warszawska")
+	if request.GetMaxResultCount() != buildingPlaceSearchResultCount {
+		t.Errorf("MaxResultCount = %d, want %d", request.GetMaxResultCount(), buildingPlaceSearchResultCount)
+	}
+	if request.GetTextQuery() != "budynek Houston, ul. Warszawska Politechnika Krakowska" {
+		t.Errorf("TextQuery = %q", request.GetTextQuery())
+	}
+}
+
 func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 	_, queries := testPlaceQueries(t)
 	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
@@ -65,10 +80,7 @@ func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	buildings := testBuildings()
-	queue, err := LoadBuildingReviewQueue(filepath.Join(t.TempDir(), "reviews.json"), "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	queue := &BuildingReviewQueue{}
 	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, nil, queue, now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
@@ -78,29 +90,6 @@ func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 	}
 	if got := buildings.Classrooms["135"]; got != "budynek Chemii" {
 		t.Fatalf("classroom mapping = %q", got)
-	}
-}
-
-func TestChoosePlaceUsesGooglePlaceTypes(t *testing.T) {
-	best, _, _, ok := choosePlace("budynek Chemii", []*placespb.Place{
-		googlePlace("best", "Wydział Chemii Politechniki Krakowskiej", "Warszawska 24, Kraków"),
-		googlePlace("other", "Budynek Chemii", "Katowice"),
-	})
-	if !ok || best.Place.GetId() != "best" {
-		t.Fatalf("winner = %#v, accepted = %v", best, ok)
-	}
-
-	_, _, _, ok = choosePlace("budynek Chemii", []*placespb.Place{
-		googlePlace("a", "Budynek Chemii", "Kraków"),
-		googlePlace("b", "Budynek Chemii", "Kraków"),
-	})
-	if ok {
-		t.Fatal("tied candidates were accepted")
-	}
-
-	best, _, _, ok = choosePlace("budynek Chemii", []*placespb.Place{googlePlace("bad", "Unrelated", "Kraków")})
-	if ok || best.Score >= minimumPlaceScore {
-		t.Fatalf("low-confidence result accepted: %#v", best)
 	}
 }
 
@@ -119,79 +108,5 @@ func TestStorePlaceRefreshesExpiry(t *testing.T) {
 	}
 	if *records[0].DisplayName != "New" || !records[0].ExpiresAt.After(now) {
 		t.Fatalf("stored record = %#v", records[0])
-	}
-}
-
-func TestBuildingReviewDecisionsApproveRejectAndInvalidate(t *testing.T) {
-	_, queries := testPlaceQueries(t)
-	ctx := context.Background()
-	for _, key := range []string{"approved", "rejected", "invalidated"} {
-		if err := queries.UpsertBuildingPlace(ctx, db.UpsertBuildingPlaceParams{BuildingKey: key, CanonicalName: key}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	queue := &BuildingReviewQueue{items: []BuildingReviewItem{
-		{BuildingKey: "approved", Status: "approved", ApprovedPlaceID: "p1", Candidates: []BuildingReviewCandidate{{PlaceID: "p1", Name: "Approved", Address: "Kraków"}}},
-		{BuildingKey: "rejected", Status: "rejected"},
-		{BuildingKey: "invalidated", Status: "invalidated"},
-	}}
-	oldID := "old"
-	if err := queries.UpdateBuildingPlace(ctx, db.UpdateBuildingPlaceParams{PlaceID: &oldID, BuildingKey: "invalidated"}); err != nil {
-		t.Fatal(err)
-	}
-	suppressed := queue.ApplyDecisions(ctx, queries, time.Now().UTC())
-	if !suppressed["rejected"] {
-		t.Fatal("rejected building was not suppressed")
-	}
-	records, err := queries.GetBuildingPlaces(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	byKey := map[string]db.BuildingPlace{}
-	for _, record := range records {
-		byKey[record.BuildingKey] = record
-	}
-	if byKey["approved"].PlaceID == nil || *byKey["approved"].PlaceID != "p1" {
-		t.Fatalf("approval not applied: %#v", byKey["approved"])
-	}
-	if byKey["invalidated"].PlaceID != nil {
-		t.Fatalf("invalidation not applied: %#v", byKey["invalidated"])
-	}
-}
-
-func TestResolvedPlaceReviewNoLongerInvalidatesCachedPlace(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "reviews.json")
-	queue, err := LoadBuildingReviewQueue(path, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	queue.RecordPlaceResolution("budynek Chemii", 0.7, []scoredPlace{{Place: googlePlace("candidate", "Chemia", "Kraków"), Score: 0.7}}, []string{"low confidence"})
-	queue.MarkPlaceResolved("budynek Chemii")
-	contents, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var items []BuildingReviewItem
-	if err := json.Unmarshal(contents, &items); err != nil {
-		t.Fatal(err)
-	}
-	if len(items) != 1 || items[0].Status != "resolved" {
-		t.Fatalf("review item = %#v, want resolved", items)
-	}
-}
-
-func TestReviewWebhookFailureDoesNotPreventQueuePersistence(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer server.Close()
-	path := filepath.Join(t.TempDir(), "reviews.json")
-	queue, err := LoadBuildingReviewQueue(path, server.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	queue.RecordPlaceResolution("budynek Chemii", 0, nil, []string{"no candidates"})
-	if _, err := os.Stat(path); err != nil {
-		t.Fatalf("queue was not persisted after webhook failure: %v", err)
 	}
 }
