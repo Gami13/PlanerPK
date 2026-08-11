@@ -13,29 +13,18 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	localizedtext "google.golang.org/genproto/googleapis/type/localized_text"
 )
 
-type fakePlacesClient struct {
-	searchResults []PlaceCandidate
-	searchErr     error
-	getResult     PlaceCandidate
-	getErr        error
-	searchCalls   int
-	getCalls      int
+func googlePlace(id, name, address string) *placespb.Place {
+	return &placespb.Place{
+		Id:               id,
+		DisplayName:      &localizedtext.LocalizedText{Text: name},
+		FormattedAddress: address,
+	}
 }
-
-func (f *fakePlacesClient) SearchText(context.Context, string) ([]PlaceCandidate, error) {
-	f.searchCalls++
-	return f.searchResults, f.searchErr
-}
-
-func (f *fakePlacesClient) GetPlace(context.Context, string) (PlaceCandidate, error) {
-	f.getCalls++
-	return f.getResult, f.getErr
-}
-
-func (f *fakePlacesClient) Close() error { return nil }
 
 func testPlaceQueries(t *testing.T) (*sql.DB, db.Querier) {
 	t.Helper()
@@ -66,92 +55,70 @@ func testBuildings() *Buildings {
 	}})
 }
 
-func TestResolveBuildingPlacesPersistsAndHydratesClearWinner(t *testing.T) {
-	_, queries := testPlaceQueries(t)
-	buildings := testBuildings()
-	places := &fakePlacesClient{searchResults: []PlaceCandidate{
-		{PlaceID: "chem", Name: "Wydział Chemii Politechniki Krakowskiej", Address: "Warszawska 24, Kraków"},
-		{PlaceID: "other", Name: "Budynek Chemii", Address: "Katowice"},
-	}}
-	queue, err := LoadBuildingReviewQueue(filepath.Join(t.TempDir(), "reviews.json"), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
-	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, places, queue, now); err != nil {
-		t.Fatal(err)
-	}
-	if places.searchCalls != 1 {
-		t.Fatalf("search calls = %d, want 1", places.searchCalls)
-	}
-	building := buildings.Buildings["budynek Chemii"]
-	if building.GooglePlaceID != "chem" || building.Name == "" {
-		t.Fatalf("hydrated building = %#v", building)
-	}
-	if got := buildings.Classrooms["135"]; got != "budynek Chemii" {
-		t.Fatalf("classroom mapping = %q", got)
-	}
-
-	if err := ResolveBuildingPlaces(context.Background(), queries, testBuildings(), places, queue, now.Add(time.Hour)); err != nil {
-		t.Fatal(err)
-	}
-	if places.searchCalls != 1 {
-		t.Fatalf("fresh cached place searched again: %d calls", places.searchCalls)
-	}
-}
-
-func TestResolveBuildingPlacesQueuesAmbiguousCandidate(t *testing.T) {
-	_, queries := testPlaceQueries(t)
-	places := &fakePlacesClient{searchResults: []PlaceCandidate{
-		{PlaceID: "a", Name: "Budynek Chemii", Address: "Kraków"},
-		{PlaceID: "b", Name: "Budynek Chemii", Address: "Kraków"},
-	}}
-	path := filepath.Join(t.TempDir(), "reviews.json")
-	queue, err := LoadBuildingReviewQueue(path, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := ResolveBuildingPlaces(context.Background(), queries, testBuildings(), places, queue, time.Now().UTC()); err != nil {
-		t.Fatal(err)
-	}
-	contents, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var items []BuildingReviewItem
-	if err := json.Unmarshal(contents, &items); err != nil {
-		t.Fatal(err)
-	}
-	if len(items) != 1 || items[0].Kind != "place_resolution" {
-		t.Fatalf("review items = %#v", items)
-	}
-}
-
-func TestResolveBuildingPlacesRefreshesExpiredDetails(t *testing.T) {
+func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 	_, queries := testPlaceQueries(t)
 	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
 	if err := queries.UpsertBuildingPlace(context.Background(), db.UpsertBuildingPlaceParams{BuildingKey: "budynek Chemii", CanonicalName: "budynek Chemii"}); err != nil {
 		t.Fatal(err)
 	}
-	oldID, oldName, oldAddress := "chem", "Old", "Old address"
-	expired := now.Add(-time.Hour)
-	if err := queries.UpdateBuildingPlace(context.Background(), db.UpdateBuildingPlaceParams{PlaceID: &oldID, DisplayName: &oldName, Address: &oldAddress, Confidence: 0.9, VerifiedAt: &expired, ExpiresAt: &expired, BuildingKey: "budynek Chemii"}); err != nil {
+	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "Wydział Chemii PK", "Kraków"), 1, now); err != nil {
 		t.Fatal(err)
 	}
-	places := &fakePlacesClient{getResult: PlaceCandidate{PlaceID: "chem", Name: "New", Address: "New address"}}
-	queue, _ := LoadBuildingReviewQueue(filepath.Join(t.TempDir(), "reviews.json"), "")
-	if err := ResolveBuildingPlaces(context.Background(), queries, testBuildings(), places, queue, now); err != nil {
+	buildings := testBuildings()
+	queue, err := LoadBuildingReviewQueue(filepath.Join(t.TempDir(), "reviews.json"), "")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if places.getCalls != 1 || places.searchCalls != 0 {
-		t.Fatalf("get/search calls = %d/%d, want 1/0", places.getCalls, places.searchCalls)
+	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, nil, queue, now.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	building := buildings.Buildings["budynek Chemii"]
+	if building.GooglePlaceID != "chem" || building.Name != "Wydział Chemii PK" {
+		t.Fatalf("hydrated building = %#v", building)
+	}
+	if got := buildings.Classrooms["135"]; got != "budynek Chemii" {
+		t.Fatalf("classroom mapping = %q", got)
+	}
+}
+
+func TestChoosePlaceUsesGooglePlaceTypes(t *testing.T) {
+	best, _, _, ok := choosePlace("budynek Chemii", []*placespb.Place{
+		googlePlace("best", "Wydział Chemii Politechniki Krakowskiej", "Warszawska 24, Kraków"),
+		googlePlace("other", "Budynek Chemii", "Katowice"),
+	})
+	if !ok || best.Place.GetId() != "best" {
+		t.Fatalf("winner = %#v, accepted = %v", best, ok)
+	}
+
+	_, _, _, ok = choosePlace("budynek Chemii", []*placespb.Place{
+		googlePlace("a", "Budynek Chemii", "Kraków"),
+		googlePlace("b", "Budynek Chemii", "Kraków"),
+	})
+	if ok {
+		t.Fatal("tied candidates were accepted")
+	}
+
+	best, _, _, ok = choosePlace("budynek Chemii", []*placespb.Place{googlePlace("bad", "Unrelated", "Kraków")})
+	if ok || best.Score >= minimumPlaceScore {
+		t.Fatalf("low-confidence result accepted: %#v", best)
+	}
+}
+
+func TestStorePlaceRefreshesExpiry(t *testing.T) {
+	_, queries := testPlaceQueries(t)
+	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
+	if err := queries.UpsertBuildingPlace(context.Background(), db.UpsertBuildingPlaceParams{BuildingKey: "budynek Chemii", CanonicalName: "budynek Chemii"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "New", "New address"), 0.9, now); err != nil {
+		t.Fatal(err)
 	}
 	records, err := queries.GetBuildingPlaces(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if *records[0].DisplayName != "New" || !records[0].ExpiresAt.After(now) {
-		t.Fatalf("refreshed record = %#v", records[0])
+		t.Fatalf("stored record = %#v", records[0])
 	}
 }
 
@@ -192,33 +159,13 @@ func TestBuildingReviewDecisionsApproveRejectAndInvalidate(t *testing.T) {
 	}
 }
 
-func TestChoosePlaceRejectsLowConfidenceAndSearchFailureDoesNotPersist(t *testing.T) {
-	best, _, _, ok := choosePlace("budynek Chemii", []PlaceCandidate{{PlaceID: "bad", Name: "Unrelated", Address: "Kraków"}})
-	if ok || best.Score >= minimumPlaceScore {
-		t.Fatalf("low-confidence result accepted: %#v", best)
-	}
-	_, queries := testPlaceQueries(t)
-	places := &fakePlacesClient{searchErr: os.ErrDeadlineExceeded}
-	queue, _ := LoadBuildingReviewQueue(filepath.Join(t.TempDir(), "reviews.json"), "")
-	if err := ResolveBuildingPlaces(context.Background(), queries, testBuildings(), places, queue, time.Now().UTC()); err != nil {
-		t.Fatalf("transient Google failure should not fail import: %v", err)
-	}
-	records, err := queries.GetBuildingPlaces(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(records) != 1 || records[0].PlaceID != nil {
-		t.Fatalf("failure persisted a place: %#v", records)
-	}
-}
-
 func TestResolvedPlaceReviewNoLongerInvalidatesCachedPlace(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "reviews.json")
 	queue, err := LoadBuildingReviewQueue(path, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	queue.RecordPlaceResolution("budynek Chemii", 0.7, []scoredPlace{{PlaceCandidate: PlaceCandidate{PlaceID: "candidate"}, Score: 0.7}}, []string{"low confidence"})
+	queue.RecordPlaceResolution("budynek Chemii", 0.7, []scoredPlace{{Place: googlePlace("candidate", "Chemia", "Kraków"), Score: 0.7}}, []string{"low confidence"})
 	queue.MarkPlaceResolved("budynek Chemii")
 	contents, err := os.ReadFile(path)
 	if err != nil {

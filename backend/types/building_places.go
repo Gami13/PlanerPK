@@ -25,6 +25,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/global"
 	"google.golang.org/api/option"
+	localizedtext "google.golang.org/genproto/googleapis/type/localized_text"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -33,72 +34,6 @@ const (
 	minimumPlaceScore     = 0.70
 	minimumPlaceScoreLead = 0.15
 )
-
-// PlaceCandidate contains only the Google Place fields needed to choose and
-// render a map link. Keeping this separate from the generated client makes
-// resolver behavior deterministic and easy to test.
-type PlaceCandidate struct {
-	PlaceID string `json:"place_id"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
-}
-
-// PlacesClient is the small Google Places surface used by building resolution.
-type PlacesClient interface {
-	SearchText(ctx context.Context, query string) ([]PlaceCandidate, error)
-	GetPlace(ctx context.Context, placeID string) (PlaceCandidate, error)
-	Close() error
-}
-
-type googlePlacesClient struct{ client *places.Client }
-
-func newGooglePlacesClient(ctx context.Context) (PlacesClient, error) {
-	if global.GooglePlacesAPIKey() == "" || global.GooglePlacesAPIKey() == "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY" {
-		return nil, nil
-	}
-	client, err := places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
-	if err != nil {
-		return nil, fmt.Errorf("create Google Places client: %w", err)
-	}
-	return &googlePlacesClient{client: client}, nil
-}
-
-func (c *googlePlacesClient) SearchText(ctx context.Context, query string) ([]PlaceCandidate, error) {
-	ctx = metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "places.id,places.displayName,places.formattedAddress")
-	response, err := c.client.SearchText(ctx, &placespb.SearchTextRequest{
-		TextQuery:      query,
-		LanguageCode:   "pl",
-		RegionCode:     "PL",
-		MaxResultCount: 5,
-	})
-	if err != nil {
-		return nil, err
-	}
-	result := make([]PlaceCandidate, 0, len(response.GetPlaces()))
-	for _, place := range response.GetPlaces() {
-		name := ""
-		if place.GetDisplayName() != nil {
-			name = place.GetDisplayName().GetText()
-		}
-		result = append(result, PlaceCandidate{PlaceID: place.GetId(), Name: name, Address: place.GetFormattedAddress()})
-	}
-	return result, nil
-}
-
-func (c *googlePlacesClient) GetPlace(ctx context.Context, placeID string) (PlaceCandidate, error) {
-	ctx = metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "id,displayName,formattedAddress")
-	place, err := c.client.GetPlace(ctx, &placespb.GetPlaceRequest{Name: "places/" + placeID, LanguageCode: "pl"})
-	if err != nil {
-		return PlaceCandidate{}, err
-	}
-	name := ""
-	if place.GetDisplayName() != nil {
-		name = place.GetDisplayName().GetText()
-	}
-	return PlaceCandidate{PlaceID: place.GetId(), Name: name, Address: place.GetFormattedAddress()}, nil
-}
-
-func (c *googlePlacesClient) Close() error { return c.client.Close() }
 
 type BuildingReviewCandidate struct {
 	PlaceID string  `json:"place_id"`
@@ -173,7 +108,7 @@ func (q *BuildingReviewQueue) RecordPlaceResolution(buildingKey string, confiden
 	}
 	reviewCandidates := make([]BuildingReviewCandidate, 0, len(candidates))
 	for _, candidate := range candidates {
-		reviewCandidates = append(reviewCandidates, BuildingReviewCandidate{PlaceID: candidate.PlaceID, Name: candidate.Name, Address: candidate.Address, Score: candidate.Score})
+		reviewCandidates = append(reviewCandidates, BuildingReviewCandidate{PlaceID: candidate.Place.GetId(), Name: placeDisplayName(candidate.Place), Address: candidate.Place.GetFormattedAddress(), Score: candidate.Score})
 	}
 	q.record(BuildingReviewItem{Kind: "place_resolution", BuildingKey: buildingKey, Confidence: confidence, Candidates: reviewCandidates, ValidationReasons: reasons, Status: "pending"})
 }
@@ -294,7 +229,7 @@ func (q *BuildingReviewQueue) ApplyDecisions(ctx context.Context, queries db.Que
 				slog.Warn("building_place_review.invalid_approval", slog.String("id", item.ID), slog.String("building_key", item.BuildingKey))
 				continue
 			}
-			if err := storePlace(ctx, queries, item.BuildingKey, candidate.PlaceCandidate, 1, now); err != nil {
+			if err := storePlace(ctx, queries, item.BuildingKey, candidate, 1, now); err != nil {
 				slog.Warn("building_place_review.approval_failed", slog.String("building_key", item.BuildingKey), slog.Any("error", err))
 			}
 		}
@@ -302,17 +237,17 @@ func (q *BuildingReviewQueue) ApplyDecisions(ctx context.Context, queries db.Que
 	return suppressed
 }
 
-func reviewCandidate(item BuildingReviewItem, placeID string) (scoredPlace, bool) {
+func reviewCandidate(item BuildingReviewItem, placeID string) (*placespb.Place, bool) {
 	for _, candidate := range item.Candidates {
 		if candidate.PlaceID == placeID && placeID != "" {
-			return scoredPlace{PlaceCandidate: PlaceCandidate{PlaceID: candidate.PlaceID, Name: candidate.Name, Address: candidate.Address}, Score: candidate.Score}, true
+			return &placespb.Place{Id: candidate.PlaceID, DisplayName: &localizedtext.LocalizedText{Text: candidate.Name}, FormattedAddress: candidate.Address}, true
 		}
 	}
-	return scoredPlace{}, false
+	return nil, false
 }
 
 type scoredPlace struct {
-	PlaceCandidate
+	Place   *placespb.Place
 	Score   float64
 	Reasons []string
 }
@@ -320,7 +255,7 @@ type scoredPlace struct {
 // ResolveBuildingPlaces synchronizes the durable classroom/building cache,
 // applies hand-edited review decisions, resolves missing places, refreshes
 // stale details, and hydrates buildings for calendar event creation.
-func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *Buildings, client PlacesClient, reviews *BuildingReviewQueue, now time.Time) error {
+func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, reviews *BuildingReviewQueue, now time.Time) error {
 	if buildings == nil {
 		return nil
 	}
@@ -385,10 +320,13 @@ func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, bui
 		slog.Error("building_place_review.load_failed", slog.Any("error", err))
 		reviews = &BuildingReviewQueue{path: global.BuildingReviewPath(), webhookURL: global.BuildingReviewWebhookURL(), httpClient: &http.Client{Timeout: 5 * time.Second}}
 	}
-	client, err := newGooglePlacesClient(ctx)
-	if err != nil {
-		slog.Error("building_place_resolution.client_failed", slog.Any("error", err))
-		client = nil
+	var client *places.Client
+	if global.GooglePlacesAPIKey() != "" && global.GooglePlacesAPIKey() != "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY" {
+		client, err = places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
+		if err != nil {
+			slog.Error("building_place_resolution.client_failed", slog.Any("error", err))
+			client = nil
+		}
 	}
 	if client != nil {
 		defer func() {
@@ -427,66 +365,77 @@ func syncLegendBuildingCache(ctx context.Context, queries db.Querier, buildings 
 	return nil
 }
 
-func resolveMissingPlace(ctx context.Context, queries db.Querier, client PlacesClient, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
+func resolveMissingPlace(ctx context.Context, queries db.Querier, client *places.Client, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
 	if client == nil {
 		slog.Debug("building_place_resolution.api_not_configured", slog.String("building_key", building.BuildingKey))
 		return
 	}
-	candidates, err := client.SearchText(ctx, building.CanonicalName+" Politechnika Krakowska")
+	searchContext := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "places.id,places.displayName,places.formattedAddress")
+	response, err := client.SearchText(searchContext, &placespb.SearchTextRequest{
+		TextQuery:      building.CanonicalName + " Politechnika Krakowska",
+		LanguageCode:   "pl",
+		RegionCode:     "PL",
+		MaxResultCount: 5,
+	})
 	if err != nil {
 		slog.Error("building_place_resolution.search_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
-	best, ranked, reasons, ok := choosePlace(building.CanonicalName, candidates)
+	best, ranked, reasons, ok := choosePlace(building.CanonicalName, response.GetPlaces())
 	if !ok {
 		reviews.RecordPlaceResolution(building.BuildingKey, best.Score, ranked, reasons)
 		return
 	}
-	if err := storePlace(ctx, queries, building.BuildingKey, best.PlaceCandidate, best.Score, now); err != nil {
+	if err := storePlace(ctx, queries, building.BuildingKey, best.Place, best.Score, now); err != nil {
 		slog.Error("building_place_resolution.store_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
 	reviews.MarkPlaceResolved(building.BuildingKey)
 }
 
-func refreshPlace(ctx context.Context, queries db.Querier, client PlacesClient, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
+func refreshPlace(ctx context.Context, queries db.Querier, client *places.Client, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
 	if client == nil || building.PlaceID == nil {
 		return
 	}
-	candidate, err := client.GetPlace(ctx, *building.PlaceID)
+	refreshContext := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "id,displayName,formattedAddress")
+	candidate, err := client.GetPlace(refreshContext, &placespb.GetPlaceRequest{Name: "places/" + *building.PlaceID, LanguageCode: "pl"})
 	if err != nil {
 		slog.Error("building_place_resolution.refresh_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
-	if candidate.PlaceID == "" {
-		candidate.PlaceID = *building.PlaceID
+	if candidate.GetId() == "" {
+		candidate.Id = *building.PlaceID
 	}
 	if err := storePlace(ctx, queries, building.BuildingKey, candidate, building.Confidence, now); err != nil {
 		slog.Error("building_place_resolution.refresh_store_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 	}
 }
 
-func storePlace(ctx context.Context, queries db.Querier, buildingKey string, candidate PlaceCandidate, confidence float64, now time.Time) error {
+func storePlace(ctx context.Context, queries db.Querier, buildingKey string, place *placespb.Place, confidence float64, now time.Time) error {
+	if place == nil || place.GetId() == "" {
+		return errors.New("Google Place has no ID")
+	}
+	placeID, displayName, address := place.GetId(), placeDisplayName(place), place.GetFormattedAddress()
 	return queries.UpdateBuildingPlace(ctx, db.UpdateBuildingPlaceParams{
-		PlaceID: &candidate.PlaceID, DisplayName: &candidate.Name, Address: &candidate.Address,
+		PlaceID: &placeID, DisplayName: &displayName, Address: &address,
 		Confidence: confidence, VerifiedAt: &now, ExpiresAt: timePointer(now.Add(buildingPlaceExpiry)), BuildingKey: buildingKey,
 	})
 }
 
 func timePointer(value time.Time) *time.Time { return &value }
 
-func choosePlace(canonicalName string, candidates []PlaceCandidate) (scoredPlace, []scoredPlace, []string, bool) {
+func choosePlace(canonicalName string, candidates []*placespb.Place) (scoredPlace, []scoredPlace, []string, bool) {
 	ranked := make([]scoredPlace, 0, len(candidates))
 	for _, candidate := range candidates {
-		if candidate.PlaceID == "" {
+		if candidate == nil || candidate.GetId() == "" {
 			continue
 		}
 		score, reasons := scorePlace(canonicalName, candidate)
-		ranked = append(ranked, scoredPlace{PlaceCandidate: candidate, Score: score, Reasons: reasons})
+		ranked = append(ranked, scoredPlace{Place: candidate, Score: score, Reasons: reasons})
 	}
 	sort.Slice(ranked, func(i, j int) bool {
 		if ranked[i].Score == ranked[j].Score {
-			return ranked[i].PlaceID < ranked[j].PlaceID
+			return ranked[i].Place.GetId() < ranked[j].Place.GetId()
 		}
 		return ranked[i].Score > ranked[j].Score
 	})
@@ -503,8 +452,8 @@ func choosePlace(canonicalName string, candidates []PlaceCandidate) (scoredPlace
 	return best, ranked, best.Reasons, true
 }
 
-func scorePlace(canonicalName string, candidate PlaceCandidate) (float64, []string) {
-	text := foldPlaceText(candidate.Name + " " + candidate.Address)
+func scorePlace(canonicalName string, place *placespb.Place) (float64, []string) {
+	text := foldPlaceText(placeDisplayName(place) + " " + place.GetFormattedAddress())
 	var score float64
 	reasons := make([]string, 0, 3)
 	if hasBuildingNameEvidence(canonicalName, text) {
@@ -522,6 +471,13 @@ func scorePlace(canonicalName string, candidate PlaceCandidate) (float64, []stri
 		reasons = append(reasons, "Krakow context")
 	}
 	return score, reasons
+}
+
+func placeDisplayName(place *placespb.Place) string {
+	if place == nil || place.GetDisplayName() == nil {
+		return ""
+	}
+	return place.GetDisplayName().GetText()
 }
 
 func hasBuildingNameEvidence(canonicalName, candidateText string) bool {
