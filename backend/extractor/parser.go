@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 )
 
@@ -20,7 +21,7 @@ var levelRegex = regexp.MustCompile(`^[A-C][12]$`)
 // Matches trailing language level in a name like "J.angielski C1"
 var trailingLevelRegex = regexp.MustCompile(`\s+([A-C][12])$`)
 
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day, legend *types.Legend) (class types.Class) {
+func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day, legend *legend.Legend) (class types.Class) {
 	class.Day = day.WeekDay
 	class.StartTime = classStartTime
 	class.EndTime = classEndTime
@@ -86,7 +87,7 @@ func parseClassText(text string, classStartTime time.Time, classEndTime time.Tim
 
 // classifyToken determines whether a token is a location, teacher, or unknown,
 // and assigns it to the appropriate field on the class.
-func classifyToken(token string, legend *types.Legend, class *types.Class) {
+func classifyToken(token string, legend *legend.Legend, class *types.Class) {
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return
@@ -115,7 +116,7 @@ func classifyToken(token string, legend *types.Legend, class *types.Class) {
 }
 
 // isLocation returns true if the token looks like a location.
-func isLocation(token string, legend *types.Legend) bool {
+func isLocation(token string, legend *legend.Legend) bool {
 	if strings.HasPrefix(token, "s.") || strings.EqualFold(token, "ZDALNIE") {
 		return true
 	}
@@ -132,7 +133,7 @@ func isLocation(token string, legend *types.Legend) bool {
 
 // hasLocationSegments checks if a slash-delimited token has at least half of
 // its segments recognized as locations (by legend or heuristic).
-func hasLocationSegments(token string, legend *types.Legend) bool {
+func hasLocationSegments(token string, legend *legend.Legend) bool {
 	if !strings.Contains(token, "/") {
 		return false
 	}
@@ -153,7 +154,7 @@ func hasLocationSegments(token string, legend *types.Legend) bool {
 }
 
 // isTeacher returns true if the token looks like a teacher name.
-func isTeacher(token string, legend *types.Legend) bool {
+func isTeacher(token string, legend *legend.Legend) bool {
 	if hasAcademicTitle(token) {
 		return true
 	}

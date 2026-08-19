@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/types"
 	"google.golang.org/api/calendar/v3"
@@ -60,7 +61,7 @@ func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*
 	return eventsToDelete, eventsToAdd, unchangedEvents
 }
 
-func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.Override, buildings *types.Buildings) map[string]*calendar.Event {
+func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.Override, buildings *buildings.Buildings) map[string]*calendar.Event {
 	newEvents := make(map[string]*calendar.Event)
 	for day, entry := range timetable {
 		slog.Debug("Processing day", slog.String("day", day.String()))
@@ -107,7 +108,7 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 // class's original time slot. It uses Google Calendar's Graphite colour (id "8")
 // so the ghost is visually distinct from real events on the calendar website.
 // The Transparency field marks the slot as "Free" in availability checks.
-func buildGhostEvent(class types.Class, buildings *types.Buildings) calendar.Event {
+func buildGhostEvent(class types.Class, buildings *buildings.Buildings) calendar.Event {
 	event := class.ToEvent(buildings)
 	event.Transparency = "transparent"
 	event.ColorId = "8" // Graphite — muted gray, signals a placeholder
@@ -118,7 +119,7 @@ func buildGhostEvent(class types.Class, buildings *types.Buildings) calendar.Eve
 
 // buildRealEvent builds the primary calendar event, optionally shifting the start time.
 // startHour must be "HH:MM" or empty.
-func buildRealEvent(class types.Class, startHour string, buildings *types.Buildings) calendar.Event {
+func buildRealEvent(class types.Class, startHour string, buildings *buildings.Buildings) calendar.Event {
 	if startHour == "" {
 		return class.ToEvent(buildings)
 	}

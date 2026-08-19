@@ -5,12 +5,14 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend, buildings *types.Buildings) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *legend.Legend, buildings *buildings.Buildings) types.Timetable {
 	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
 
@@ -22,7 +24,7 @@ func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *typ
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, buildings *types.Buildings, days []types.Day) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
@@ -67,7 +69,7 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 
 const slotDuration = 15 * time.Minute
 
-func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend, buildings *types.Buildings) []types.Class {
+func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings) []types.Class {
 	var classes []types.Class
 
 	currentTime := global.DayStartTime()
@@ -119,7 +121,7 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 	return result
 }
 
-func finalizeClasses(classes []types.Class, buildings *types.Buildings) []types.Class {
+func finalizeClasses(classes []types.Class, buildings *buildings.Buildings) []types.Class {
 	var result []types.Class
 	for _, class := range classes {
 		for _, finalClass := range splitSlashClasses(class) {

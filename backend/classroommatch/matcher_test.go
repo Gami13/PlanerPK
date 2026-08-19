@@ -1,8 +1,11 @@
 package classroommatch
 
 import (
+	"log/slog"
 	"slices"
 	"testing"
+
+	"github.com/woodpkrs/PlanerPK/internal/testutil"
 )
 
 func testMatcher() *Matcher {
@@ -15,6 +18,24 @@ func testMatcher() *Matcher {
 	}, nil)
 }
 
+func ambiguousMatcher() *Matcher {
+	return New([]Candidate{
+		{ClassroomKey: "sala alfa", BuildingKey: "A"},
+		{ClassroomKey: "sala alga", BuildingKey: "B"},
+	}, nil)
+}
+
+func assertMatchKinds(t *testing.T, results []Result, want ...MatchKind) {
+	t.Helper()
+	got := make([]MatchKind, len(results))
+	for i := range results {
+		got[i] = results[i].Kind
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("result kinds = %v, want %v", got, want)
+	}
+}
+
 func TestResolveSupportsAliasesCorrectionsAndCompoundLocations(t *testing.T) {
 	matcher := testMatcher()
 	results := matcher.Resolve("s. 114 GIL/Działowia 1/15, 136 bis/ZDALNIE")
@@ -22,14 +43,7 @@ func TestResolveSupportsAliasesCorrectionsAndCompoundLocations(t *testing.T) {
 	if len(results) != 4 {
 		t.Fatalf("Resolve returned %d results, want 4", len(results))
 	}
-	wantKinds := []MatchKind{MatchExact, MatchCorrected, MatchExact, MatchIgnored}
-	gotKinds := make([]MatchKind, len(results))
-	for i := range results {
-		gotKinds[i] = results[i].Kind
-	}
-	if !slices.Equal(gotKinds, wantKinds) {
-		t.Errorf("result kinds = %v, want %v", gotKinds, wantKinds)
-	}
+	assertMatchKinds(t, results, MatchExact, MatchCorrected, MatchExact, MatchIgnored)
 	if results[0].BuildingKey != "GIL" {
 		t.Errorf("first building = %q, want GIL", results[0].BuildingKey)
 	}
@@ -42,17 +56,75 @@ func TestResolveSupportsAliasesCorrectionsAndCompoundLocations(t *testing.T) {
 }
 
 func TestResolveRejectsShortFuzzyAndAmbiguousMatches(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		matcher func() *Matcher
+		input   string
+		want    MatchKind
+	}{
+		{name: "short room", matcher: testMatcher, input: "s. S4", want: MatchUnmatched},
+		{name: "ambiguous room", matcher: ambiguousMatcher, input: "sala alpa", want: MatchAmbiguous},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if result := test.matcher().Resolve(test.input)[0]; result.Kind != test.want {
+				t.Errorf("match kind = %q, want %q", result.Kind, test.want)
+			}
+		})
+	}
+}
+
+func TestUnresolvedMatchesAreLoggedAtWarnLevel(t *testing.T) {
+	handler := testutil.CaptureLogs(t)
+
 	matcher := testMatcher()
-	if result := matcher.Resolve("s. S4")[0]; result.Kind != MatchUnmatched {
-		t.Errorf("short room kind = %q, want unmatched", result.Kind)
+	matcher.Resolve("s. S4")
+	ambiguousMatcher().Resolve("sala alpa")
+
+	var messages []string
+	for _, record := range handler.Records {
+		if record.Level == slog.LevelWarn {
+			messages = append(messages, record.Message)
+		}
+	}
+	if !slices.Equal(messages, []string{"classroom_resolution.unmatched", "classroom_resolution.ambiguous"}) {
+		t.Fatalf("error messages = %v", messages)
+	}
+}
+
+func TestSortedCandidatesAndNormalizePreserveExpectedKeys(t *testing.T) {
+	candidates := []Candidate{
+		{ClassroomKey: "z", BuildingKey: "B"},
+		{ClassroomKey: "alpha", BuildingKey: "Z"},
+		{ClassroomKey: "alpha", BuildingKey: "A"},
+		{ClassroomKey: "z", BuildingKey: "A"},
+		{ClassroomKey: "alpha", BuildingKey: "A"},
+	}
+	wantCandidates := []Candidate{
+		{ClassroomKey: "alpha", BuildingKey: "A"},
+		{ClassroomKey: "alpha", BuildingKey: "A"},
+		{ClassroomKey: "alpha", BuildingKey: "Z"},
+		{ClassroomKey: "z", BuildingKey: "A"},
+		{ClassroomKey: "z", BuildingKey: "B"},
+	}
+	if got := sortedCandidates(candidates); !slices.Equal(got, wantCandidates) {
+		t.Errorf("sortedCandidates() = %#v, want %#v", got, wantCandidates)
+	}
+	if candidates[0] != (Candidate{ClassroomKey: "z", BuildingKey: "B"}) {
+		t.Errorf("sortedCandidates mutated input: %#v", candidates)
 	}
 
-	ambiguous := New([]Candidate{
-		{ClassroomKey: "sala alfa", BuildingKey: "A"},
-		{ClassroomKey: "sala alga", BuildingKey: "B"},
-	}, nil)
-	if result := ambiguous.Resolve("sala alpa")[0]; result.Kind != MatchAmbiguous {
-		t.Errorf("ambiguous room kind = %q, want ambiguous", result.Kind)
+	for _, test := range []struct {
+		input string
+		want  string
+	}{
+		{input: "", want: ""},
+		{input: "---/()", want: ""},
+		{input: " s. Sala Żółć-101 ", want: "101 sala żółć"},
+		{input: "s. 114 GIL", want: "114 gil"},
+	} {
+		if got := Normalize(test.input); got != test.want {
+			t.Errorf("Normalize(%q) = %q, want %q", test.input, got, test.want)
+		}
 	}
 }
 

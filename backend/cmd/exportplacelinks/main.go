@@ -12,10 +12,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/global"
-	"github.com/woodpkrs/PlanerPK/types"
 )
 
 type PlaceInfo struct {
@@ -63,7 +63,7 @@ func main() {
 	}
 	defer extractor.CloseFile(file)
 
-	legendBuildings := types.BuildBuildingsFromLegend(extractor.ExtractLegend(file))
+	legendBuildings := buildings.BuildBuildingsFromLegend(extractor.ExtractLegend(file))
 	placesByBuildingKey := make(map[string]db.BuildingPlace, len(allBuildings))
 	for _, building := range allBuildings {
 		placesByBuildingKey[building.BuildingKey] = building
@@ -133,7 +133,7 @@ func main() {
 }
 
 func buildPlaceInfo(classroomName, buildingKey string, place db.BuildingPlace) PlaceInfo {
-	building := types.BuildingFromPlace(place)
+	building := buildings.BuildingFromPlace(place)
 	info := PlaceInfo{
 		ClassroomName: classroomName,
 		BuildingKey:   buildingKey,

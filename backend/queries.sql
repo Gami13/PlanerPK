@@ -62,8 +62,3 @@ UPDATE building_places
 SET place_id = sqlc.arg(place_id), display_name = sqlc.arg(display_name), address = sqlc.arg(address),
     confidence = sqlc.arg(confidence), verified_at = sqlc.arg(verified_at), expires_at = sqlc.arg(expires_at)
 WHERE building_key = sqlc.arg(building_key);
-
--- name: ClearBuildingPlace :exec
-UPDATE building_places
-SET place_id = NULL, display_name = NULL, address = NULL, confidence = 0, verified_at = NULL, expires_at = NULL
-WHERE building_key = sqlc.arg(building_key);

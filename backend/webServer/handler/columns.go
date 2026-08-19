@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"connectrpc.com/connect"
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	pkplanerv1 "github.com/woodpkrs/PlanerPK/gen/pkplaner/v1"
@@ -74,7 +75,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		slog.Warn("Failed to fetch overrides for initial import, proceeding without", slog.Any("error", err))
 		overrides = nil
 	}
-	var b *types.Buildings
+	var b *buildings.Buildings
 	if loaded := h.cache.Buildings(); loaded != nil {
 		b = loaded
 	}

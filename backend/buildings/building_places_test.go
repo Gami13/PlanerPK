@@ -1,8 +1,9 @@
-package types
+package buildings
 
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 
 	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/internal/testutil"
+	"github.com/woodpkrs/PlanerPK/legend"
 	localizedtext "google.golang.org/genproto/googleapis/type/localized_text"
 )
 
@@ -41,10 +44,12 @@ func testPlaceQueries(t *testing.T) (*sql.DB, db.Querier) {
 }
 
 func testBuildings() *Buildings {
-	return BuildBuildingsFromLegend(&Legend{Locations: map[string]Location{
+	return BuildBuildingsFromLegend(&legend.Legend{Locations: map[string]legend.Location{
 		"s. 135": {Shorthand: "s. 135", FullName: "budynek Chemii"},
 	}})
 }
+
+var testPlaceTime = time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
 
 func TestBuildingFromPlace(t *testing.T) {
 	placeID, displayName, address := "chem", "Wydział Chemii PK", "Kraków"
@@ -72,16 +77,14 @@ func TestBuildingPlaceSearchRequestReturnsTwentyCandidates(t *testing.T) {
 
 func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 	_, queries := testPlaceQueries(t)
-	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
 	if err := queries.UpsertBuildingPlace(context.Background(), db.UpsertBuildingPlaceParams{BuildingKey: "budynek Chemii", CanonicalName: "budynek Chemii"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "Wydział Chemii PK", "Kraków"), 1, now); err != nil {
+	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "Wydział Chemii PK", "Kraków"), 1, testPlaceTime); err != nil {
 		t.Fatal(err)
 	}
 	buildings := testBuildings()
-	queue := &BuildingReviewQueue{}
-	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, nil, queue, now.Add(time.Hour)); err != nil {
+	if err := ResolveBuildingPlaces(context.Background(), queries, buildings, nil, testPlaceTime.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	building := buildings.BuildingsByKey["budynek Chemii"]
@@ -95,18 +98,60 @@ func TestResolveBuildingPlacesHydratesConfirmedCache(t *testing.T) {
 
 func TestStorePlaceRefreshesExpiry(t *testing.T) {
 	_, queries := testPlaceQueries(t)
-	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
 	if err := queries.UpsertBuildingPlace(context.Background(), db.UpsertBuildingPlaceParams{BuildingKey: "budynek Chemii", CanonicalName: "budynek Chemii"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "New", "New address"), 0.9, now); err != nil {
+	if err := storePlace(context.Background(), queries, "budynek Chemii", googlePlace("chem", "New", "New address"), 0.9, testPlaceTime); err != nil {
 		t.Fatal(err)
 	}
 	records, err := queries.GetBuildingPlaces(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *records[0].DisplayName != "New" || !records[0].ExpiresAt.After(now) {
+	if *records[0].DisplayName != "New" || !records[0].ExpiresAt.After(testPlaceTime) {
 		t.Fatalf("stored record = %#v", records[0])
+	}
+}
+
+func TestRejectedPlaceResolutionIsLoggedAtErrorLevel(t *testing.T) {
+	handler := testutil.CaptureLogs(t)
+	runnerUp := googlePlace("runner-up", "Wydział Architektury PK", "Warszawska 24, Kraków")
+
+	logRejectedPlaceResolution("budynek Chemii", placeResolution{
+		Best: scoredPlace{
+			Place: googlePlace("best", "Budynek Chemii", "Kraków"),
+			Score: 0.85,
+		},
+		Ranked: []scoredPlace{
+			{Place: googlePlace("best", "Budynek Chemii", "Kraków"), Score: 0.85},
+			{Place: runnerUp, Score: 0.80},
+		},
+		Reasons: []string{"candidate confidence is below 0.70"},
+	})
+
+	if len(handler.Records) != 1 || handler.Records[0].Level != slog.LevelError || handler.Records[0].Message != "building_place_resolution.rejected" {
+		t.Fatalf("records = %#v", handler.Records)
+	}
+	attrs := make(map[string]slog.Value)
+	handler.Records[0].Attrs(func(attr slog.Attr) bool {
+		attrs[attr.Key] = attr.Value
+		return true
+	})
+	for key, want := range map[string]string{
+		"rejected_place_name":     "Budynek Chemii",
+		"rejected_place_address":  "Kraków",
+		"rejected_place_id":       "best",
+		"rejected_place_maps_url": "https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=best",
+		"runner_up_name":          "Wydział Architektury PK",
+		"runner_up_address":       "Warszawska 24, Kraków",
+		"runner_up_place_id":      "runner-up",
+		"runner_up_maps_url":      "https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=runner-up",
+	} {
+		if got := attrs[key].String(); got != want {
+			t.Errorf("%s = %q, want %q", key, got, want)
+		}
+	}
+	if got := attrs["runner_up_confidence"].Float64(); got != 0.80 {
+		t.Errorf("runner_up_confidence = %.2f, want 0.80", got)
 	}
 }

@@ -1,4 +1,4 @@
-package types
+package buildings
 
 import (
 	"context"
@@ -39,9 +39,9 @@ func BuildingFromPlace(place db.BuildingPlace) Building {
 }
 
 // ResolveBuildingPlaces synchronizes the durable classroom/building cache,
-// applies hand-edited review decisions, resolves missing places, refreshes
-// stale details, and hydrates buildings for calendar event creation.
-func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, reviews *BuildingReviewQueue, now time.Time) error {
+// resolves missing places, refreshes stale details, and hydrates buildings for
+// calendar event creation.
+func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, now time.Time) error {
 	if buildings == nil {
 		return nil
 	}
@@ -49,19 +49,17 @@ func ResolveBuildingPlaces(ctx context.Context, queries db.Querier, buildings *B
 		return err
 	}
 
-	suppressed := reviews.ApplyDecisions(ctx, queries, now)
 	records, err := loadBuildingPlaceRecords(ctx, queries)
 	if err != nil {
 		return err
 	}
-	resolveBuildingPlaceCandidates(ctx, queries, buildings, client, reviews, records, suppressed, now)
+	resolveBuildingPlaceCandidates(ctx, queries, buildings, client, records, now)
 
 	records, err = loadBuildingPlaceRecords(ctx, queries)
 	if err != nil {
 		return err
 	}
 	hydrateBuildingDetails(buildings, records)
-	buildings.reviews = reviews
 	return nil
 }
 
@@ -73,19 +71,16 @@ func loadBuildingPlaceRecords(ctx context.Context, queries db.Querier) ([]db.Bui
 	return records, nil
 }
 
-func resolveBuildingPlaceCandidates(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, reviews *BuildingReviewQueue, records []db.BuildingPlace, suppressed map[string]bool, now time.Time) {
+func resolveBuildingPlaceCandidates(ctx context.Context, queries db.Querier, buildings *Buildings, client *places.Client, records []db.BuildingPlace, now time.Time) {
 	byKey := make(map[string]db.BuildingPlace, len(records))
 	for _, record := range records {
 		byKey[record.BuildingKey] = record
 	}
 	keys := slices.Sorted(maps.Keys(buildings.BuildingsByKey))
 	for _, key := range keys {
-		if suppressed[key] {
-			continue
-		}
 		record := byKey[key]
 		if record.PlaceID == nil || *record.PlaceID == "" {
-			resolveMissingPlace(ctx, queries, client, reviews, record, now)
+			resolveMissingPlace(ctx, queries, client, record, now)
 			continue
 		}
 		if record.ExpiresAt != nil && !record.ExpiresAt.After(now) {
@@ -103,15 +98,12 @@ func hydrateBuildingDetails(buildings *Buildings, records []db.BuildingPlace) {
 	}
 }
 
-// ResolveBuildingPlacesForImport is the production entry point. Google and
-// review-file failures are intentionally non-fatal so a timetable can still
-// be imported without map links.
+// ResolveBuildingPlacesForImport is the production entry point. Google API
+// failures are intentionally non-fatal so a timetable can still be imported
+// without map links.
 func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, buildings *Buildings) error {
-	reviews, err := LoadBuildingReviewQueue(global.BuildingReviewPath(), global.BuildingReviewWebhookURL())
-	if err != nil {
-		slog.Error("building_place_review.load_failed", slog.Any("error", err))
-	}
 	var client *places.Client
+	var err error
 	if global.GooglePlacesConfigured() {
 		client, err = places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
 		if err != nil {
@@ -126,7 +118,7 @@ func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, bui
 			}
 		}()
 	}
-	return ResolveBuildingPlaces(ctx, queries, buildings, client, reviews, time.Now().UTC())
+	return ResolveBuildingPlaces(ctx, queries, buildings, client, time.Now().UTC())
 }
 
 func syncLegendBuildingCache(ctx context.Context, queries db.Querier, buildings *Buildings) error {
@@ -142,7 +134,7 @@ func syncLegendBuildingCache(ctx context.Context, queries db.Querier, buildings 
 	return nil
 }
 
-func resolveMissingPlace(ctx context.Context, queries db.Querier, client *places.Client, reviews *BuildingReviewQueue, building db.BuildingPlace, now time.Time) {
+func resolveMissingPlace(ctx context.Context, queries db.Querier, client *places.Client, building db.BuildingPlace, now time.Time) {
 	if client == nil {
 		slog.Debug("building_place_resolution.api_not_configured", slog.String("building_key", building.BuildingKey))
 		return
@@ -155,14 +147,43 @@ func resolveMissingPlace(ctx context.Context, queries db.Querier, client *places
 	}
 	resolution := choosePlace(building.CanonicalName, response.GetPlaces())
 	if !resolution.Accepted {
-		reviews.RecordPlaceResolution(building.BuildingKey, resolution.Best.Score, resolution.Ranked, resolution.Reasons)
+		logRejectedPlaceResolution(building.BuildingKey, resolution)
 		return
 	}
 	if err := storePlace(ctx, queries, building.BuildingKey, resolution.Best.Place, resolution.Best.Score, now); err != nil {
 		slog.Error("building_place_resolution.store_failed", slog.String("building_key", building.BuildingKey), slog.Any("error", err))
 		return
 	}
-	reviews.MarkPlaceResolved(building.BuildingKey)
+}
+
+func logRejectedPlaceResolution(buildingKey string, resolution placeResolution) {
+	attrs := []slog.Attr{
+		slog.String("building_key", buildingKey),
+		slog.Float64("confidence", resolution.Best.Score),
+		slog.Int("candidate_count", len(resolution.Ranked)),
+		slog.Any("validation_reasons", resolution.Reasons),
+	}
+	rejectedPlaceID := resolution.Best.Place.GetId()
+	attrs = append(attrs,
+		slog.String("rejected_place_name", placeDisplayName(resolution.Best.Place)),
+		slog.String("rejected_place_address", resolution.Best.Place.GetFormattedAddress()),
+		slog.String("rejected_place_id", rejectedPlaceID),
+		slog.String("rejected_place_maps_url", (Building{GooglePlaceID: rejectedPlaceID}).MapURL()),
+	)
+	if len(resolution.Ranked) > 1 {
+		runnerUp := resolution.Ranked[1]
+		runnerUpPlaceID := runnerUp.Place.GetId()
+		runnerUpMapsURL := (Building{GooglePlaceID: runnerUpPlaceID}).MapURL()
+		attrs = append(attrs,
+			slog.Float64("runner_up_confidence", runnerUp.Score),
+			slog.String("runner_up_name", placeDisplayName(runnerUp.Place)),
+			slog.String("runner_up_address", runnerUp.Place.GetFormattedAddress()),
+			slog.String("runner_up_place_id", runnerUpPlaceID),
+			slog.String("runner_up_maps_url", runnerUpMapsURL),
+		)
+	}
+
+	slog.LogAttrs(context.Background(), slog.LevelError, "building_place_resolution.rejected", attrs...)
 }
 
 func buildingPlaceSearchRequest(canonicalName string) *placespb.SearchTextRequest {

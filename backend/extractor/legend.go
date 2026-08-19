@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/woodpkrs/PlanerPK/global"
-	"github.com/woodpkrs/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -13,19 +13,19 @@ import (
 // column headers, then parses teacher and location entries from the rows below.
 // Both sections share the same rows — teachers on the left, locations in the
 // Sale column.
-func ExtractLegend(file *excelize.File) *types.Legend {
+func ExtractLegend(file *excelize.File) *legend.Legend {
 	rows, err := file.GetRows(global.SheetName())
 	if err != nil {
 		slog.Error("Failed to get rows for legend extraction", slog.Any("error", err))
-		return &types.Legend{
-			Teachers:  make(map[string]types.Teacher),
-			Locations: make(map[string]types.Location),
+		return &legend.Legend{
+			Teachers:  make(map[string]legend.Teacher),
+			Locations: make(map[string]legend.Location),
 		}
 	}
 
-	legend := &types.Legend{
-		Teachers:  make(map[string]types.Teacher),
-		Locations: make(map[string]types.Location),
+	legend := &legend.Legend{
+		Teachers:  make(map[string]legend.Teacher),
+		Locations: make(map[string]legend.Location),
 	}
 
 	headerRow := -1
@@ -65,7 +65,7 @@ func ExtractLegend(file *excelize.File) *types.Legend {
 // parseTeachers extracts teacher entries from rows below the "Legenda" header.
 // It dynamically finds the "Imię i nazwisko" and "adres email" columns in the
 // header row (startingRow+1), then iterates downward from startingRow+2.
-func parseTeachers(rows [][]string, startingRow int, legend *types.Legend) {
+func parseTeachers(rows [][]string, startingRow int, legen *legend.Legend) {
 	if startingRow+1 >= len(rows) {
 		return
 	}
@@ -122,7 +122,7 @@ func parseTeachers(rows [][]string, startingRow int, legend *types.Legend) {
 		emptyCount = 0
 
 		if shorthand != "" {
-			legend.Teachers[shorthand] = types.Teacher{
+			legen.Teachers[shorthand] = legend.Teacher{
 				Shorthand: shorthand,
 				FullName:  fullName,
 				Email:     email,
@@ -135,7 +135,7 @@ func parseTeachers(rows [][]string, startingRow int, legend *types.Legend) {
 // row below the header (which contains "Sale"). Each cell is split on " - " to
 // produce shorthand and full name. Compound shorthands like
 // "s. 135(L2), 136(L1,) 151(L3)" are expanded into individual locations.
-func parseLocations(rows [][]string, headerRow int, saleCol int, legend *types.Legend) {
+func parseLocations(rows [][]string, headerRow int, saleCol int, lege *legend.Legend) {
 	emptyCount := 0
 	for i := headerRow + 1; i < len(rows); i++ {
 		row := rows[i]
@@ -165,7 +165,7 @@ func parseLocations(rows [][]string, headerRow int, saleCol int, legend *types.L
 		}
 
 		for _, sub := range splitLocationShorthand(shorthand) {
-			legend.Locations[sub] = types.Location{
+			lege.Locations[sub] = legend.Location{
 				Shorthand: sub,
 				FullName:  fullName,
 			}

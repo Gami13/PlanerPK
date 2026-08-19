@@ -1,4 +1,4 @@
-package types
+package buildings
 
 import (
 	"fmt"
@@ -16,6 +16,8 @@ const (
 	buildingEvidenceWeight    = 0.70
 	campusContextWeight       = 0.15
 	cityContextWeight         = 0.15
+	matchingKatedraBonus      = 0.10
+	unmatchedKatedraPenalty   = 0.20
 	subBuildingAddressPenalty = 0.35
 )
 
@@ -91,6 +93,17 @@ func scorePlace(canonicalName string, place *placespb.Place) (float64, []string)
 		score += cityContextWeight
 		reasons = append(reasons, "Krakow context")
 	}
+	canonicalHasKatedra := strings.Contains(paddedFoldPlaceSearchText(canonicalName), " katedra ")
+	candidateHasKatedra := strings.Contains(text, " katedra ")
+	if candidateHasKatedra {
+		if canonicalHasKatedra {
+			score += matchingKatedraBonus
+			reasons = append(reasons, "matching katedra context")
+		} else {
+			score -= unmatchedKatedraPenalty
+			reasons = append(reasons, "unexpected katedra context")
+		}
+	}
 	if isSubBuildingLocation(canonicalName, place.GetFormattedAddress()) {
 		score -= subBuildingAddressPenalty
 		reasons = append(reasons, "candidate identifies a floor or room within the building")
@@ -125,7 +138,7 @@ func hasBuildingInitialismEvidence(canonicalName, displayName string) bool {
 	}
 	for _, token := range strings.Fields(canonicalName) {
 		acronym := strings.ToUpper(strings.Trim(token, "\"'(),."))
-		if isUppercaseAcronym(acronym) && strings.HasPrefix(initialism, acronym) {
+		if IsUppercaseAcronym(acronym) && strings.HasPrefix(initialism, acronym) {
 			return true
 		}
 	}

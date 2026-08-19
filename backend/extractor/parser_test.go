@@ -6,62 +6,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
+	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 )
 
-// mockLegend returns a Legend populated with sample teachers and locations
-// based on real timetable data, for use across all parser tests.
-func mockLegend() *types.Legend {
-	return &types.Legend{
-		Teachers: map[string]types.Teacher{
-			"JD":     {Shorthand: "JD", FullName: "Jan Doe"},
-			"MD":     {Shorthand: "MD", FullName: "Michał Drygaś"},
-			"TG":     {Shorthand: "TG", FullName: "T. Gąciarz"},
-			"KSw":    {Shorthand: "KSw", FullName: "K. Świszcz"},
-			"SF":     {Shorthand: "SF", FullName: "S. Fialko"},
-			"AJ-S":   {Shorthand: "AJ-S", FullName: "A. Jasińska-Suwada"},
-			"LB":     {Shorthand: "LB", FullName: "L. Bieniasz"},
-			"MB":     {Shorthand: "MB", FullName: "M. Bereta"},
-			"MN":     {Shorthand: "MN", FullName: "M. Niedźwiecki"},
-			"JO":     {Shorthand: "JO", FullName: "J. Opiła"},
-			"AP":     {Shorthand: "AP", FullName: "A. Plichta"},
-			"OB":     {Shorthand: "OB", FullName: "O. Bar"},
-			"KW":     {Shorthand: "KW", FullName: "K. Wiśniewski"},
-			"FT":     {Shorthand: "FT", FullName: "F. Turza"},
-			"WK":     {Shorthand: "WK", FullName: "W. Książek"},
-			"ARP":    {Shorthand: "ARP", FullName: "A. R. P."},
-			"DŻ":     {Shorthand: "DŻ", FullName: "D. Żelasko"},
-			"TL":     {Shorthand: "TL", FullName: "T. L."},
-			"MNiedz": {Shorthand: "MNiedz", FullName: "M. Niedźwiecki"},
-			"MNaw":   {Shorthand: "MNaw", FullName: "M. Nawrocki"},
-			"DK":     {Shorthand: "DK", FullName: "D. Kulis"},
-			"SzSzom": {Shorthand: "SzSzom", FullName: "Szymon Szomiński"},
-			"BB":     {Shorthand: "BB", FullName: "B. B."},
-			"KS":     {Shorthand: "KS", FullName: "K. Skabek"},
-			"IU":     {Shorthand: "IU", FullName: "I. U."},
-			"FK":     {Shorthand: "FK", FullName: "F. K."},
-			"RK":     {Shorthand: "RK", FullName: "R. K."},
-			"JK":     {Shorthand: "JK", FullName: "J. K."},
-			"AWid":   {Shorthand: "AWid", FullName: "A. Wid"},
-			"AW":     {Shorthand: "AW", FullName: "A. W."},
-			"EPAM":   {Shorthand: "EPAM", FullName: "EPAM"},
-			"NOKIA":  {Shorthand: "NOKIA", FullName: "NOKIA"},
-		},
-		Locations: map[string]types.Location{
-			"131":                       {Shorthand: "131", FullName: "s. 131"},
-			"135":                       {Shorthand: "135", FullName: "s. 135"},
-			"136":                       {Shorthand: "136", FullName: "s. 136"},
-			"151":                       {Shorthand: "151", FullName: "s. 151"},
-			"114 GIL":                   {Shorthand: "114 GIL", FullName: "s. 114 GIL"},
-			"152 SJO":                   {Shorthand: "152 SJO", FullName: "s. 152 SJO"},
-			"N":                         {Shorthand: "N", FullName: "s. N"},
-			"SJO":                       {Shorthand: "SJO", FullName: "s. SJO"},
-			"S1":                        {Shorthand: "S1", FullName: "s. S1"},
-			"F020":                      {Shorthand: "F020", FullName: "s. F020"},
-			"Działownia 1/15":           {Shorthand: "Działownia 1/15", FullName: "Działownia 1/15"},
-			"wykładowa KI/135, 136 bis": {Shorthand: "wykładowa KI/135, 136 bis", FullName: "Wykładowa KI"},
-		},
+// mockLegend returns only the teacher shorthands needed by the parser cases;
+// location inputs use the parser's built-in "s." heuristic.
+func mockLegend() *legend.Legend {
+	teachers := make(map[string]legend.Teacher)
+	for _, shorthand := range []string{"JD", "MD", "KSw", "MN", "JO", "LB", "MB", "MNiedz", "FT", "FK", "AW", "EPAM"} {
+		teachers[shorthand] = legend.Teacher{Shorthand: shorthand}
 	}
+	return &legend.Legend{Teachers: teachers, Locations: map[string]legend.Location{}}
 }
 
 var (
@@ -70,15 +27,19 @@ var (
 	testEndTime   = time.Date(2026, 1, 5, 9, 30, 0, 0, time.UTC)
 )
 
+func parseTestClass(text string, lg *legend.Legend) types.Class {
+	return parseClassText(text, testStartTime, testEndTime, testDay, lg)
+}
+
 func TestParseClassText(t *testing.T) {
 	legend := mockLegend()
 
 	tests := []struct {
-		name       string
-		input      string
-		nilLegend  bool
-		want       types.Class
-		extraCheck func(t *testing.T, got types.Class)
+		name              string
+		input             string
+		nilLegend         bool
+		want              types.Class
+		wantTeacherOrInfo bool
 	}{
 		{
 			name:  "BasicLecture",
@@ -231,15 +192,11 @@ func TestParseClassText(t *testing.T) {
 			want:  types.Class{Name: "J.angielski", Type: "ćw.", Teacher: "mgr E. Szabat", Level: "C1", Location: "s. 139 SJO", AdditionalInfo: "gr 12 i część gr 11"},
 		},
 		{
-			name:      "NilLegend",
-			input:     "AiSD     lab.     JD     s. 131",
-			nilLegend: true,
-			want:      types.Class{Name: "AiSD", Type: "lab.", Location: "s. 131"},
-			extraCheck: func(t *testing.T, got types.Class) {
-				if got.Teacher == "" && got.AdditionalInfo == "" {
-					t.Error("expected 'JD' in Teacher or AdditionalInfo, both are empty")
-				}
-			},
+			name:              "NilLegend",
+			input:             "AiSD     lab.     JD     s. 131",
+			nilLegend:         true,
+			want:              types.Class{Name: "AiSD", Type: "lab.", Location: "s. 131"},
+			wantTeacherOrInfo: true,
 		},
 	}
 
@@ -249,18 +206,17 @@ func TestParseClassText(t *testing.T) {
 			if tt.nilLegend {
 				lg = nil
 			}
-			class := parseClassText(tt.input, testStartTime, testEndTime, testDay, lg)
-			t.Log("Class test", "parsed", class)
+			class := parseTestClass(tt.input, lg)
 			assertStructContains(t, class, tt.want)
-			if tt.extraCheck != nil {
-				tt.extraCheck(t, class)
+			if tt.wantTeacherOrInfo && class.Teacher == "" && class.AdditionalInfo == "" {
+				t.Error("expected 'JD' in Teacher or AdditionalInfo, both are empty")
 			}
 		})
 	}
 }
 
 func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
-	buildings := types.BuildBuildingsFromLegend(&types.Legend{Locations: map[string]types.Location{
+	buildings := buildings.BuildBuildingsFromLegend(&legend.Legend{Locations: map[string]legend.Location{
 		"s. 1/15 Działownia": {
 			Shorthand: "s. 1/15 Działownia",
 			FullName:  "budynek Działownia",
@@ -282,13 +238,13 @@ func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
 }
 
 func TestFinalizeClassesResolvesEachSlashSplitLocation(t *testing.T) {
-	buildings := types.BuildBuildingsFromLegend(&types.Legend{Locations: map[string]types.Location{
+	buildings := buildings.BuildBuildingsFromLegend(&legend.Legend{Locations: map[string]legend.Location{
 		"s. SJO": {Shorthand: "s. SJO", FullName: "budynek SJO"},
 		"s. N":   {Shorthand: "s. N", FullName: "budynek N"},
 	}})
-	parsed := parseClassText(
+	parsed := parseTestClass(
 		"J. niemiecki/J.angielski C1\nćw.\nmgr D. Guzik/mgr E. Szabat     s. SJO/s. N",
-		testStartTime, testEndTime, testDay, mockLegend(),
+		mockLegend(),
 	)
 
 	classes := finalizeClasses([]types.Class{parsed}, buildings)
@@ -338,7 +294,7 @@ func TestSplitSlashClasses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parsed := parseClassText(tt.input, testStartTime, testEndTime, testDay, legend)
+			parsed := parseTestClass(tt.input, legend)
 			got := splitSlashClasses(parsed)
 			if len(got) != len(tt.want) {
 				t.Fatalf("got %d classes, want %d", len(got), len(tt.want))

@@ -13,8 +13,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/webServer"
 
@@ -91,7 +93,7 @@ func initializeApp() (queries db.Querier) {
 	return queries
 }
 
-func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *types.Legend, *types.Buildings, types.Timetable, error) {
+func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *buildings.Buildings, types.Timetable, error) {
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -102,8 +104,8 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *types.Legend, *typ
 		return nil, nil, nil, nil, err
 	}
 	newLegend := extractor.ExtractLegend(file)
-	newBuildings := types.BuildBuildingsFromLegend(newLegend)
-	if err := types.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
+	newBuildings := buildings.BuildBuildingsFromLegend(newLegend)
+	if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
 		return nil, nil, nil, nil, err
 	}
 	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend, newBuildings)

@@ -1,4 +1,4 @@
-package types
+package buildings
 
 import "testing"
 

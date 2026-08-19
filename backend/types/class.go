@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/utils"
 	"google.golang.org/api/calendar/v3"
 )
@@ -82,7 +83,7 @@ func (c Class) EndTimeRFC3339() string {
 	return c.timeOnDay(c.EndTime).Format(time.RFC3339)
 }
 
-func (c Class) ToEvent(buildings *Buildings) calendar.Event {
+func (c Class) ToEvent(buildings *buildings.Buildings) calendar.Event {
 	var links []string
 	for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
 		if link := building.MapHTMLAnchor(); link != "" {

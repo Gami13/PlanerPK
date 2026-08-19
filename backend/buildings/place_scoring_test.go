@@ -1,4 +1,4 @@
-package types
+package buildings
 
 import (
 	"testing"
@@ -90,4 +90,44 @@ func TestHasBuildingInitialismEvidence(t *testing.T) {
 			t.Errorf("hasBuildingInitialismEvidence(%q, %q) = %v, want %v", tt.canonicalName, tt.displayName, got, tt.want)
 		}
 	}
+}
+
+func TestKatedraContextInfluencesPlaceScore(t *testing.T) {
+	withoutKatedra := googlePlace(
+		"building",
+		"Wydział Architektury Politechniki Krakowskiej",
+		"Warszawska 24, Kraków",
+	)
+	withKatedra := googlePlace(
+		"department",
+		"Katedra Architektury Politechniki Krakowskiej",
+		"Warszawska 24, Kraków",
+	)
+
+	unexpectedScore, unexpectedReasons := scorePlace("budynek Architektury", withKatedra)
+	ordinaryScore, _ := scorePlace("budynek Architektury", withoutKatedra)
+	if unexpectedScore >= ordinaryScore {
+		t.Fatalf("unexpected katedra score = %.2f, want below ordinary score %.2f", unexpectedScore, ordinaryScore)
+	}
+	if !containsReason(unexpectedReasons, "unexpected katedra context") {
+		t.Fatalf("unexpected katedra reasons = %v", unexpectedReasons)
+	}
+
+	matchingScore, matchingReasons := scorePlace("Katedra Architektury", withKatedra)
+	missingScore, _ := scorePlace("Katedra Architektury", withoutKatedra)
+	if matchingScore <= missingScore {
+		t.Fatalf("matching katedra score = %.2f, want above missing-katedra score %.2f", matchingScore, missingScore)
+	}
+	if !containsReason(matchingReasons, "matching katedra context") {
+		t.Fatalf("matching katedra reasons = %v", matchingReasons)
+	}
+}
+
+func containsReason(reasons []string, want string) bool {
+	for _, reason := range reasons {
+		if reason == want {
+			return true
+		}
+	}
+	return false
 }
