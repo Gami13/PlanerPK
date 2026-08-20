@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	global.LoadEnvVariables()
+	global.Load()
 
 	file, err := extractor.OpenCurrentTimetableFile()
 	legend := extractor.ExtractLegend(file)

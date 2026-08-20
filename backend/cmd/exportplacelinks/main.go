@@ -33,14 +33,15 @@ func main() {
 	outPathFlag := flag.String("out", "", "Output file path (default: <STATE_DIR>/place_links.txt)")
 	flag.Parse()
 
-	global.LoadEnvVariables()
+	global.Load()
+	config := global.Config
 
 	outPath := *outPathFlag
 	if outPath == "" {
-		outPath = filepath.Join(global.StateDir(), "place_links.txt")
+		outPath = filepath.Join(config.StateDir, "place_links.txt")
 	}
 
-	database, err := sql.Open(global.DatabaseDriver(), global.DatabaseSource())
+	database, err := sql.Open(global.DatabaseDriver, config.DatabaseSource)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening database: %v\n", err)
 		os.Exit(1)

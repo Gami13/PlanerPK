@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	global.LoadEnvVariables()
+	global.Load()
 
 	xlsxPath, err := findCurrentTimetableFile()
 	if err != nil {
@@ -100,12 +100,7 @@ func addClassroom(unique map[string]struct{}, raw string) {
 
 // findCurrentTimetableFile locates the single .xlsx timetable file in the current_timetable directory.
 func findCurrentTimetableFile() (string, error) {
-	dirsToSearch := []string{
-		global.CurrentTimetableDir(),
-		"data/current_timetable",
-		"../data/current_timetable",
-		"../../data/current_timetable",
-	}
+	dirsToSearch := []string{global.Config.CurrentTimetableDir}
 
 	seen := make(map[string]bool)
 	for _, dir := range dirsToSearch {

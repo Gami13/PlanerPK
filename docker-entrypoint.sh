@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-# Set ownership to google user
-chown -R google:users /app || true
+# Set ownership for mutable data without changing the read-only credentials file.
+find "$DATA_DIR" -path "$DATA_DIR/credentials.json" -prune -o -exec chown google:users {} +
 
 echo "Using API_BASE_URL: ${API_BASE_URL}"
 

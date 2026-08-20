@@ -104,8 +104,8 @@ func hydrateBuildingDetails(buildings *Buildings, records []db.BuildingPlace) {
 func ResolveBuildingPlacesForImport(ctx context.Context, queries db.Querier, buildings *Buildings) error {
 	var client *places.Client
 	var err error
-	if global.GooglePlacesConfigured() {
-		client, err = places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
+	if global.Config.GooglePlacesAPIKey != "" {
+		client, err = places.NewClient(ctx, option.WithAPIKey(global.Config.GooglePlacesAPIKey))
 		if err != nil {
 			slog.Error("building_place_resolution.client_failed", slog.Any("error", err))
 			client = nil

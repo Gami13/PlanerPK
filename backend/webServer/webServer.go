@@ -1,10 +1,8 @@
 package webServer
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/woodpkrs/PlanerPK/gen/db"
@@ -18,40 +16,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type Credentials struct {
-	Web struct {
-		ClientID                string   `json:"client_id"`
-		ProjectID               string   `json:"project_id"`
-		AuthURI                 string   `json:"auth_uri"`
-		TokenURI                string   `json:"token_uri"`
-		AuthProviderX509CertURL string   `json:"auth_provider_x509_cert_url"`
-		ClientSecret            string   `json:"client_secret"`
-		RedirectURIs            []string `json:"redirect_uris"`
-		JavascriptOrigins       []string `json:"javascript_origins"`
-	} `json:"web"`
-}
-
-func readAllowedOrigins() ([]string, error) {
-	b, err := os.ReadFile(global.CalendarCredentialsPath())
-	if err != nil {
-		slog.Error("Failed to read credentials file", slog.Any("error", err))
-		return nil, err
-	}
-	var creds Credentials
-	err = json.Unmarshal(b, &creds)
-	if err != nil {
-		slog.Error("Failed to parse credentials file", slog.Any("error", err))
-		return nil, err
-	}
-	return creds.Web.JavascriptOrigins, nil
-}
-
 func corsMiddleware(next http.Handler) http.Handler {
-	origins, err := readAllowedOrigins()
-	if err != nil {
-		slog.Error("Failed to read allowed origins for CORS middleware", slog.Any("error", err))
-		panic(err)
-	}
+	origins := global.Config.AllowedOrigins
 
 	slog.Info("CORS middleware initialized", slog.String("allowed_origins", strings.Join(origins, ", ")))
 
@@ -95,7 +61,7 @@ func Start(db db.Querier, cache *types.Cache) {
 
 	corsHandler := corsMiddleware(mux)
 	server := &http.Server{
-		Addr:      ":" + global.ServerPort(),
+		Addr:      ":" + global.ServerPort,
 		Handler:   corsHandler,
 		Protocols: &http.Protocols{},
 	}
@@ -103,7 +69,7 @@ func Start(db db.Querier, cache *types.Cache) {
 	server.Protocols.SetHTTP2(true)
 	server.Protocols.SetUnencryptedHTTP2(true)
 
-	slog.Info("Web server listening", slog.String("port", global.ServerPort()))
+	slog.Info("Web server listening", slog.String("port", global.ServerPort))
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}

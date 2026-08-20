@@ -72,52 +72,6 @@
             '';
           };
 
-          default = pkgs.writeShellApplication {
-            name = "planer-pk";
-
-            runtimeInputs = [ pkgs.libreoffice ];
-
-            text = ''
-              export SERVER_PORT="''${SERVER_PORT:-8080}"
-              export API_BASE_URL="''${API_BASE_URL:-http://localhost:8080}"
-              export DATABASE_DRIVER="''${DATABASE_DRIVER:-sqlite}"
-
-              # Prepare the frontend
-              if [ -n "''${STATIC_DIR:-}" ]; then
-                  # STATIC_DIR is explicitly set
-                  :
-              elif [ -n "''${APP_BASE_DIR:-}" ]; then
-                  # Use APP_BASE_DIR
-                  STATIC_DIR="''${APP_BASE_DIR}/static"
-              else
-                  # Use XDG directory
-                  STATIC_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/planer-pk/static"
-              fi
-
-              mkdir -p "$STATIC_DIR"
-              cp -rf ${self'.packages.frontend}/static/* "$STATIC_DIR/"
-              chmod -R u+w "$STATIC_DIR"
-
-              for js_file in "$STATIC_DIR"/assets/*.js; do
-                  if [ -f "$js_file" ]; then
-                      # shellcheck disable=SC2016
-                      ${pkgs.gettext}/bin/envsubst '$API_BASE_URL' < "$js_file" > "$js_file.tmp"
-                      mv "$js_file.tmp" "$js_file"
-                  fi
-              done
-
-              # Prevents LibreOffice from trying to create `/run/user/<uid>`
-              export DBUS_SESSION_BUS_ADDRESS="''${DBUS_SESSION_BUS_ADDRESS:-/dev/null}"
-
-              exec ${self'.packages.backend}/bin/planer-pk-backend "$@"
-            '';
-          };
-        };
-
-        apps.default = {
-          type = "app";
-          program = "${self'.packages.default}/bin/planer-pk";
-          meta.description = "Run the Planer PK backend and frontend locally";
         };
 
         devShells.default = pkgs.mkShell {
@@ -152,7 +106,7 @@
         };
 
         checks = {
-          inherit (self'.packages) frontend backend default;
+          inherit (self'.packages) frontend backend;
 
           # Is everything formatted
           formatting =
@@ -202,12 +156,6 @@
             options.services.planer-pk = {
               enable = lib.mkEnableOption "Planer PK Service";
 
-              port = lib.mkOption {
-                type = lib.types.port;
-                default = 8080;
-                description = "Port to listen on";
-              };
-
               apiBaseUrl = lib.mkOption {
                 type = lib.types.str;
                 default = "http://localhost:8080/api";
@@ -237,12 +185,9 @@
                 path = [ pkgs.libreoffice ];
 
                 environment = {
-                  SERVER_PORT = toString cfg.port;
                   API_BASE_URL = cfg.apiBaseUrl;
 
-                  APP_BASE_DIR = "%S/planer-pk";
-                  CALENDAR_CREDENTIALS_PATH = "%d/credentials.json";
-                  LOGS_DIR = "%L/planer-pk/";
+                  DATA_DIR = "%S/planer-pk/data";
                   TZ = config.time.timeZone;
 
                   HOME = "%t/planer-pk-runtime";
@@ -252,9 +197,8 @@
                 };
 
                 serviceConfig = {
-                  StateDirectory = "planer-pk/data planer-pk/static";
+                  StateDirectory = "planer-pk/data";
                   WorkingDirectory = "%S/planer-pk";
-                  LogsDirectory = "planer-pk";
                   RuntimeDirectory = "planer-pk-runtime";
                   ExecStart = "${appPkgs.backend}/bin/planer-pk-backend";
                   Restart = "always";
@@ -266,7 +210,7 @@
                 };
 
                 preStart = ''
-                  mkdir -p data/downloads data/current_timetable
+                  mkdir -p "$DATA_DIR" static
 
                   cp -rf ${appPkgs.frontend}/static/* static/
                   chmod -R u+w static
@@ -277,6 +221,9 @@
                           mv "''${js_file}.tmp" "$js_file"
                       fi
                   done
+
+                  cp "$CREDENTIALS_DIRECTORY/credentials.json" "$DATA_DIR/credentials.json"
+                  chmod 600 "$DATA_DIR/credentials.json"
                 '';
               };
             };
