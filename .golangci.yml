@@ -28,3 +28,10 @@ linters:
     - dupl
     - unconvert
     - prealloc
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - funlen
+
