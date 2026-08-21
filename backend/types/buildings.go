@@ -141,7 +141,7 @@ func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlac
 
 func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
 	slog.Info("Starting update of building details")
-	client, err := places.NewClient(ctx, option.WithAPIKey(global.GOOGLE_PLACES_API_KEY))
+	client, err := places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
 	if err != nil {
 		slog.Error("Failed to create Google Places client", slog.Any("error", err))
 		return fmt.Errorf("failed to create Google Places client: %w", err)

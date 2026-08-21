@@ -41,7 +41,7 @@ func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *type
 func getDaysStartEnd(file *excelize.File) []types.Day {
 	// Find starting rows for each day
 	var days []types.Day
-	rows, err := file.GetRows(global.SHEET_NAME)
+	rows, err := file.GetRows(global.SheetName())
 	if err != nil {
 		slog.Error("Failed to get rows from timetable", slog.Any("error", err))
 		return days
@@ -49,14 +49,14 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 	for number, row := range rows {
 		if len(row) > 1 {
 
-			if row[global.HOUR_COLUMN] == global.DAY_START {
+			if row[global.HourColumn()] == global.DayStart() {
 				day := types.Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7),
 				}
 				days = append(days, day)
 			}
-			if row[global.HOUR_COLUMN] == global.DAY_END {
+			if row[global.HourColumn()] == global.DayEnd() {
 				days[len(days)-1].EndingRow = number
 			}
 
@@ -70,10 +70,10 @@ const slotDuration = 15 * time.Minute
 func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend) []types.Class {
 	var classes []types.Class
 
-	currentTime := global.DAY_START_TIME
+	currentTime := global.DayStartTime()
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		classText := getCell(file, global.SHEET_NAME, i, int(groupColumn))
+		classText := getCell(file, global.SheetName(), i, int(groupColumn))
 		if classText != "" {
 
 			classEndTime := currentTime.Add(slotDuration)

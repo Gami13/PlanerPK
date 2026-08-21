@@ -27,26 +27,17 @@ type PlaceInfo struct {
 }
 
 func main() {
-	outPathFlag := flag.String("out", "", "Output file path (default: <DATA_DIRECTORY>/place_links.txt)")
+	outPathFlag := flag.String("out", "", "Output file path (default: <STATE_DIR>/place_links.txt)")
 	flag.Parse()
 
 	global.LoadEnvVariables()
 
-	dbPath := global.DATABASE_PATH
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		// Fallback to relative path if executed from backend/cmd/exportplacelinks
-		altPath := filepath.Join("..", "..", "data", "database.db")
-		if _, err := os.Stat(altPath); err == nil {
-			dbPath = altPath
-		}
-	}
-
 	outPath := *outPathFlag
 	if outPath == "" {
-		outPath = filepath.Join(global.DATA_DIR, "place_links.txt")
+		outPath = filepath.Join(global.StateDir(), "place_links.txt")
 	}
 
-	database, err := sql.Open(global.DATABASE_DRIVER, global.DATABASE_SOURCE)
+	database, err := sql.Open(global.DatabaseDriver(), global.DatabaseSource())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening database: %v\n", err)
 		os.Exit(1)

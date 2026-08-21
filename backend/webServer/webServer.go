@@ -32,7 +32,7 @@ type Credentials struct {
 }
 
 func readAllowedOrigins() ([]string, error) {
-	b, err := os.ReadFile(global.CALENDAR_CREDENTIALS_PATH)
+	b, err := os.ReadFile(global.CalendarCredentialsPath())
 	if err != nil {
 		slog.Error("Failed to read credentials file", slog.Any("error", err))
 		return nil, err
@@ -95,7 +95,7 @@ func Start(db db.Querier, cache *types.Cache) {
 
 	corsHandler := corsMiddleware(mux)
 	server := &http.Server{
-		Addr:      ":" + global.SERVER_PORT,
+		Addr:      ":" + global.ServerPort(),
 		Handler:   corsHandler,
 		Protocols: &http.Protocols{},
 	}
@@ -103,7 +103,7 @@ func Start(db db.Querier, cache *types.Cache) {
 	server.Protocols.SetHTTP2(true)
 	server.Protocols.SetUnencryptedHTTP2(true)
 
-	slog.Info("Web server listening", slog.String("port", global.SERVER_PORT))
+	slog.Info("Web server listening", slog.String("port", global.ServerPort()))
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}

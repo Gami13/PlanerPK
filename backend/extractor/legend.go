@@ -14,7 +14,7 @@ import (
 // Both sections share the same rows — teachers on the left, locations in the
 // Sale column.
 func ExtractLegend(file *excelize.File) *types.Legend {
-	rows, err := file.GetRows(global.SHEET_NAME)
+	rows, err := file.GetRows(global.SheetName())
 	if err != nil {
 		slog.Error("Failed to get rows for legend extraction", slog.Any("error", err))
 		return &types.Legend{
