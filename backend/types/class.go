@@ -10,16 +10,19 @@ import (
 )
 
 type Class struct {
-	Name           string
-	Type           string
-	Day            time.Weekday
-	StartTime      time.Time
-	EndTime        time.Time
-	Location       string
-	Teacher        string
-	AdditionalInfo string
-	Level          string
-	TotalHours     string
+	Name      string
+	Type      string
+	Day       time.Weekday
+	StartTime time.Time
+	EndTime   time.Time
+	Location  string
+	// ResolvedClassroomKeys are precomputed while the timetable is imported.
+	// Location remains the original text shown in the calendar.
+	ResolvedClassroomKeys []string
+	Teacher               string
+	AdditionalInfo        string
+	Level                 string
+	TotalHours            string
 }
 
 func (c Class) String() string {
@@ -57,9 +60,6 @@ func (c Class) Summary() string {
 	if len(c.Teacher) > 0 {
 		summary += fmt.Sprintf(" - %s", c.Teacher)
 	}
-	// if len(c.Location) > 0 {
-	// 	summary += fmt.Sprintf(" | %s", c.Location)
-	// }
 	if len(c.TotalHours) > 0 {
 		summary += fmt.Sprintf(" | %s", c.TotalHours)
 	}
@@ -83,26 +83,14 @@ func (c Class) EndTimeRFC3339() string {
 }
 
 func (c Class) ToEvent(buildings *Buildings) calendar.Event {
-	description := ""
-
-	if buildings != nil {
-		building, found := buildings.GetBuildingByClassroom(strings.TrimPrefix(c.Location, "s. "))
-		if found {
-			var label string
-			if building.Name != "" && building.Address != "" {
-				label = fmt.Sprintf("%s, %s", building.Name, building.Address)
-			} else if building.Name != "" {
-				label = building.Name
-			} else if building.Address != "" {
-				label = building.Address
-			} else {
-				label = "Google Maps"
-			}
-			description = fmt.Sprintf("<a href=\"https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s\">%s</a>", building.GooglePlaceID, label)
+	var links []string
+	for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
+		if link := building.MapHTMLAnchor(); link != "" {
+			links = append(links, link)
 		}
 	}
 
-	event := &calendar.Event{
+	return calendar.Event{
 		Summary: c.Summary(),
 		Start: &calendar.EventDateTime{
 			DateTime: c.StartTimeRFC3339(),
@@ -111,7 +99,7 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 			DateTime: c.EndTimeRFC3339(),
 		},
 		Location:    c.Location,
-		Description: description,
+		Description: strings.Join(links, "<br>"),
 		ExtendedProperties: &calendar.EventExtendedProperties{
 			Private: map[string]string{
 				"added_by": ADDED_BY,
@@ -119,5 +107,4 @@ func (c Class) ToEvent(buildings *Buildings) calendar.Event {
 			},
 		},
 	}
-	return *event
 }

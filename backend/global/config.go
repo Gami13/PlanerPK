@@ -70,7 +70,8 @@ type serverConfig struct {
 }
 
 type integrationConfig struct {
-	googlePlacesAPIKey string
+	googlePlacesAPIKey       string
+	buildingReviewWebhookURL string
 }
 
 type loggingConfig struct {
@@ -214,7 +215,8 @@ func LoadEnvVariables() {
 			port: defaultServerPort,
 		},
 		integrations: integrationConfig{
-			googlePlacesAPIKey: getEnvOrDefault("GOOGLE_PLACES_API_KEY", defaultPlacesAPIKey),
+			googlePlacesAPIKey:       getEnvOrDefault("GOOGLE_PLACES_API_KEY", defaultPlacesAPIKey),
+			buildingReviewWebhookURL: getEnvOrDefault("BUILDING_REVIEW_WEBHOOK_URL", ""),
 		},
 		logging: loggingConfig{
 			level: getEnvOrDefault("LOG_LEVEL", defaultLogLevel),
@@ -244,9 +246,14 @@ func TimetableDownloadsDir() string          { return current.paths.timetableDow
 func CurrentTimetableDir() string            { return current.paths.currentTimetableDir }
 func CalendarCredentialsPath() string        { return current.paths.calendarCredentialsPath }
 func CurrentTimetableStatsPath() string      { return current.paths.timetableStatsPath }
+func BuildingReviewPath() string             { return filepath.Join(StateDir(), "building_place_review.json") }
 func ServerPort() string                     { return current.server.port }
 func GooglePlacesAPIKey() string             { return current.integrations.googlePlacesAPIKey }
-func LogLevel() string                       { return current.logging.level }
+func GooglePlacesConfigured() bool {
+	return GooglePlacesAPIKey() != "" && GooglePlacesAPIKey() != defaultPlacesAPIKey
+}
+func BuildingReviewWebhookURL() string { return current.integrations.buildingReviewWebhookURL }
+func LogLevel() string                 { return current.logging.level }
 
 func PrintEnvVariables() {
 	slog.Info(
@@ -261,7 +268,7 @@ func PrintEnvVariables() {
 		slog.String("SERVER_PORT", ServerPort()),
 		slog.String("TIMETABLE_URL", TimetableURL()),
 		slog.Duration("TIME_BETWEEN_SYNC", TimeBetweenSync()),
-		slog.Bool("GOOGLE_PLACES_API_KEY_SET", GooglePlacesAPIKey() != "" && GooglePlacesAPIKey() != defaultPlacesAPIKey),
+		slog.Bool("GOOGLE_PLACES_API_KEY_SET", GooglePlacesConfigured()),
 		slog.String("DATA_DIR", DataDir()),
 		slog.String("STATE_DIR", StateDir()),
 		slog.String("LOGS_DIR", LogsDir()),

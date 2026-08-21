@@ -6,12 +6,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/woodpkrs/PlanerPK/classroommatch"
 )
 
 // readLines resolves filename across default directories and returns non-empty, trimmed lines.
 func readLines(filename string) ([]string, error) {
 	path := filename
-	for _, dir := range []string{"data", "../data", "../../data", "."} {
+	for _, dir := range []string{"testdata", "data", "../data", "../../data", "."} {
 		p := filepath.Join(dir, filename)
 		if _, err := os.Stat(p); err == nil {
 			path = p
@@ -48,8 +50,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	candidates := make([]classroommatch.Candidate, 0, len(classrooms))
+	for _, classroom := range classrooms {
+		candidates = append(candidates, classroommatch.Candidate{
+			ClassroomKey: classroom,
+			BuildingKey:  classroom,
+		})
+	}
+	matcher := classroommatch.New(candidates, nil)
 	for _, input := range inputs {
-		result := MatchLine(input, classrooms)
-		fmt.Printf("%s -> %s\n", result.Input, result.Output)
+		matches := matcher.Resolve(input)
+		output := make([]string, 0, len(matches))
+		for _, match := range matches {
+			if match.ClassroomKey != "" {
+				output = append(output, match.ClassroomKey)
+			} else {
+				output = append(output, match.Input)
+			}
+		}
+		fmt.Printf("%s -> %s\n", input, strings.Join(output, "/"))
 	}
 }

@@ -1,201 +1,158 @@
 package types
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
+	"strings"
+	"unicode"
 
-	places "cloud.google.com/go/maps/places/apiv1"
-	placespb "cloud.google.com/go/maps/places/apiv1/placespb"
-	"github.com/woodpkrs/PlanerPK/gen/db"
-	"github.com/woodpkrs/PlanerPK/global"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc/metadata"
+	"github.com/woodpkrs/PlanerPK/classroommatch"
 )
 
 type Building struct {
-	ID            int64
-	Key           string
+	CanonicalName string
 	GooglePlaceID string
 	Name          string
 	Address       string
 }
 
 type Buildings struct {
-	Buildings  map[int64]Building
-	Classrooms map[string]int64
+	BuildingsByKey            map[string]Building
+	BuildingKeyByClassroomKey map[string]string
+	matcher                   *classroommatch.Matcher
+	reviews                   *BuildingReviewQueue
 }
 
-func (b *Buildings) GetBuilding(id int64) (Building, bool) {
-	if b == nil || b.Buildings == nil {
-		return Building{}, false
+// BuildBuildingsFromLegend creates the legend-derived classroom-to-building
+// cache for one timetable import. Persistent place details are hydrated later.
+func BuildBuildingsFromLegend(legend *Legend) *Buildings {
+	buildings := &Buildings{
+		BuildingsByKey:            make(map[string]Building),
+		BuildingKeyByClassroomKey: make(map[string]string),
 	}
-	building, exists := b.Buildings[id]
-	return building, exists
-}
-
-func (b *Buildings) GetBuildingByClassroom(classroomName string) (Building, bool) {
-	if b == nil || b.Classrooms == nil || b.Buildings == nil {
-		return Building{}, false
-	}
-	buildingID, roomExists := b.Classrooms[classroomName]
-	if !roomExists {
-		return Building{}, false
-	}
-	building, buildingExists := b.Buildings[buildingID]
-	return building, buildingExists
-}
-
-func MapToBuilding(building db.Building) Building {
-	b := Building{
-		ID: building.ID,
+	if legend == nil {
+		return buildings
 	}
 
-	if building.Key != nil {
-		b.Key = *building.Key
-	}
-	if building.GooglePlaceID != nil {
-		b.GooglePlaceID = *building.GooglePlaceID
-	}
-	if building.Name != nil {
-		b.Name = *building.Name
-	}
-	if building.Address != nil {
-		b.Address = *building.Address
-	}
+	locationKeys := slices.Sorted(maps.Keys(legend.Locations))
 
-	return b
-}
-
-func LoadBuildings(ctx context.Context, queries db.Querier) (*Buildings, error) {
-	slog.Info("Loading buildings and classrooms from database")
-	bList, err := queries.GetBuildings(ctx)
-	if err != nil {
-		slog.Error("Failed to fetch buildings from database", slog.Any("error", err))
-		return nil, err
-	}
-	cList, err := queries.GetClassroomNamesWithBuildingIDs(ctx)
-	if err != nil {
-		slog.Error("Failed to fetch classroom names with building IDs", slog.Any("error", err))
-		return nil, err
-	}
-
-	res := &Buildings{
-		Buildings:  make(map[int64]Building, len(bList)),
-		Classrooms: make(map[string]int64, len(cList)),
-	}
-
-	for _, b := range bList {
-		res.Buildings[b.ID] = MapToBuilding(b)
-	}
-
-	for _, c := range cList {
-		if c.Name != nil {
-			res.Classrooms[*c.Name] = c.ID
+	candidates := make([]classroommatch.Candidate, 0, len(locationKeys))
+	for _, locationKey := range locationKeys {
+		location := legend.Locations[locationKey]
+		classroomKey := strings.TrimSpace(location.Shorthand)
+		if classroomKey == "" {
+			classroomKey = locationKey
 		}
-	}
-
-	slog.Info("Successfully loaded buildings and classrooms",
-		slog.Int("buildings_count", len(res.Buildings)),
-		slog.Int("classrooms_count", len(res.Classrooms)))
-
-	return res, nil
-}
-
-type BuildingDetails struct {
-	Name    string
-	Address string
-}
-
-func fetchBuildingDetails(ctx context.Context, client *places.Client, googlePlaceID string) (*BuildingDetails, error) {
-	slog.Debug("Fetching building details from Google Places API", slog.String("google_place_id", googlePlaceID))
-	reqCtx := metadata.AppendToOutgoingContext(ctx, "x-goog-fieldmask", "displayName,formattedAddress")
-
-	req := &placespb.GetPlaceRequest{
-		Name:         fmt.Sprintf("places/%s", googlePlaceID),
-		LanguageCode: "pl",
-	}
-
-	resp, err := client.GetPlace(reqCtx, req)
-	if err != nil {
-		slog.Error("Google Places API call failed", slog.String("google_place_id", googlePlaceID), slog.Any("error", err))
-		return nil, fmt.Errorf("Google Places API error for place ID %s: %w", googlePlaceID, err)
-	}
-
-	var name string
-	if resp.GetDisplayName() != nil {
-		name = resp.GetDisplayName().GetText()
-	}
-
-	details := &BuildingDetails{
-		Name:    name,
-		Address: resp.GetFormattedAddress(),
-	}
-	slog.Debug("Successfully fetched building details from Google Places API",
-		slog.String("google_place_id", googlePlaceID),
-		slog.String("name", details.Name),
-		slog.String("address", details.Address))
-
-	return details, nil
-}
-
-func UpdateBuildingsDetails(ctx context.Context, queries db.Querier) error {
-	slog.Info("Starting update of building details")
-	client, err := places.NewClient(ctx, option.WithAPIKey(global.GooglePlacesAPIKey()))
-	if err != nil {
-		slog.Error("Failed to create Google Places client", slog.Any("error", err))
-		return fmt.Errorf("failed to create Google Places client: %w", err)
-	}
-	defer client.Close()
-
-	buildings, err := queries.GetBuildings(ctx)
-	if err != nil {
-		slog.Error("Failed to fetch buildings for details update", slog.Any("error", err))
-		return err
-	}
-
-	updatedCount := 0
-	skippedCount := 0
-	for _, building := range buildings {
-		if building.GooglePlaceID == nil || *building.GooglePlaceID == "" {
-			skippedCount++
-			slog.Debug("Skipping building without Google Place ID", slog.Int64("building_id", building.ID))
+		buildingKey := strings.TrimSpace(location.FullName)
+		if classroomKey == "" || buildingKey == "" {
+			slog.Warn("classroom_resolution.invalid_legend_entry",
+				slog.String("classroom", classroomKey),
+				slog.String("building_key", buildingKey),
+				slog.String("source", "legend"))
+			continue
+		}
+		if classroommatch.Normalize(classroomKey) == "zdalnie" {
 			continue
 		}
 
-		slog.Info("Updating details for building",
-			slog.Int64("building_id", building.ID),
-			slog.String("google_place_id", *building.GooglePlaceID))
-
-		buildingDetails, err := fetchBuildingDetails(ctx, client, *building.GooglePlaceID)
-		if err != nil {
-			slog.Error("Failed to fetch building details",
-				slog.Int64("building_id", building.ID),
-				slog.String("google_place_id", *building.GooglePlaceID),
-				slog.Any("error", err))
-			return err
-		}
-
-		if err := queries.UpdateBuilding(ctx, db.UpdateBuildingParams{
-			ID:      building.ID,
-			Name:    &buildingDetails.Name,
-			Address: &buildingDetails.Address,
-		}); err != nil {
-			slog.Error("Failed to update building in database",
-				slog.Int64("building_id", building.ID),
-				slog.Any("error", err))
-			return err
-		}
-		updatedCount++
-		slog.Info("Successfully updated building details in database",
-			slog.Int64("building_id", building.ID),
-			slog.String("name", buildingDetails.Name),
-			slog.String("address", buildingDetails.Address))
+		buildings.BuildingsByKey[buildingKey] = Building{CanonicalName: buildingKey}
+		candidates = append(candidates, classroommatch.Candidate{
+			ClassroomKey: classroomKey,
+			BuildingKey:  buildingKey,
+		})
 	}
 
-	slog.Info("Finished updating building details",
-		slog.Int("updated_count", updatedCount),
-		slog.Int("skipped_count", skippedCount))
+	buildingKeys := slices.Sorted(maps.Keys(buildings.BuildingsByKey))
+	var buildingAliases []classroommatch.Candidate
+	for _, buildingKey := range buildingKeys {
+		if alias, ok := buildingAcronymAlias(buildingKey); ok {
+			buildingAliases = append(buildingAliases, classroommatch.Candidate{ClassroomKey: alias, BuildingKey: buildingKey})
+		}
+	}
+	buildings.matcher = classroommatch.New(candidates, buildingAliases)
+	buildings.BuildingKeyByClassroomKey = buildings.matcher.ClassroomBuildings()
+	return buildings
+}
 
-	return nil
+// buildingAcronymAlias returns an explicit building shorthand only when the
+// legend names it as an uppercase acronym, for example "budynek SJO".
+func buildingAcronymAlias(buildingKey string) (string, bool) {
+	fields := strings.Fields(buildingKey)
+	if len(fields) < 2 {
+		return "", false
+	}
+	for i, field := range fields[:len(fields)-1] {
+		if !strings.EqualFold(strings.Trim(field, "\"'(),."), "budynek") {
+			continue
+		}
+		candidate := strings.Trim(fields[i+1], "\"'(),.")
+		if isUppercaseAcronym(candidate) {
+			return candidate, true
+		}
+	}
+	return "", false
+}
+
+func isUppercaseAcronym(value string) bool {
+	runes := []rune(value)
+	if len(runes) < 2 || len(runes) > 6 {
+		return false
+	}
+	for _, r := range runes {
+		if !unicode.IsUpper(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// ResolveClassroomKeys performs the only fuzzy matching in the runtime flow:
+// while a newly imported timetable is being built.
+func (b *Buildings) ResolveClassroomKeys(location string) []string {
+	if b == nil || b.matcher == nil {
+		return nil
+	}
+	var keys []string
+	seen := make(map[string]struct{})
+	for _, match := range b.matcher.Resolve(location) {
+		switch match.Kind {
+		case classroommatch.MatchExact, classroommatch.MatchCorrected:
+			if _, exists := seen[match.ClassroomKey]; !exists {
+				seen[match.ClassroomKey] = struct{}{}
+				keys = append(keys, match.ClassroomKey)
+			}
+		case classroommatch.MatchAmbiguous, classroommatch.MatchUnmatched:
+			if b.reviews != nil {
+				b.reviews.RecordClassroomMatch(match)
+			}
+		}
+	}
+	return keys
+}
+
+// GetBuildingsByClassroomKeys performs an exact lookup of keys that were
+// precomputed while parsing a timetable.
+func (b *Buildings) GetBuildingsByClassroomKeys(classroomKeys []string) []Building {
+	if b == nil || b.BuildingKeyByClassroomKey == nil || b.BuildingsByKey == nil {
+		return nil
+	}
+	var buildings []Building
+	seen := make(map[string]struct{})
+	for _, classroomKey := range classroomKeys {
+		buildingKey, exists := b.BuildingKeyByClassroomKey[classroomKey]
+		if !exists {
+			continue
+		}
+		if _, exists := seen[buildingKey]; exists {
+			continue
+		}
+		building, exists := b.BuildingsByKey[buildingKey]
+		if !exists {
+			continue
+		}
+		seen[buildingKey] = struct{}{}
+		buildings = append(buildings, building)
+	}
+	return buildings
 }

@@ -10,25 +10,25 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *types.Legend, buildings *types.Buildings) types.Timetable {
 	timetable := make(types.Timetable)
 	days := getDaysStartEnd(file)
 
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, days)
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, buildings, days)
 		timetable[int64(group.Column)] = groupTimetable
 
 	}
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, days []types.Day) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *types.Legend, buildings *types.Buildings, days []types.Day) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := traverseDay(file, day, groupColumn, legend)
+		classes := traverseDay(file, day, groupColumn, legend, buildings)
 		timetable[day.WeekDay] = classes
 		slog.Debug("Processed day",
 			slog.String("day", day.WeekDay.String()),
@@ -67,7 +67,7 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 
 const slotDuration = 15 * time.Minute
 
-func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend) []types.Class {
+func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *types.Legend, buildings *types.Buildings) []types.Class {
 	var classes []types.Class
 
 	currentTime := global.DayStartTime()
@@ -95,13 +95,14 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 	}
 
 	// Post-process: split any slash-delimited class names into separate classes
-	var result []types.Class
-	for _, class := range classes {
-		result = append(result, splitSlashClasses(class)...)
-	}
+	result := finalizeClasses(classes, buildings)
 
 	// Log the final classes for the day
 	for _, class := range result {
+		var buildingNames []string
+		for _, building := range buildings.GetBuildingsByClassroomKeys(class.ResolvedClassroomKeys) {
+			buildingNames = append(buildingNames, building.CanonicalName)
+		}
 		slog.Debug("Final class for day",
 			slog.String("name", class.Name),
 			slog.String("type", class.Type),
@@ -110,8 +111,23 @@ func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *
 			slog.String("additional_info", class.AdditionalInfo),
 			slog.String("level", class.Level),
 			slog.String("total_hours", class.TotalHours),
+			slog.Any("classroom_keys", class.ResolvedClassroomKeys),
+			slog.Any("buildings", buildingNames),
 			slog.String("start_time", class.StartTime.Format("15:04")),
 			slog.String("end_time", class.EndTime.Format("15:04")))
+	}
+	return result
+}
+
+func finalizeClasses(classes []types.Class, buildings *types.Buildings) []types.Class {
+	var result []types.Class
+	for _, class := range classes {
+		for _, finalClass := range splitSlashClasses(class) {
+			if buildings != nil && finalClass.Location != "" {
+				finalClass.ResolvedClassroomKeys = buildings.ResolveClassroomKeys(finalClass.Location)
+			}
+			result = append(result, finalClass)
+		}
 	}
 	return result
 }

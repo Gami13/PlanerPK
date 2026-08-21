@@ -2,15 +2,13 @@ package types
 
 import (
 	"sync/atomic"
-	"time"
 )
 
 type Cache struct {
-	availableGroups    atomic.Pointer[[]ColumnGroup]
-	timetable          atomic.Pointer[Timetable]
-	legend             atomic.Pointer[Legend]
-	buildings          atomic.Pointer[Buildings]
-	lastBuildingUpdate atomic.Pointer[time.Time]
+	availableGroups atomic.Pointer[[]ColumnGroup]
+	timetable       atomic.Pointer[Timetable]
+	legend          atomic.Pointer[Legend]
+	buildings       atomic.Pointer[Buildings]
 }
 
 func (c *Cache) AvailableGroups() *[]ColumnGroup {
@@ -43,12 +41,4 @@ func (c *Cache) Buildings() *Buildings {
 
 func (c *Cache) SetBuildings(buildings *Buildings) {
 	c.buildings.Store(buildings)
-}
-
-func (c *Cache) LastBuildingUpdate() *time.Time {
-	return c.lastBuildingUpdate.Load()
-}
-
-func (c *Cache) SetLastBuildingUpdate(lastUpdate *time.Time) {
-	c.lastBuildingUpdate.Store(lastUpdate)
 }

@@ -5,11 +5,14 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	_ "modernc.org/sqlite"
 
+	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/woodpkrs/PlanerPK/types"
@@ -47,76 +50,35 @@ func main() {
 	queries := db.New(database)
 	ctx := context.Background()
 
-	loadedBuildings, err := types.LoadBuildings(ctx, queries)
+	allBuildings, err := queries.GetBuildingPlaces(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading buildings: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error fetching building places from DB: %v\n", err)
 		os.Exit(1)
 	}
 
-	allBuildings, err := queries.GetBuildings(ctx)
+	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching buildings from DB: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error opening current timetable: %v\n", err)
 		os.Exit(1)
 	}
+	defer extractor.CloseFile(file)
 
-	// Query distinct classrooms and their associated building details
-	rows, err := database.QueryContext(ctx, `
-		SELECT DISTINCT 
-			c.id, 
-			c.name, 
-			COALESCE(b.key, ''), 
-			COALESCE(b.google_place_id, ''), 
-			COALESCE(b.name, ''), 
-			COALESCE(b.address, '')
-		FROM classrooms c
-		LEFT JOIN building_classrooms bc ON c.id = bc.classroom_id
-		LEFT JOIN buildings b ON bc.building_id = b.id
-		ORDER BY c.name ASC
-	`)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error querying classrooms: %v\n", err)
-		os.Exit(1)
+	legendBuildings := types.BuildBuildingsFromLegend(extractor.ExtractLegend(file))
+	placesByBuildingKey := make(map[string]db.BuildingPlace, len(allBuildings))
+	for _, building := range allBuildings {
+		placesByBuildingKey[building.BuildingKey] = building
 	}
-	if err := rows.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error in rows: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
 
 	var classroomPlaces []PlaceInfo
-	for rows.Next() {
-		var id int64
-		var cName, bKey, placeID, bName, bAddr string
-		if err := rows.Scan(&id, &cName, &bKey, &placeID, &bName, &bAddr); err != nil {
-			fmt.Fprintf(os.Stderr, "Error scanning row: %v\n", err)
-			continue
-		}
-
-		info := buildPlaceInfo(cName, bKey, placeID, bName, bAddr, loadedBuildings)
-		classroomPlaces = append(classroomPlaces, info)
+	classroomKeys := slices.Sorted(maps.Keys(legendBuildings.BuildingKeyByClassroomKey))
+	for _, classroomKey := range classroomKeys {
+		buildingKey := legendBuildings.BuildingKeyByClassroomKey[classroomKey]
+		classroomPlaces = append(classroomPlaces, buildPlaceInfo(classroomKey, buildingKey, placesByBuildingKey[buildingKey]))
 	}
 
 	var buildingPlaces []PlaceInfo
 	for _, b := range allBuildings {
-		key := ""
-		if b.Key != nil {
-			key = *b.Key
-		}
-		placeID := ""
-		if b.GooglePlaceID != nil {
-			placeID = *b.GooglePlaceID
-		}
-		name := ""
-		if b.Name != nil {
-			name = *b.Name
-		}
-		addr := ""
-		if b.Address != nil {
-			addr = *b.Address
-		}
-
-		info := buildPlaceInfo("", key, placeID, name, addr, nil)
-		buildingPlaces = append(buildingPlaces, info)
+		buildingPlaces = append(buildingPlaces, buildPlaceInfo("", b.BuildingKey, b))
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
@@ -132,7 +94,7 @@ func main() {
 	defer outFile.Close()
 
 	fmt.Fprintf(outFile, "================================================================================\n")
-	fmt.Fprintf(outFile, "                         DATABASE PLACE HYPERLINKS                              \n")
+	fmt.Fprintf(outFile, "                          LEGEND PLACE HYPERLINKS                               \n")
 	fmt.Fprintf(outFile, "================================================================================\n\n")
 
 	fmt.Fprintf(outFile, "--------------------------------------------------------------------------------\n")
@@ -170,47 +132,17 @@ func main() {
 		len(classroomPlaces), len(buildingPlaces), outPath)
 }
 
-func buildPlaceInfo(classroomName, bKey, placeID, bName, bAddr string, buildings *types.Buildings) PlaceInfo {
+func buildPlaceInfo(classroomName, buildingKey string, place db.BuildingPlace) PlaceInfo {
+	building := types.BuildingFromPlace(place)
 	info := PlaceInfo{
 		ClassroomName: classroomName,
-		BuildingKey:   bKey,
-		BuildingName:  bName,
-		Address:       bAddr,
-		GooglePlaceID: placeID,
+		BuildingKey:   buildingKey,
+		BuildingName:  building.Name,
+		Address:       building.Address,
+		GooglePlaceID: building.GooglePlaceID,
+		Label:         building.MapLabel(),
+		MapsURL:       building.MapURL(),
+		HTMLAnchor:    building.MapHTMLAnchor(),
 	}
-
-	// Try resolving via buildings model if classroomName is provided
-	if classroomName != "" && buildings != nil {
-		b, found := buildings.GetBuildingByClassroom(classroomName)
-		if found {
-			info.BuildingKey = b.Key
-			info.GooglePlaceID = b.GooglePlaceID
-			info.BuildingName = b.Name
-			info.Address = b.Address
-		}
-	}
-
-	if info.GooglePlaceID != "" {
-		label := "Google Maps"
-		if info.BuildingName != "" && info.Address != "" {
-			label = fmt.Sprintf("%s, %s", info.BuildingName, info.Address)
-		} else if info.BuildingName != "" {
-			label = info.BuildingName
-		} else if info.Address != "" {
-			label = info.Address
-		}
-		info.Label = label
-		info.MapsURL = fmt.Sprintf("https://www.google.com/maps/search/?api=1&query=Politechnika+Krakowska&query_place_id=%s", info.GooglePlaceID)
-		info.HTMLAnchor = fmt.Sprintf("<a href=\"%s\">%s</a>", info.MapsURL, info.Label)
-	} else if info.BuildingName != "" || info.Address != "" {
-		if info.BuildingName != "" && info.Address != "" {
-			info.Label = fmt.Sprintf("%s, %s", info.BuildingName, info.Address)
-		} else if info.BuildingName != "" {
-			info.Label = info.BuildingName
-		} else {
-			info.Label = info.Address
-		}
-	}
-
 	return info
 }

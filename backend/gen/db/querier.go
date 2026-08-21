@@ -9,22 +9,19 @@ import (
 )
 
 type Querier interface {
+	ClearBuildingPlace(ctx context.Context, buildingKey string) error
 	DeleteOverride(ctx context.Context, arg DeleteOverrideParams) error
 	GetAllUsers(ctx context.Context) ([]User, error)
-	GetBuildingByClassroomName(ctx context.Context, classroomName *string) (Building, error)
-	GetBuildingByGooglePlaceID(ctx context.Context, googlePlaceID *string) (Building, error)
-	GetBuildingByID(ctx context.Context, id int64) (Building, error)
-	GetBuildingByKey(ctx context.Context, key *string) (Building, error)
-	GetBuildings(ctx context.Context) ([]Building, error)
-	GetClassroomNamesWithBuildingIDs(ctx context.Context) ([]GetClassroomNamesWithBuildingIDsRow, error)
+	GetBuildingPlaces(ctx context.Context) ([]BuildingPlace, error)
 	GetOverridesForUser(ctx context.Context, userID int64) ([]Override, error)
 	GetTokenByAccessToken(ctx context.Context, accessToken string) (GetTokenByAccessTokenRow, error)
 	GetUserByAccessToken(ctx context.Context, accessToken string) (User, error)
 	GetUserByEmail(ctx context.Context, email *string) (User, error)
-	UpdateBuilding(ctx context.Context, arg UpdateBuildingParams) error
+	UpdateBuildingPlace(ctx context.Context, arg UpdateBuildingPlaceParams) error
 	UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumnParams) error
 	UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
+	UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPlaceParams) error
 	UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error
 	UpsertUser(ctx context.Context, arg UpsertUserParams) (User, error)
 }
