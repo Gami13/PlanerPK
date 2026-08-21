@@ -1,4 +1,4 @@
-package types
+package buildings
 
 import (
 	"log/slog"
@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/woodpkrs/PlanerPK/classroommatch"
+	"github.com/woodpkrs/PlanerPK/legend"
 )
 
 type Building struct {
@@ -21,25 +22,24 @@ type Buildings struct {
 	BuildingsByKey            map[string]Building
 	BuildingKeyByClassroomKey map[string]string
 	matcher                   *classroommatch.Matcher
-	reviews                   *BuildingReviewQueue
 }
 
 // BuildBuildingsFromLegend creates the legend-derived classroom-to-building
 // cache for one timetable import. Persistent place details are hydrated later.
-func BuildBuildingsFromLegend(legend *Legend) *Buildings {
+func BuildBuildingsFromLegend(legendData *legend.Legend) *Buildings {
 	buildings := &Buildings{
 		BuildingsByKey:            make(map[string]Building),
 		BuildingKeyByClassroomKey: make(map[string]string),
 	}
-	if legend == nil {
+	if legendData == nil {
 		return buildings
 	}
 
-	locationKeys := slices.Sorted(maps.Keys(legend.Locations))
+	locationKeys := slices.Sorted(maps.Keys(legendData.Locations))
 
 	candidates := make([]classroommatch.Candidate, 0, len(locationKeys))
 	for _, locationKey := range locationKeys {
-		location := legend.Locations[locationKey]
+		location := legendData.Locations[locationKey]
 		classroomKey := strings.TrimSpace(location.Shorthand)
 		if classroomKey == "" {
 			classroomKey = locationKey
@@ -87,14 +87,14 @@ func buildingAcronymAlias(buildingKey string) (string, bool) {
 			continue
 		}
 		candidate := strings.Trim(fields[i+1], "\"'(),.")
-		if isUppercaseAcronym(candidate) {
+		if IsUppercaseAcronym(candidate) {
 			return candidate, true
 		}
 	}
 	return "", false
 }
 
-func isUppercaseAcronym(value string) bool {
+func IsUppercaseAcronym(value string) bool {
 	runes := []rune(value)
 	if len(runes) < 2 || len(runes) > 6 {
 		return false
@@ -123,9 +123,8 @@ func (b *Buildings) ResolveClassroomKeys(location string) []string {
 				keys = append(keys, match.ClassroomKey)
 			}
 		case classroommatch.MatchAmbiguous, classroommatch.MatchUnmatched:
-			if b.reviews != nil {
-				b.reviews.RecordClassroomMatch(match)
-			}
+			// The matcher logs structured diagnostics; unresolved locations keep
+			// their raw text and simply receive no map link.
 		}
 	}
 	return keys

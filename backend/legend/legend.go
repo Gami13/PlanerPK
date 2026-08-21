@@ -1,4 +1,4 @@
-package types
+package legend
 
 import "strings"
 
@@ -27,7 +27,6 @@ func (l *Legend) GetLocation(name string) (Location, bool) {
 	if loc, ok := l.Locations["s. "+name]; ok {
 		return loc, true
 	}
-	// Try stripping "s. " prefix from the query
 	trimmed := strings.TrimPrefix(name, "s. ")
 	if trimmed != name {
 		if loc, ok := l.Locations[trimmed]; ok {
@@ -37,8 +36,7 @@ func (l *Legend) GetLocation(name string) (Location, bool) {
 	return Location{}, false
 }
 
-// GetTeacher looks up a teacher by shorthand.
 func (l *Legend) GetTeacher(shorthand string) (Teacher, bool) {
-	t, ok := l.Teachers[shorthand]
-	return t, ok
+	teacher, ok := l.Teachers[shorthand]
+	return teacher, ok
 }

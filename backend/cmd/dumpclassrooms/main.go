@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/global"
-	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -35,7 +35,7 @@ func main() {
 
 	// A. Extract from Legend section ("Sale")
 	legend := extractor.ExtractLegend(file)
-	buildings := types.BuildBuildingsFromLegend(legend)
+	buildings := buildings.BuildBuildingsFromLegend(legend)
 	if legend != nil {
 		for _, loc := range legend.Locations {
 			if loc.Shorthand != "" {
