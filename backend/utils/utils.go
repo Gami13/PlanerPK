@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -75,15 +74,17 @@ func InitializeLogging(logDir string) error {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
 
-	// Create a multi-writer that writes to both file and console
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
-
-	// Create a handler with nice formatting
-
-	slog.SetDefault(slog.New(tint.NewHandler(multiWriter, &tint.Options{
-		Level:      getLogLevelFromEnv(),
+	level := getLogLevelFromEnv()
+	consoleHandler := tint.NewHandler(os.Stdout, &tint.Options{
+		Level:      level,
 		TimeFormat: time.Stamp,
-	})))
+	})
+	fileHandler := tint.NewHandler(logFile, &tint.Options{
+		Level:      level,
+		TimeFormat: time.Stamp,
+		NoColor:    true,
+	})
+	slog.SetDefault(slog.New(slog.NewMultiHandler(consoleHandler, fileHandler)))
 
 	slog.Info("Logger initialized",
 		slog.String("log_file", logFilePath),
