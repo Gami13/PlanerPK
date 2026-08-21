@@ -5,10 +5,12 @@ go 1.26.0
 require (
 	cloud.google.com/go/maps v1.39.0
 	connectrpc.com/connect v1.20.0
+	connectrpc.com/cors v0.1.0
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/antchfx/htmlquery v1.3.6
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/lmittmann/tint v1.2.0
+	github.com/rs/cors v1.11.1
 	github.com/xuri/excelize/v2 v2.11.0
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.293.0
