@@ -1,279 +1,166 @@
 package global
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strconv"
+	"strings"
 	"time"
+
+	"github.com/caarlos0/env/v11"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 )
 
 const (
-	defaultDataDir        = "/data"
-	defaultStaticDir      = "/app/static"
-	defaultSheetName      = "2025_2026"
-	defaultHourColumn     = 1
-	defaultDayStart       = "7.30"
-	defaultDayEnd         = "21.00"
-	defaultLastColumn     = 40
-	defaultMinutesBetween = 1
-	defaultSyncInterval   = 72
-	defaultServerPort     = "8080"
-	defaultTimetableURL   = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-	defaultLogLevel       = "DEBUG"
-	defaultDatabaseDriver = "sqlite"
-	databaseArguments     = "cache=shared&mode=rwc&_busy_timeout=5000&_time_format=sqlite"
-	defaultPlacesAPIKey   = "PLEASE_SET_YOUR_GOOGLE_PLACES_API_KEY"
+	DatabaseDriver    = "sqlite"
+	databaseFilename  = "database.db"
+	databaseArguments = "mode=rwc&_busy_timeout=5000&_time_format=sqlite&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(1)"
+
+	// ServerPort is deliberately fixed. Deployments configure the host-facing
+	// port in their reverse proxy or container runtime.
+	ServerPort = "8080"
 )
 
-type config struct {
-	timetable    timetableConfig
-	database     databaseConfig
-	paths        pathConfig
-	server       serverConfig
-	integrations integrationConfig
-	logging      loggingConfig
+// Configuration contains parsed settings and paths derived from DATA_DIR.
+type Configuration struct {
+	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
+	SheetName             string     `env:"SHEET_NAME" envDefault:"2025_2026"`
+	HourColumn            int        `env:"HOUR_COLUMN" envDefault:"1"`
+	DayStart              string     `env:"DAY_START" envDefault:"7.30"`
+	DayEnd                string     `env:"DAY_END" envDefault:"21.00"`
+	LastColumn            int        `env:"LAST_COLUMN" envDefault:"40"`
+	MinutesBetween        int        `env:"MINUTES_BETWEEN" envDefault:"1"`
+	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
+	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"`
+	GooglePlacesAPIKey    string     `env:"GOOGLE_PLACES_API_KEY"`
+	LogLevel              slog.Level `env:"LOG_LEVEL" envDefault:"DEBUG"`
+	DayStartTime          time.Time
+	TimetableUpdatePeriod time.Duration
+	TimetableSyncPeriod   time.Duration
+	StateDir              string
+	LogsDir               string
+	StaticDir             string
+	TimetableDownloadsDir string
+	CurrentTimetableDir   string
+	CalendarCredentials   string
+	OAuthConfig           *oauth2.Config
+	AllowedOrigins        []string
+	TimetableStats        string
+	DatabaseSource        string
 }
 
-type timetableConfig struct {
-	sheetName      string
-	hourColumn     int
-	dayStart       string
-	dayStartTime   time.Time
-	dayEnd         string
-	lastColumn     int
-	updateInterval time.Duration
-	url            string
-	syncInterval   time.Duration
+type oauthCredentials struct {
+	Web struct {
+		JavaScriptOrigins []string `json:"javascript_origins"`
+	} `json:"web"`
 }
 
-type databaseConfig struct {
-	driver string
-	path   string
-	source string
-}
+// Config is populated by Load and then treated as read-only.
+var Config Configuration
 
-type pathConfig struct {
-	dataDir                 string
-	stateDir                string
-	logsDir                 string
-	staticDir               string
-	timetableDownloadsDir   string
-	currentTimetableDir     string
-	calendarCredentialsPath string
-	timetableStatsPath      string
-}
-
-type serverConfig struct {
-	port string
-}
-
-type integrationConfig struct {
-	googlePlacesAPIKey string
-}
-
-type loggingConfig struct {
-	level string
-}
-
-var current config
-
-func getEnvOrDefault(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
-}
-
-func getIntEnv(key string, fallback int) int {
-	value := os.Getenv(key)
-	if value == "" {
-		return fallback
-	}
-
-	parsed, err := strconv.Atoi(value)
+// Load reads, validates, stores the process configuration, and prepares its
+// mutable directories. It panics when startup configuration is invalid or the
+// filesystem cannot be prepared.
+func Load() {
+	cfg, err := parseEnvironment(env.ToMap(os.Environ()))
 	if err != nil {
-		slog.Warn("Invalid integer environment variable; using default",
-			slog.String("variable", key),
-			slog.String("value", value),
-			slog.Int("default", fallback),
-		)
-		return fallback
+		panic(fmt.Sprintf("load configuration: %v", err))
 	}
-	return parsed
+	if err := PrepareFilesystem(cfg); err != nil {
+		panic(fmt.Sprintf("prepare runtime directories: %v", err))
+	}
+	if err := loadOAuthCredentials(&cfg); err != nil {
+		panic(fmt.Sprintf("load OAuth credentials: %v", err))
+	}
+	Config = cfg
 }
 
-func getClockEnv(key, fallback string) (string, time.Time) {
-	value := getEnvOrDefault(key, fallback)
-	parsed, err := time.Parse("15.04", value)
+func parseEnvironment(environment map[string]string) (Configuration, error) {
+	if dataDir, isSet := environment["DATA_DIR"]; isSet && strings.TrimSpace(dataDir) == "" {
+		return Configuration{}, fmt.Errorf("DATA_DIR must not be empty")
+	}
+
+	cfg, err := env.ParseAsWithOptions[Configuration](env.Options{Environment: environment})
 	if err != nil {
-		slog.Warn("Invalid time environment variable; using default",
-			slog.String("variable", key),
-			slog.String("value", value),
-			slog.String("default", fallback),
-		)
-		value = fallback
-		parsed, _ = time.Parse("15.04", fallback)
+		return Configuration{}, fmt.Errorf("parse environment: %w", err)
 	}
-	return value, parsed
+
+	dayStartTime, err := time.Parse("15.04", cfg.DayStart)
+	if err != nil {
+		return Configuration{}, fmt.Errorf("DAY_START must use HH.MM format: %w", err)
+	}
+	if _, err := time.Parse("15.04", cfg.DayEnd); err != nil {
+		return Configuration{}, fmt.Errorf("DAY_END must use HH.MM format: %w", err)
+	}
+	if cfg.HourColumn < 0 {
+		return Configuration{}, fmt.Errorf("HOUR_COLUMN must be non-negative")
+	}
+	if cfg.LastColumn <= cfg.HourColumn {
+		return Configuration{}, fmt.Errorf("LAST_COLUMN must be greater than HOUR_COLUMN")
+	}
+	if cfg.MinutesBetween <= 0 {
+		return Configuration{}, fmt.Errorf("MINUTES_BETWEEN must be greater than zero")
+	}
+	if cfg.TimeBetweenSyncHours < 0 {
+		return Configuration{}, fmt.Errorf("TIME_BETWEEN_SYNC_HOURS must be non-negative")
+	}
+
+	dataDir, err := filepath.Abs(filepath.Clean(cfg.DataDir))
+	if err != nil {
+		return Configuration{}, fmt.Errorf("resolve DATA_DIR: %w", err)
+	}
+	cfg.DataDir = dataDir
+	cfg.StateDir = filepath.Join(cfg.DataDir, "state")
+	cfg.LogsDir = filepath.Join(cfg.DataDir, "logs")
+	cfg.StaticDir = "static"
+	cfg.TimetableDownloadsDir = filepath.Join(cfg.DataDir, "downloads")
+	cfg.CurrentTimetableDir = filepath.Join(cfg.DataDir, "current_timetable")
+	cfg.CalendarCredentials = filepath.Join(cfg.DataDir, "credentials.json")
+	cfg.TimetableStats = filepath.Join(cfg.StateDir, "current_timetable_stats.json")
+	databasePath := filepath.Join(cfg.StateDir, databaseFilename)
+	cfg.DatabaseSource = fmt.Sprintf("file:%s?%s", filepath.ToSlash(databasePath), databaseArguments)
+	cfg.DayStartTime = time.Date(0, 0, 0, dayStartTime.Hour(), dayStartTime.Minute(), 0, 0, time.UTC)
+	cfg.TimetableUpdatePeriod = time.Duration(cfg.MinutesBetween) * time.Minute
+	cfg.TimetableSyncPeriod = time.Duration(cfg.TimeBetweenSyncHours) * time.Hour
+	return cfg, nil
 }
 
-func ensureDirectories(paths pathConfig) {
+func loadOAuthCredentials(cfg *Configuration) error {
+	credentials, err := os.ReadFile(cfg.CalendarCredentials)
+	if err != nil {
+		return fmt.Errorf("read credentials file: %w", err)
+	}
+
+	oauthConfig, err := google.ConfigFromJSON(credentials, calendar.CalendarScope, "email", "profile")
+	if err != nil {
+		return fmt.Errorf("parse OAuth config: %w", err)
+	}
+
+	var parsedCredentials oauthCredentials
+	if err := json.Unmarshal(credentials, &parsedCredentials); err != nil {
+		return fmt.Errorf("parse allowed origins: %w", err)
+	}
+	cfg.OAuthConfig = oauthConfig
+	cfg.AllowedOrigins = parsedCredentials.Web.JavaScriptOrigins
+	return nil
+}
+
+// PrepareFilesystem creates mutable runtime directories. Static assets are
+// prepared by the deployment and are intentionally not created here.
+func PrepareFilesystem(cfg Configuration) error {
 	for _, directory := range []string{
-		paths.stateDir,
-		paths.logsDir,
-		paths.timetableDownloadsDir,
-		paths.currentTimetableDir,
+		cfg.StateDir,
+		cfg.LogsDir,
+		cfg.TimetableDownloadsDir,
+		cfg.CurrentTimetableDir,
 	} {
 		if err := os.MkdirAll(directory, 0o755); err != nil {
-			slog.Error("Failed to create data directory",
-				slog.String("directory", directory),
-				slog.Any("error", err),
-			)
+			return fmt.Errorf("create runtime directory %q: %w", directory, err)
 		}
 	}
-}
-
-// LoadEnvVariables loads runtime settings and derives all application paths.
-// It should be called once before starting the application or any worker.
-func LoadEnvVariables() {
-	dataDir := getEnvOrDefault("DATA_DIR", defaultDataDir)
-
-	hourColumn := getIntEnv("HOUR_COLUMN", defaultHourColumn)
-	if hourColumn < 0 {
-		slog.Warn("HOUR_COLUMN must be non-negative; using default",
-			slog.Int("value", hourColumn), slog.Int("default", defaultHourColumn))
-		hourColumn = defaultHourColumn
-	}
-
-	dayStart, startTime := getClockEnv("DAY_START", defaultDayStart)
-	dayStartTime := time.Date(0, 0, 0, startTime.Hour(), startTime.Minute(), 0, 0, time.UTC)
-	dayEnd, _ := getClockEnv("DAY_END", defaultDayEnd)
-
-	lastColumn := getIntEnv("LAST_COLUMN", defaultLastColumn)
-	if lastColumn <= hourColumn {
-		slog.Warn("LAST_COLUMN must be greater than HOUR_COLUMN; using default",
-			slog.Int("value", lastColumn), slog.Int("default", defaultLastColumn))
-		lastColumn = defaultLastColumn
-		if lastColumn <= hourColumn {
-			slog.Warn("HOUR_COLUMN is outside the default timetable range; using default",
-				slog.Int("value", hourColumn), slog.Int("default", defaultHourColumn))
-			hourColumn = defaultHourColumn
-		}
-	}
-
-	minutesBetween := getIntEnv("MINUTES_BETWEEN", defaultMinutesBetween)
-	if minutesBetween <= 0 {
-		slog.Warn("MINUTES_BETWEEN must be greater than zero; using default",
-			slog.Int("value", minutesBetween), slog.Int("default", defaultMinutesBetween))
-		minutesBetween = defaultMinutesBetween
-	}
-
-	syncHours := getIntEnv("TIME_BETWEEN_SYNC_HOURS", defaultSyncInterval)
-	if syncHours < 0 {
-		slog.Warn("TIME_BETWEEN_SYNC_HOURS must be non-negative; using default",
-			slog.Int("value", syncHours), slog.Int("default", defaultSyncInterval))
-		syncHours = defaultSyncInterval
-	}
-
-	stateDir := filepath.Join(dataDir, "state")
-	paths := pathConfig{
-		dataDir:                 dataDir,
-		stateDir:                stateDir,
-		logsDir:                 filepath.Join(dataDir, "logs"),
-		staticDir:               defaultStaticDir,
-		timetableDownloadsDir:   filepath.Join(dataDir, "downloads"),
-		currentTimetableDir:     filepath.Join(dataDir, "current_timetable"),
-		calendarCredentialsPath: filepath.Join(dataDir, "credentials.json"),
-		timetableStatsPath:      filepath.Join(stateDir, "current_timetable_stats.json"),
-	}
-
-	databasePath := filepath.Join(stateDir, "database.db")
-	current = config{
-		timetable: timetableConfig{
-			sheetName:      getEnvOrDefault("SHEET_NAME", defaultSheetName),
-			hourColumn:     hourColumn,
-			dayStart:       dayStart,
-			dayStartTime:   dayStartTime,
-			dayEnd:         dayEnd,
-			lastColumn:     lastColumn,
-			updateInterval: time.Duration(minutesBetween) * time.Minute,
-			url:            getEnvOrDefault("TIMETABLE_URL", defaultTimetableURL),
-			syncInterval:   time.Duration(syncHours) * time.Hour,
-		},
-		database: databaseConfig{
-			driver: defaultDatabaseDriver,
-			path:   databasePath,
-			source: fmt.Sprintf("file:%s?%s", filepath.ToSlash(databasePath), databaseArguments),
-		},
-		paths: paths,
-		server: serverConfig{
-			// The container listens on a fixed internal port. Change the
-			// host-facing port through Docker or Compose.
-			port: defaultServerPort,
-		},
-		integrations: integrationConfig{
-			googlePlacesAPIKey: getEnvOrDefault("GOOGLE_PLACES_API_KEY", defaultPlacesAPIKey),
-		},
-		logging: loggingConfig{
-			level: getEnvOrDefault("LOG_LEVEL", defaultLogLevel),
-		},
-	}
-
-	ensureDirectories(current.paths)
-}
-
-func SheetName() string                      { return current.timetable.sheetName }
-func HourColumn() int                        { return current.timetable.hourColumn }
-func DayStart() string                       { return current.timetable.dayStart }
-func DayStartTime() time.Time                { return current.timetable.dayStartTime }
-func DayEnd() string                         { return current.timetable.dayEnd }
-func LastColumn() int                        { return current.timetable.lastColumn }
-func TimetableUpdateInterval() time.Duration { return current.timetable.updateInterval }
-func TimetableURL() string                   { return current.timetable.url }
-func TimeBetweenSync() time.Duration         { return current.timetable.syncInterval }
-func DatabaseDriver() string                 { return current.database.driver }
-func DatabasePath() string                   { return current.database.path }
-func DatabaseSource() string                 { return current.database.source }
-func DataDir() string                        { return current.paths.dataDir }
-func StateDir() string                       { return current.paths.stateDir }
-func LogsDir() string                        { return current.paths.logsDir }
-func StaticDir() string                      { return current.paths.staticDir }
-func TimetableDownloadsDir() string          { return current.paths.timetableDownloadsDir }
-func CurrentTimetableDir() string            { return current.paths.currentTimetableDir }
-func CalendarCredentialsPath() string        { return current.paths.calendarCredentialsPath }
-func CurrentTimetableStatsPath() string      { return current.paths.timetableStatsPath }
-func ServerPort() string                     { return current.server.port }
-func GooglePlacesAPIKey() string             { return current.integrations.googlePlacesAPIKey }
-func GooglePlacesConfigured() bool {
-	return GooglePlacesAPIKey() != "" && GooglePlacesAPIKey() != defaultPlacesAPIKey
-}
-func LogLevel() string { return current.logging.level }
-
-func PrintEnvVariables() {
-	slog.Info(
-		"Current configuration",
-		slog.String("SHEET_NAME", SheetName()),
-		slog.Int("HOUR_COLUMN", HourColumn()),
-		slog.String("DAY_START", DayStart()),
-		slog.String("DAY_END", DayEnd()),
-		slog.Int("LAST_COLUMN", LastColumn()),
-		slog.String("DATABASE_DRIVER", DatabaseDriver()),
-		slog.Duration("UPDATE_INTERVAL", TimetableUpdateInterval()),
-		slog.String("SERVER_PORT", ServerPort()),
-		slog.String("TIMETABLE_URL", TimetableURL()),
-		slog.Duration("TIME_BETWEEN_SYNC", TimeBetweenSync()),
-		slog.Bool("GOOGLE_PLACES_API_KEY_SET", GooglePlacesConfigured()),
-		slog.String("DATA_DIR", DataDir()),
-		slog.String("STATE_DIR", StateDir()),
-		slog.String("LOGS_DIR", LogsDir()),
-		slog.String("DATABASE_PATH", DatabasePath()),
-		slog.String("DATABASE_SOURCE", DatabaseSource()),
-		slog.String("STATIC_DIR", StaticDir()),
-		slog.String("TIMETABLE_DOWNLOADS_DIR", TimetableDownloadsDir()),
-		slog.String("CURRENT_TIMETABLE_DIR", CurrentTimetableDir()),
-		slog.String("CALENDAR_CREDENTIALS_PATH", CalendarCredentialsPath()),
-		slog.String("CURRENT_TIMETABLE_STATS_PATH", CurrentTimetableStatsPath()),
-	)
+	return nil
 }

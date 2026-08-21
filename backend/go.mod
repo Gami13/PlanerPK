@@ -7,6 +7,7 @@ require (
 	connectrpc.com/connect v1.20.0
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/antchfx/htmlquery v1.3.6
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/lmittmann/tint v1.2.0
 	github.com/xuri/excelize/v2 v2.11.0
 	golang.org/x/oauth2 v0.36.0
@@ -28,7 +29,6 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.21 // indirect

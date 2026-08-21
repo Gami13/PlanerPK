@@ -11,9 +11,10 @@ import (
 )
 
 func main() {
-	global.LoadEnvVariables()
+	global.Load()
+	config := global.Config
 
-	xlsxPath, err := findXlsxFile(global.CurrentTimetableDir())
+	xlsxPath, err := findXlsxFile(config.CurrentTimetableDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error finding timetable file: %v\n", err)
 		os.Exit(1)
@@ -41,13 +42,13 @@ func main() {
 		"CZWARTEK": true, "PIĄTEK": true, "SOBOTA": true, "NIEDZIELA": true,
 	}
 
-	for col := global.HourColumn() + 1; col <= global.LastColumn(); col++ {
+	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
 		if skipCols[col] {
 			continue
 		}
 		for _, day := range days {
 			for row := day.startRow; row <= day.endRow; row++ {
-				text := getCell(file, global.SheetName(), row, col)
+				text := getCell(file, global.Config.SheetName, row, col)
 				if text != "" && !dayNames[strings.TrimSpace(text)] {
 					classTexts = append(classTexts, text)
 				}
@@ -86,17 +87,17 @@ type dayRange struct {
 
 func findDays(file *excelize.File) []dayRange {
 	var days []dayRange
-	rows, err := file.GetRows(global.SheetName())
+	rows, err := file.GetRows(global.Config.SheetName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting rows: %v\n", err)
 		return days
 	}
 	for i, row := range rows {
-		if len(row) > global.HourColumn() {
-			if row[global.HourColumn()] == global.DayStart() {
+		if len(row) > global.Config.HourColumn {
+			if row[global.Config.HourColumn] == global.Config.DayStart {
 				days = append(days, dayRange{startRow: i})
 			}
-			if row[global.HourColumn()] == global.DayEnd() && len(days) > 0 {
+			if row[global.Config.HourColumn] == global.Config.DayEnd && len(days) > 0 {
 				days[len(days)-1].endRow = i
 			}
 		}
@@ -138,9 +139,9 @@ func findHourColumns(file *excelize.File, days []dayRange) map[int]bool {
 	}
 	// Check a few rows above the first day's start for "Godziny"
 	headerSearch := max(days[0].startRow-5, 0)
-	for col := global.HourColumn() + 1; col <= global.LastColumn(); col++ {
+	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
 		for row := headerSearch; row < days[0].startRow; row++ {
-			val := strings.TrimSpace(getCell(file, global.SheetName(), row, col))
+			val := strings.TrimSpace(getCell(file, global.Config.SheetName, row, col))
 			if strings.EqualFold(val, "Godziny") {
 				skip[col] = true
 				break

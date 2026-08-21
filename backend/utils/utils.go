@@ -5,12 +5,10 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/lmittmann/tint"
 	"github.com/woodpkrs/PlanerPK/gen/db"
-	"github.com/woodpkrs/PlanerPK/global"
 	"golang.org/x/oauth2"
 )
 
@@ -42,29 +40,7 @@ func GetToken(u *db.User) *oauth2.Token {
 
 // wykład, lab., ćwiczenia
 
-func getLogLevelFromEnv() slog.Level {
-	switch strings.ToUpper(strings.TrimSpace(global.LogLevel())) {
-	case "DEBUG":
-		return slog.LevelDebug
-	case "INFO":
-		return slog.LevelInfo
-	case "WARN":
-		return slog.LevelWarn
-	case "ERROR":
-		return slog.LevelError
-	default:
-		slog.Warn("Invalid LOG_LEVEL environment variable, defaulting to INFO",
-			slog.String("LOG_LEVEL", global.LogLevel()))
-		return slog.LevelInfo
-	}
-}
-
-func InitializeLogging(logDir string) error {
-	// Create logs directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create log directory: %w", err)
-	}
-
+func InitializeLogging(logDir string, level slog.Level) error {
 	// Create log file with timestamp
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
 	logFilePath := filepath.Join(logDir, fmt.Sprintf("app_%s.log", timestamp))
@@ -74,7 +50,6 @@ func InitializeLogging(logDir string) error {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
 
-	level := getLogLevelFromEnv()
 	consoleHandler := tint.NewHandler(os.Stdout, &tint.Options{
 		Level:      level,
 		TimeFormat: time.Stamp,
@@ -88,7 +63,7 @@ func InitializeLogging(logDir string) error {
 
 	slog.Info("Logger initialized",
 		slog.String("log_file", logFilePath),
-		slog.String("log_level", global.LogLevel()))
+		slog.String("log_level", level.String()))
 
 	return nil
 }

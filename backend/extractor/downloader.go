@@ -25,7 +25,7 @@ var httpClient = &http.Client{
 }
 
 func fetchTimetableUrl() (string, error) {
-	doc, err := htmlquery.LoadURL(global.TimetableURL())
+	doc, err := htmlquery.LoadURL(global.Config.TimetableURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
 	}
@@ -37,11 +37,7 @@ func fetchTimetableUrl() (string, error) {
 var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
 
 func getCurrentXlsxPath() (filePath string, err error) {
-	absoluteDestination, err := filepath.Abs(global.CurrentTimetableDir())
-	if err != nil {
-		return "", err
-	}
-	entries, err := os.ReadDir(absoluteDestination)
+	entries, err := os.ReadDir(global.Config.CurrentTimetableDir)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +47,7 @@ func getCurrentXlsxPath() (filePath string, err error) {
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xlsx") {
-			return filepath.Join(absoluteDestination, entry.Name()), nil
+			return filepath.Join(global.Config.CurrentTimetableDir, entry.Name()), nil
 		}
 	}
 
@@ -70,12 +66,7 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 		return stats, err
 	}
 
-	destination, err := filepath.Abs(global.CurrentTimetableStatsPath())
-	if err != nil {
-		return stats, err
-	}
-
-	err = os.WriteFile(destination, jsonString, 0o644)
+	err = os.WriteFile(global.Config.TimetableStats, jsonString, 0o644)
 	if err != nil {
 		return stats, err
 	}
@@ -83,12 +74,7 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 }
 
 func getLatestTimetableInfo() (stats types.TimetableFileStats, err error) {
-	destination, err := filepath.Abs(global.CurrentTimetableStatsPath())
-	if err != nil {
-		return types.TimetableFileStats{}, err
-	}
-
-	jsonBytes, err := os.ReadFile(destination)
+	jsonBytes, err := os.ReadFile(global.Config.TimetableStats)
 	if err != nil {
 		return types.TimetableFileStats{}, err
 	}
@@ -123,7 +109,9 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 
 	remoteLastModified := response.Header.Get("Last-Modified")
 	remoteContentLength := response.Header.Get("Content-Length")
-
+	if remoteLastModified == "" || remoteContentLength == "" {
+		return true, remoteTimetableUrl, nil
+	}
 	if localFileInfo.LastModified != remoteLastModified || localFileInfo.ContentLength != remoteContentLength {
 		slog.Info("Last modified", "local", localFileInfo.LastModified, "remote", remoteLastModified)
 		slog.Info("Content length", "local", localFileInfo.ContentLength, "remote", remoteContentLength)
@@ -136,10 +124,7 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 // Downloads the timetable from PKs website
 // Returns types.TimetableFileStats
 func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
-	destination, err := filepath.Abs(filepath.Join(global.TimetableDownloadsDir(), filepath.Base(url)))
-	if err != nil {
-		return types.TimetableFileStats{}, err
-	}
+	destination := filepath.Join(global.Config.TimetableDownloadsDir, filepath.Base(url))
 
 	response, err := httpClient.Get(url)
 	if err != nil {
@@ -178,10 +163,7 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err error) {
 	origin := stats.Path
 
-	timetableDestination, err := filepath.Abs(global.CurrentTimetableDir())
-	if err != nil {
-		return "", err
-	}
+	timetableDestination := global.Config.CurrentTimetableDir
 	doesExist := true
 	currentXlsxPath, err := getCurrentXlsxPath()
 	if err != nil {

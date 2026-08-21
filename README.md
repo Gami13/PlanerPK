@@ -2,12 +2,12 @@
 
 ## Deployment model
 
-PlanerPK is intended to run inside a container only. Supported deployments are:
+PlanerPK is intended for managed deployment only. Supported deployments are:
 
 - a Docker container built from the repository `Dockerfile`;
-- a Nix container that provides the same runtime filesystem contract.
+- the NixOS module, which provides the same runtime filesystem contract.
 
-Running the Go binary, `go run`, `nix run`, or the NixOS systemd module directly on the host is not supported. The container must provide `/app/static` for frontend assets, a writable `/data` directory for persistent state, and the OAuth file at `/data/credentials.json`.
+Running the Go binary, `go run`, or `nix run` directly on the host is not supported. The runtime serves frontend assets from its internal `static` directory, stores mutable data under `DATA_DIR` (default `/data`), and reads OAuth credentials from `DATA_DIR/credentials.json`.
 
 ## Docker workflow
 
@@ -15,10 +15,10 @@ The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS fron
 
 The container has two filesystem areas:
 
-- `/app` contains the application and compiled static assets.
+- `static` contains the internal compiled frontend assets.
 - `/data` contains all mutable runtime data and should be mounted as one persistent volume.
 
-The runtime uses `/app` and `/data` instead of the XDG directory hierarchy. XDG is designed around per-user desktop applications and distributes files across host-specific locations, which is a poor fit for containerized deployments with explicit mounts. All mutable paths are therefore derived from `DATA_DIR`, keeping persistent state under `/data`.
+The runtime does not use the XDG directory hierarchy. All mutable paths are derived from `DATA_DIR`, while the static directory remains internal to the deployment.
 
 The data directory has this layout:
 
@@ -85,7 +85,7 @@ Start the application with:
 docker compose up --build
 ```
 
-The backend uses `/data` by default. `DATA_DIR` can be changed if a different mount point is required, but all derived data paths remain inside that directory. Static assets remain in `/app/static` and are not part of the persistent data volume.
+The backend uses `DATA_DIR=/data` by default. Every mutable runtime path is derived from it; `static` remains internal to the deployment.
 
 ### Runtime settings
 
@@ -99,6 +99,6 @@ The backend supports these environment variables:
 - `SHEET_NAME`, `HOUR_COLUMN`, `DAY_START`, `DAY_END`, and `LAST_COLUMN` — timetable spreadsheet layout settings.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
 
-The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment; the container does not invent a development URL. The static asset directory is fixed at `/app/static`.
+The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment, for example `https://planpk.gami.ovh/api`.
 
 Protobuf generation is run from the repository root with `buf generate --template buf.gen.yaml` and writes to `backend/gen` and `frontend/src/gen`.

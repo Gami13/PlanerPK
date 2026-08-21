@@ -10,7 +10,7 @@ COPY frontend/ ./
 RUN pnpm build
 
 # --- Backend ---
-FROM golang:1.25-alpine AS backend-builder
+FROM golang:1.26-alpine AS backend-builder
 WORKDIR /app/backend
 ARG TARGETOS
 ARG TARGETARCH
@@ -24,8 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # --- Runtime ---
 FROM debian:bookworm-slim AS runtime
-ENV APP_HOME=/app \
-	HOME=/home/google \
+ENV HOME=/home/google \
 	DATA_DIR=/data
 WORKDIR /app
 

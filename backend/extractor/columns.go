@@ -38,18 +38,18 @@ func BuildAvailableGroups(file *excelize.File) ([]types.ColumnGroup, error) {
 
 // findDataStartRow finds the first row containing DAY_START in HOUR_COLUMN.
 func findDataStartRow(file *excelize.File) (int, error) {
-	rows, err := file.GetRows(global.SheetName())
+	rows, err := file.GetRows(global.Config.SheetName)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get rows: %w", err)
 	}
 
 	for i, row := range rows {
-		if len(row) > global.HourColumn() && row[global.HourColumn()] == global.DayStart() {
+		if len(row) > global.Config.HourColumn && row[global.Config.HourColumn] == global.Config.DayStart {
 			return i, nil
 		}
 	}
 
-	return 0, fmt.Errorf("could not find row with %q in hour column", global.DayStart())
+	return 0, fmt.Errorf("could not find row with %q in hour column", global.Config.DayStart)
 }
 
 // findHeaderRows scans upward from dataStartRow to find the group name row
@@ -65,8 +65,8 @@ func findHeaderRows(file *excelize.File, dataStartRow int) (int, int) {
 
 // rowHasDataContent checks if any data column in the row is non-empty.
 func rowHasDataContent(file *excelize.File, row int) bool {
-	for col := global.HourColumn() + 1; col <= global.LastColumn(); col++ {
-		if strings.TrimSpace(getCell(file, global.SheetName(), row, col)) != "" {
+	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
+		if strings.TrimSpace(getCell(file, global.Config.SheetName, row, col)) != "" {
 			return true
 		}
 	}
@@ -77,7 +77,7 @@ func rowHasDataContent(file *excelize.File, row int) bool {
 func buildMergeLookup(file *excelize.File) map[[2]int]*mergeRange {
 	lookup := make(map[[2]int]*mergeRange)
 
-	mergeCells, err := file.GetMergeCells(global.SheetName())
+	mergeCells, err := file.GetMergeCells(global.Config.SheetName)
 	if err != nil {
 		slog.Error("Failed to get merge cells", slog.Any("error", err))
 		return lookup
@@ -125,7 +125,7 @@ func effectiveGroupValue(file *excelize.File, row, col int, lookup map[[2]int]*m
 			return strings.TrimSpace(mr.Value)
 		}
 	}
-	return strings.TrimSpace(getCell(file, global.SheetName(), row, col))
+	return strings.TrimSpace(getCell(file, global.Config.SheetName, row, col))
 }
 
 // buildColumnGroups iterates data columns and builds ColumnGroup entries.
@@ -146,10 +146,10 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 	slog.Debug("Building column groups",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
-		slog.Int("firstCol", global.HourColumn()+1),
-		slog.Int("lastCol", global.LastColumn()))
+		slog.Int("firstCol", global.Config.HourColumn+1),
+		slog.Int("lastCol", global.Config.LastColumn))
 
-	for col := global.HourColumn() + 1; col <= global.LastColumn(); col++ {
+	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
 		value := effectiveGroupValue(file, groupRow, col, lookup)
 		category := effectiveCategory(file, categoryRow, col, lookup)
 
@@ -223,7 +223,7 @@ func effectiveCategory(file *excelize.File, categoryRow int, col int, lookup map
 		if mr, ok := lookup[[2]int{categoryRow, c}]; ok && strings.TrimSpace(mr.Value) != "" {
 			v = strings.TrimSpace(mr.Value)
 		} else {
-			v = strings.TrimSpace(getCell(file, global.SheetName(), categoryRow, c))
+			v = strings.TrimSpace(getCell(file, global.Config.SheetName, categoryRow, c))
 		}
 		if v != "" && !isHourLabel(v) {
 			return v
