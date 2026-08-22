@@ -109,9 +109,6 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 
 	remoteLastModified := response.Header.Get("Last-Modified")
 	remoteContentLength := response.Header.Get("Content-Length")
-	if remoteLastModified == "" || remoteContentLength == "" {
-		return true, remoteTimetableUrl, nil
-	}
 	if localFileInfo.LastModified != remoteLastModified || localFileInfo.ContentLength != remoteContentLength {
 		slog.Info("Last modified", "local", localFileInfo.LastModified, "remote", remoteLastModified)
 		slog.Info("Content length", "local", localFileInfo.ContentLength, "remote", remoteContentLength)
