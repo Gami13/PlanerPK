@@ -14,9 +14,9 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/gen/db"
-	"github.com/woodpkrs/PlanerPK/global"
 )
 
 type PlaceInfo struct {
@@ -34,15 +34,14 @@ func main() {
 	outPathFlag := flag.String("out", "", "Output file path (default: <STATE_DIR>/place_links.txt)")
 	flag.Parse()
 
-	global.Load()
-	config := global.Config
+	config.Load()
 
 	outPath := *outPathFlag
 	if outPath == "" {
-		outPath = filepath.Join(config.StateDir, "place_links.txt")
+		outPath = filepath.Join(config.Config.StateDir, "place_links.txt")
 	}
 
-	database, err := sql.Open(global.DatabaseDriver, config.DatabaseSource)
+	database, err := sql.Open(config.DatabaseDriver, config.Config.DatabaseSource)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening database: %v\n", err)
 		os.Exit(1)

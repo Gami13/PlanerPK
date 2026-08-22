@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 )
 
 var (
@@ -18,14 +18,14 @@ var (
 
 func getFileServer() http.Handler {
 	fileServerOnce.Do(func() {
-		staticFileServer = http.FileServer(http.Dir(global.Config.StaticDir))
+		staticFileServer = http.FileServer(http.Dir(config.Config.StaticDir))
 	})
 	return staticFileServer
 }
 
 func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		fullPath := filepath.Join(global.Config.StaticDir, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+		fullPath := filepath.Join(config.Config.StaticDir, strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		fi, err := os.Stat(fullPath)
 		if err != nil {
 			if !os.IsNotExist(err) {

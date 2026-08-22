@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
-	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/webServer/handler"
 
@@ -18,11 +18,11 @@ import (
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
-	if len(global.Config.AllowedOrigins) == 0 {
+	if len(config.Config.AllowedOrigins) == 0 {
 		return next
 	}
 	return cors.New(cors.Options{
-		AllowedOrigins: global.Config.AllowedOrigins,
+		AllowedOrigins: config.Config.AllowedOrigins,
 		AllowedMethods: connectcors.AllowedMethods(),
 		AllowedHeaders: append(connectcors.AllowedHeaders(), "Authorization"),
 		ExposedHeaders: connectcors.ExposedHeaders(),
@@ -44,7 +44,7 @@ func Start(db db.Querier, cache *types.Cache) {
 	mux.Handle("/", http.HandlerFunc(ServeFrontend))
 
 	server := &http.Server{
-		Addr:      ":" + global.ServerPort,
+		Addr:      ":" + config.ServerPort,
 		Handler:   mux,
 		Protocols: &http.Protocols{},
 	}
@@ -52,7 +52,7 @@ func Start(db db.Querier, cache *types.Cache) {
 	server.Protocols.SetHTTP2(true)
 	server.Protocols.SetUnencryptedHTTP2(true)
 
-	slog.Info("Web server listening", slog.String("port", global.ServerPort))
+	slog.Info("Web server listening", slog.String("port", config.ServerPort))
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Web server failed", slog.Any("error", err))
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/webServer"
 
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 
 	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/utils"
@@ -29,7 +29,7 @@ import (
 var ddl string
 
 func initializeXlsxInfo() {
-	filename := global.Config.TimetableStats
+	filename := config.Config.TimetableStats
 
 	_, err := os.Stat(filename)
 	if err == nil {
@@ -53,18 +53,17 @@ func initializeXlsxInfo() {
 
 // Function is free to panic as resources are required for app to function
 func initializeApp() (queries db.Querier) {
-	global.Load()
-	config := global.Config
+	config.Load()
 
-	err := utils.InitializeLogging(config.LogsDir, config.LogLevel)
+	err := utils.InitializeLogging(config.Config.LogsDir, config.Config.LogLevel)
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}
 	slog.Info("Configuration loaded",
-		slog.String("data_dir", config.DataDir),
-		slog.Bool("google_places_api_key_set", config.GooglePlacesAPIKey != ""))
+		slog.String("data_dir", config.Config.DataDir),
+		slog.Bool("google_places_api_key_set", config.Config.GooglePlacesAPIKey != ""))
 
-	database, err := sql.Open(global.DatabaseDriver, config.DatabaseSource)
+	database, err := sql.Open(config.DatabaseDriver, config.Config.DatabaseSource)
 	if err != nil {
 		panic(err)
 	}
@@ -150,15 +149,15 @@ func main() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(global.Config.TimetableUpdatePeriod)
+	ticker := time.NewTicker(config.Config.TimetableUpdatePeriod)
 	defer ticker.Stop()
 
-	slog.Info("Starting web server", slog.String("port", global.ServerPort))
+	slog.Info("Starting web server", slog.String("port", config.ServerPort))
 
 	go webServer.Start(queries, &cache)
 
 	slog.Info("Starting timetable update ticker",
-		slog.Int("interval_minutes", int(global.Config.TimetableUpdatePeriod/time.Minute)))
+		slog.Int("interval_minutes", int(config.Config.TimetableUpdatePeriod/time.Minute)))
 	for t := range ticker.C {
 		slog.Info("Timetable update triggered", slog.Time("tick_time", t))
 		updateAllTimetables(queries, &cache)
@@ -186,7 +185,7 @@ func updateAllTimetables(queries db.Querier, cache *types.Cache) {
 			continue
 		}
 		timeSinceSync := time.Since(user.LastSynced)
-		if !hasChanged && timeSinceSync < global.Config.TimetableSyncPeriod {
+		if !hasChanged && timeSinceSync < config.Config.TimetableSyncPeriod {
 			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
 				slog.String("email", *user.Email),
 				slog.Int64("column", *user.ChosenColumn))

@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/extractor"
-	"github.com/woodpkrs/PlanerPK/global"
 )
 
 func main() {
-	global.Load()
+	config.Load()
 
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {

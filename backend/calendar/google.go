@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
@@ -14,7 +14,7 @@ import (
 )
 
 func AuthorizeFromCode(code string) (*oauth2.Token, error) {
-	tok, err := global.Config.OAuthConfig.Exchange(context.Background(), code)
+	tok, err := config.Config.OAuthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func AuthorizeFromCode(code string) (*oauth2.Token, error) {
 }
 
 func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
-	client := global.Config.OAuthConfig.Client(context.Background(), token)
+	client := config.Config.OAuthConfig.Client(context.Background(), token)
 
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
@@ -52,7 +52,7 @@ func GetUserInfo(token *oauth2.Token) (*types.UserInfo, error) {
 }
 
 func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service, error) {
-	client := global.Config.OAuthConfig.Client(ctx, token)
+	client := config.Config.OAuthConfig.Client(ctx, token)
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
@@ -64,6 +64,6 @@ func createService(ctx context.Context, token *oauth2.Token) (*calendar.Service,
 
 func GenerateAuthURL() (string, error) {
 	//"&prompt=consent"
-	authURL := global.Config.OAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
+	authURL := config.Config.OAuthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 	return authURL, nil
 }

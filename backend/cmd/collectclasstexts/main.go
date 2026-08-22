@@ -7,16 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/extractor"
-	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/xuri/excelize/v2"
 )
 
 func main() {
-	global.Load()
-	config := global.Config
+	config.Load()
 
-	xlsxPath, err := findXlsxFile(config.CurrentTimetableDir)
+	xlsxPath, err := findXlsxFile(config.Config.CurrentTimetableDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error finding timetable file: %v\n", err)
 		os.Exit(1)
@@ -49,7 +48,7 @@ func main() {
 		"CZWARTEK": true, "PIĄTEK": true, "SOBOTA": true, "NIEDZIELA": true,
 	}
 
-	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
+	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		if skipCols[col] {
 			continue
 		}
@@ -100,11 +99,11 @@ func findDays(file *excelize.File, sheetName string) []dayRange {
 		return days
 	}
 	for i, row := range rows {
-		if len(row) > global.Config.HourColumn {
-			if row[global.Config.HourColumn] == global.Config.DayStart {
+		if len(row) > config.Config.HourColumn {
+			if row[config.Config.HourColumn] == config.Config.DayStart {
 				days = append(days, dayRange{startRow: i})
 			}
-			if row[global.Config.HourColumn] == global.Config.DayEnd && len(days) > 0 {
+			if row[config.Config.HourColumn] == config.Config.DayEnd && len(days) > 0 {
 				days[len(days)-1].endRow = i
 			}
 		}
@@ -146,7 +145,7 @@ func findHourColumns(file *excelize.File, sheetName string, days []dayRange) map
 	}
 	// Check a few rows above the first day's start for "Godziny"
 	headerSearch := max(days[0].startRow-5, 0)
-	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
+	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		for row := headerSearch; row < days[0].startRow; row++ {
 			val := strings.TrimSpace(getCell(file, sheetName, row, col))
 			if strings.EqualFold(val, "Godziny") {

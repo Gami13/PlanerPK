@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/extractor"
-	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/xuri/excelize/v2"
 )
 
 func main() {
-	global.Load()
+	config.Load()
 
 	xlsxPath, err := findCurrentTimetableFile()
 	if err != nil {
@@ -106,7 +106,7 @@ func addClassroom(unique map[string]struct{}, raw string) {
 
 // findCurrentTimetableFile locates the single .xlsx timetable file in the current_timetable directory.
 func findCurrentTimetableFile() (string, error) {
-	dirsToSearch := []string{global.Config.CurrentTimetableDir}
+	dirsToSearch := []string{config.Config.CurrentTimetableDir}
 
 	seen := make(map[string]bool)
 	for _, dir := range dirsToSearch {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
@@ -51,14 +51,14 @@ func getDaysStartEnd(file *excelize.File, sheetName string) []types.Day {
 	for number, row := range rows {
 		if len(row) > 1 {
 
-			if row[global.Config.HourColumn] == global.Config.DayStart {
+			if row[config.Config.HourColumn] == config.Config.DayStart {
 				day := types.Day{
 					StartingRow: number,
 					WeekDay:     time.Weekday((len(days) + 1) % 7),
 				}
 				days = append(days, day)
 			}
-			if row[global.Config.HourColumn] == global.Config.DayEnd {
+			if row[config.Config.HourColumn] == config.Config.DayEnd {
 				days[len(days)-1].EndingRow = number
 			}
 
@@ -72,7 +72,7 @@ const slotDuration = 15 * time.Minute
 func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings) []types.Class {
 	var classes []types.Class
 
-	currentTime := global.Config.DayStartTime
+	currentTime := config.Config.DayStartTime
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
 		classText := getCell(file, sheetName, i, int(groupColumn))

@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
@@ -25,7 +25,7 @@ var httpClient = &http.Client{
 }
 
 func fetchTimetableUrl() (string, error) {
-	doc, err := htmlquery.LoadURL(global.Config.TimetableURL)
+	doc, err := htmlquery.LoadURL(config.Config.TimetableURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
 	}
@@ -37,7 +37,7 @@ func fetchTimetableUrl() (string, error) {
 var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
 
 func getCurrentXlsxPath() (filePath string, err error) {
-	entries, err := os.ReadDir(global.Config.CurrentTimetableDir)
+	entries, err := os.ReadDir(config.Config.CurrentTimetableDir)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +47,7 @@ func getCurrentXlsxPath() (filePath string, err error) {
 
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".xlsx") {
-			return filepath.Join(global.Config.CurrentTimetableDir, entry.Name()), nil
+			return filepath.Join(config.Config.CurrentTimetableDir, entry.Name()), nil
 		}
 	}
 
@@ -66,7 +66,7 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 		return stats, err
 	}
 
-	err = os.WriteFile(global.Config.TimetableStats, jsonString, 0o644)
+	err = os.WriteFile(config.Config.TimetableStats, jsonString, 0o644)
 	if err != nil {
 		return stats, err
 	}
@@ -74,7 +74,7 @@ func setLatestTimetableInfo(lastModified string, contentLength string, filePath 
 }
 
 func getLatestTimetableInfo() (stats types.TimetableFileStats, err error) {
-	jsonBytes, err := os.ReadFile(global.Config.TimetableStats)
+	jsonBytes, err := os.ReadFile(config.Config.TimetableStats)
 	if err != nil {
 		return types.TimetableFileStats{}, err
 	}
@@ -121,7 +121,7 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 // Downloads the timetable from PKs website
 // Returns types.TimetableFileStats
 func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
-	destination := filepath.Join(global.Config.TimetableDownloadsDir, filepath.Base(url))
+	destination := filepath.Join(config.Config.TimetableDownloadsDir, filepath.Base(url))
 
 	response, err := httpClient.Get(url)
 	if err != nil {
@@ -160,7 +160,7 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err error) {
 	origin := stats.Path
 
-	timetableDestination := global.Config.CurrentTimetableDir
+	timetableDestination := config.Config.CurrentTimetableDir
 	doesExist := true
 	currentXlsxPath, err := getCurrentXlsxPath()
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/woodpkrs/PlanerPK/global"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
@@ -44,12 +44,12 @@ func findDataStartRow(file *excelize.File, sheetName string) (int, error) {
 	}
 
 	for i, row := range rows {
-		if len(row) > global.Config.HourColumn && row[global.Config.HourColumn] == global.Config.DayStart {
+		if len(row) > config.Config.HourColumn && row[config.Config.HourColumn] == config.Config.DayStart {
 			return i, nil
 		}
 	}
 
-	return 0, fmt.Errorf("could not find row with %q in hour column", global.Config.DayStart)
+	return 0, fmt.Errorf("could not find row with %q in hour column", config.Config.DayStart)
 }
 
 // findHeaderRows scans upward from dataStartRow to find the group name row
@@ -65,7 +65,7 @@ func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int) (in
 
 // rowHasDataContent checks if any data column in the row is non-empty.
 func rowHasDataContent(file *excelize.File, sheetName string, row int) bool {
-	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
+	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		if strings.TrimSpace(getCell(file, sheetName, row, col)) != "" {
 			return true
 		}
@@ -146,10 +146,10 @@ func buildColumnGroups(file *excelize.File, sheetName string, groupRow, category
 	slog.Debug("Building column groups",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
-		slog.Int("firstCol", global.Config.HourColumn+1),
-		slog.Int("lastCol", global.Config.LastColumn))
+		slog.Int("firstCol", config.Config.HourColumn+1),
+		slog.Int("lastCol", config.Config.LastColumn))
 
-	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
+	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		value := effectiveGroupValue(file, sheetName, groupRow, col, lookup)
 		category := effectiveCategory(file, sheetName, categoryRow, col, lookup)
 
