@@ -22,7 +22,7 @@ func TestParseEnvironmentDefaults(t *testing.T) {
 	if cfg.DataDir != wantDataDir {
 		t.Errorf("DataDir = %q, want %q", cfg.DataDir, wantDataDir)
 	}
-	if cfg.SheetName != "2025_2026" || cfg.HourColumn != 1 || cfg.LastColumn != 40 {
+	if cfg.HourColumn != 1 || cfg.LastColumn != 40 {
 		t.Errorf("unexpected timetable defaults: %+v", cfg)
 	}
 	if cfg.TimetableUpdatePeriod != time.Minute || cfg.TimetableSyncPeriod != 72*time.Hour {
@@ -43,7 +43,6 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	dataDir := t.TempDir()
 	cfg, err := parseEnvironment(map[string]string{
 		"DATA_DIR":                dataDir,
-		"SHEET_NAME":              "custom",
 		"HOUR_COLUMN":             "2",
 		"DAY_START":               "8.15",
 		"DAY_END":                 "20.45",
@@ -67,7 +66,7 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	if cfg.DayStartTime.Hour() != 8 || cfg.DayStartTime.Minute() != 15 {
 		t.Errorf("DayStartTime = %v", cfg.DayStartTime)
 	}
-	if cfg.SheetName != "custom" || cfg.HourColumn != 2 || cfg.LastColumn != 41 {
+	if cfg.HourColumn != 2 || cfg.LastColumn != 41 {
 		t.Errorf("unexpected timetable overrides: %+v", cfg)
 	}
 	if cfg.LogLevel != slog.LevelWarn {

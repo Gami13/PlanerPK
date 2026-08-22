@@ -28,7 +28,6 @@ const (
 // Configuration contains parsed settings and paths derived from DATA_DIR.
 type Configuration struct {
 	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
-	SheetName             string     `env:"SHEET_NAME" envDefault:"2025_2026"`
 	HourColumn            int        `env:"HOUR_COLUMN" envDefault:"1"`
 	DayStart              string     `env:"DAY_START" envDefault:"7.30"`
 	DayEnd                string     `env:"DAY_END" envDefault:"21.00"`

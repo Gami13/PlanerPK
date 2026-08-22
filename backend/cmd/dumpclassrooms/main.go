@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/extractor"
@@ -30,11 +31,16 @@ func main() {
 		os.Exit(1)
 	}
 	defer file.Close()
+	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
+		os.Exit(1)
+	}
 
 	uniqueClassrooms := make(map[string]struct{})
 
 	// A. Extract from Legend section ("Sale")
-	legend := extractor.ExtractLegend(file)
+	legend := extractor.ExtractLegend(file, sheetName)
 	buildings := buildings.BuildBuildingsFromLegend(legend)
 	if legend != nil {
 		for _, loc := range legend.Locations {
@@ -45,11 +51,11 @@ func main() {
 	}
 
 	// B. Extract from timetable grid classes
-	groups, err := extractor.BuildAvailableGroups(file)
+	groups, err := extractor.BuildAvailableGroups(file, sheetName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error building groups for %s: %v\n", xlsxPath, err)
 	} else {
-		timetable := extractor.BuildTimetable(groups, file, legend, buildings)
+		timetable := extractor.BuildTimetable(groups, file, sheetName, legend, buildings)
 		for _, groupTimetable := range timetable {
 			for _, classes := range groupTimetable {
 				for _, class := range classes {

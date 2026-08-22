@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"time"
 
 	_ "modernc.org/sqlite"
 
@@ -63,8 +64,13 @@ func main() {
 		os.Exit(1)
 	}
 	defer extractor.CloseFile(file)
+	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
+		os.Exit(1)
+	}
 
-	legendBuildings := buildings.BuildBuildingsFromLegend(extractor.ExtractLegend(file))
+	legendBuildings := buildings.BuildBuildingsFromLegend(extractor.ExtractLegend(file, sheetName))
 	placesByBuildingKey := make(map[string]db.BuildingPlace, len(allBuildings))
 	for _, building := range allBuildings {
 		placesByBuildingKey[building.BuildingKey] = building

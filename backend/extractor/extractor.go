@@ -12,25 +12,25 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, legend *legend.Legend, buildings *buildings.Buildings) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings) types.Timetable {
 	timetable := make(types.Timetable)
-	days := getDaysStartEnd(file)
+	days := getDaysStartEnd(file, sheetName)
 
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, legend, buildings, days)
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, sheetName, legend, buildings, days)
 		timetable[int64(group.Column)] = groupTimetable
 
 	}
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := traverseDay(file, day, groupColumn, legend, buildings)
+		classes := traverseDay(file, sheetName, day, groupColumn, legend, buildings)
 		timetable[day.WeekDay] = classes
 		slog.Debug("Processed day",
 			slog.String("day", day.WeekDay.String()),
@@ -40,10 +40,10 @@ func buildTimetableForGroup(groupColumn int64, file *excelize.File, legend *lege
 	return timetable
 }
 
-func getDaysStartEnd(file *excelize.File) []types.Day {
+func getDaysStartEnd(file *excelize.File, sheetName string) []types.Day {
 	// Find starting rows for each day
 	var days []types.Day
-	rows, err := file.GetRows(global.Config.SheetName)
+	rows, err := file.GetRows(sheetName)
 	if err != nil {
 		slog.Error("Failed to get rows from timetable", slog.Any("error", err))
 		return days
@@ -69,13 +69,13 @@ func getDaysStartEnd(file *excelize.File) []types.Day {
 
 const slotDuration = 15 * time.Minute
 
-func traverseDay(file *excelize.File, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings) []types.Class {
+func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings) []types.Class {
 	var classes []types.Class
 
 	currentTime := global.Config.DayStartTime
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
-		classText := getCell(file, global.Config.SheetName, i, int(groupColumn))
+		classText := getCell(file, sheetName, i, int(groupColumn))
 		if classText != "" {
 
 			classEndTime := currentTime.Add(slotDuration)

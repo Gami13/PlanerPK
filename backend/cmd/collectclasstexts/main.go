@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/woodpkrs/PlanerPK/extractor"
 	"github.com/woodpkrs/PlanerPK/global"
 	"github.com/xuri/excelize/v2"
 )
@@ -27,12 +29,17 @@ func main() {
 		os.Exit(1)
 	}
 	defer file.Close()
+	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
+		os.Exit(1)
+	}
 
-	days := findDays(file)
+	days := findDays(file, sheetName)
 	fmt.Fprintf(os.Stderr, "Found %d days\n", len(days))
 
 	// Find hour-reference columns to skip (header says "Godziny")
-	skipCols := findHourColumns(file, days)
+	skipCols := findHourColumns(file, sheetName, days)
 	fmt.Fprintf(os.Stderr, "Skipping %d hour-reference columns\n", len(skipCols))
 
 	var classTexts []string
@@ -48,7 +55,7 @@ func main() {
 		}
 		for _, day := range days {
 			for row := day.startRow; row <= day.endRow; row++ {
-				text := getCell(file, global.Config.SheetName, row, col)
+				text := getCell(file, sheetName, row, col)
 				if text != "" && !dayNames[strings.TrimSpace(text)] {
 					classTexts = append(classTexts, text)
 				}
@@ -85,9 +92,9 @@ type dayRange struct {
 	endRow   int
 }
 
-func findDays(file *excelize.File) []dayRange {
+func findDays(file *excelize.File, sheetName string) []dayRange {
 	var days []dayRange
-	rows, err := file.GetRows(global.Config.SheetName)
+	rows, err := file.GetRows(sheetName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting rows: %v\n", err)
 		return days
@@ -132,7 +139,7 @@ func findXlsxFile(dir string) (string, error) {
 
 // findHourColumns identifies columns whose header row contains "Godziny" — these
 // are hour-reference columns, not class data.
-func findHourColumns(file *excelize.File, days []dayRange) map[int]bool {
+func findHourColumns(file *excelize.File, sheetName string, days []dayRange) map[int]bool {
 	skip := make(map[int]bool)
 	if len(days) == 0 {
 		return skip
@@ -141,7 +148,7 @@ func findHourColumns(file *excelize.File, days []dayRange) map[int]bool {
 	headerSearch := max(days[0].startRow-5, 0)
 	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
 		for row := headerSearch; row < days[0].startRow; row++ {
-			val := strings.TrimSpace(getCell(file, global.Config.SheetName, row, col))
+			val := strings.TrimSpace(getCell(file, sheetName, row, col))
 			if strings.EqualFold(val, "Godziny") {
 				skip[col] = true
 				break

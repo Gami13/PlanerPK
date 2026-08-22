@@ -18,27 +18,27 @@ type mergeRange struct {
 }
 
 // BuildAvailableGroups parses the Excel header rows and returns available column groups.
-func BuildAvailableGroups(file *excelize.File) ([]types.ColumnGroup, error) {
-	dataStartRow, err := findDataStartRow(file)
+func BuildAvailableGroups(file *excelize.File, sheetName string) ([]types.ColumnGroup, error) {
+	dataStartRow, err := findDataStartRow(file, sheetName)
 	if err != nil {
 		return nil, err
 	}
 
-	groupRow, categoryRow := findHeaderRows(file, dataStartRow)
+	groupRow, categoryRow := findHeaderRows(file, sheetName, dataStartRow)
 	slog.Debug("Header rows found",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
 		slog.Int("dataStartRow", dataStartRow))
 
-	mergeLookup := buildMergeLookup(file)
-	groups := buildColumnGroups(file, groupRow, categoryRow, mergeLookup)
+	mergeLookup := buildMergeLookup(file, sheetName)
+	groups := buildColumnGroups(file, sheetName, groupRow, categoryRow, mergeLookup)
 
 	return groups, nil
 }
 
 // findDataStartRow finds the first row containing DAY_START in HOUR_COLUMN.
-func findDataStartRow(file *excelize.File) (int, error) {
-	rows, err := file.GetRows(global.Config.SheetName)
+func findDataStartRow(file *excelize.File, sheetName string) (int, error) {
+	rows, err := file.GetRows(sheetName)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get rows: %w", err)
 	}
@@ -54,9 +54,9 @@ func findDataStartRow(file *excelize.File) (int, error) {
 
 // findHeaderRows scans upward from dataStartRow to find the group name row
 // and the category row directly above it.
-func findHeaderRows(file *excelize.File, dataStartRow int) (int, int) {
+func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int) (int, int) {
 	for row := dataStartRow - 1; row >= 0; row-- {
-		if rowHasDataContent(file, row) {
+		if rowHasDataContent(file, sheetName, row) {
 			return row, max(row-1, 0)
 		}
 	}
@@ -64,9 +64,9 @@ func findHeaderRows(file *excelize.File, dataStartRow int) (int, int) {
 }
 
 // rowHasDataContent checks if any data column in the row is non-empty.
-func rowHasDataContent(file *excelize.File, row int) bool {
+func rowHasDataContent(file *excelize.File, sheetName string, row int) bool {
 	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
-		if strings.TrimSpace(getCell(file, global.Config.SheetName, row, col)) != "" {
+		if strings.TrimSpace(getCell(file, sheetName, row, col)) != "" {
 			return true
 		}
 	}
@@ -74,10 +74,10 @@ func rowHasDataContent(file *excelize.File, row int) bool {
 }
 
 // buildMergeLookup parses all merge cells and maps each covered (row,col) to its mergeRange.
-func buildMergeLookup(file *excelize.File) map[[2]int]*mergeRange {
+func buildMergeLookup(file *excelize.File, sheetName string) map[[2]int]*mergeRange {
 	lookup := make(map[[2]int]*mergeRange)
 
-	mergeCells, err := file.GetMergeCells(global.Config.SheetName)
+	mergeCells, err := file.GetMergeCells(sheetName)
 	if err != nil {
 		slog.Error("Failed to get merge cells", slog.Any("error", err))
 		return lookup
@@ -119,13 +119,13 @@ func buildMergeLookup(file *excelize.File) map[[2]int]*mergeRange {
 
 // effectiveGroupValue returns the group name for a cell, preferring the merge
 // value when the cell is inside a multi-column merge.
-func effectiveGroupValue(file *excelize.File, row, col int, lookup map[[2]int]*mergeRange) string {
+func effectiveGroupValue(file *excelize.File, sheetName string, row, col int, lookup map[[2]int]*mergeRange) string {
 	if mr, ok := lookup[[2]int{row, col}]; ok {
 		if mr.EndCol > mr.StartCol && strings.TrimSpace(mr.Value) != "" {
 			return strings.TrimSpace(mr.Value)
 		}
 	}
-	return strings.TrimSpace(getCell(file, global.Config.SheetName, row, col))
+	return strings.TrimSpace(getCell(file, sheetName, row, col))
 }
 
 // buildColumnGroups iterates data columns and builds ColumnGroup entries.
@@ -138,7 +138,7 @@ func effectiveGroupValue(file *excelize.File, row, col int, lookup map[[2]int]*m
 //  4. Reset the GK counter when the year digit changes (e.g. grupa 1x → 2x).
 //  5. Resolve categories from the row above, inheriting leftward when the
 //     direct value is empty or "Godziny".
-func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup map[[2]int]*mergeRange) []types.ColumnGroup {
+func buildColumnGroups(file *excelize.File, sheetName string, groupRow, categoryRow int, lookup map[[2]int]*mergeRange) []types.ColumnGroup {
 	var groups []types.ColumnGroup
 	gkCounter := 1
 	prevYearDigit := byte(0) // first digit of last "grupa XY" — reset GK when it changes
@@ -150,8 +150,8 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 		slog.Int("lastCol", global.Config.LastColumn))
 
 	for col := global.Config.HourColumn + 1; col <= global.Config.LastColumn; col++ {
-		value := effectiveGroupValue(file, groupRow, col, lookup)
-		category := effectiveCategory(file, categoryRow, col, lookup)
+		value := effectiveGroupValue(file, sheetName, groupRow, col, lookup)
+		category := effectiveCategory(file, sheetName, categoryRow, col, lookup)
 
 		slog.Debug("Scanning column",
 			slog.Int("col", col),
@@ -217,13 +217,13 @@ func buildColumnGroups(file *excelize.File, groupRow, categoryRow int, lookup ma
 // effectiveCategory returns the category for a column. When the direct value
 // is empty or an hour label ("Godziny"), it inherits from the nearest
 // meaningful category to the left.
-func effectiveCategory(file *excelize.File, categoryRow int, col int, lookup map[[2]int]*mergeRange) string {
+func effectiveCategory(file *excelize.File, sheetName string, categoryRow int, col int, lookup map[[2]int]*mergeRange) string {
 	for c := col; c >= 0; c-- {
 		var v string
 		if mr, ok := lookup[[2]int{categoryRow, c}]; ok && strings.TrimSpace(mr.Value) != "" {
 			v = strings.TrimSpace(mr.Value)
 		} else {
-			v = strings.TrimSpace(getCell(file, global.Config.SheetName, categoryRow, c))
+			v = strings.TrimSpace(getCell(file, sheetName, categoryRow, c))
 		}
 		if v != "" && !isHourLabel(v) {
 			return v

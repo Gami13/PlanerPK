@@ -88,16 +88,20 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 		return nil, nil, nil, nil, err
 	}
 	defer extractor.CloseFile(file)
-	newGroups, err := extractor.BuildAvailableGroups(file)
+	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	newLegend := extractor.ExtractLegend(file)
+	newGroups, err := extractor.BuildAvailableGroups(file, sheetName)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	newLegend := extractor.ExtractLegend(file, sheetName)
 	newBuildings := buildings.BuildBuildingsFromLegend(newLegend)
 	if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
 		return nil, nil, nil, nil, err
 	}
-	newTimetable := extractor.BuildTimetable(newGroups, file, newLegend, newBuildings)
+	newTimetable := extractor.BuildTimetable(newGroups, file, sheetName, newLegend, newBuildings)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
 

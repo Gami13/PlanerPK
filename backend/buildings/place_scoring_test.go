@@ -75,6 +75,34 @@ func TestChoosePlace(t *testing.T) {
 	}
 }
 
+func TestChoosePlaceAcceptsTenPointLead(t *testing.T) {
+	resolution := choosePlace(
+		"budynek Wydziału Inżynierii i Technologii Chemicznej ul. Warszawska, Katedra Informatyki",
+		[]*placespb.Place{
+			googlePlace(
+				"department",
+				"Katedra Informatyki, Wydział Informatyki i Telekomunikacji",
+				"Gmach WIiTCh, pokój 141, Warszawska 24, 31-155 Kraków",
+			),
+			googlePlace(
+				"faculty",
+				"Wydział Inżynierii i Technologii Chemicznej Politechniki Krakowskiej",
+				"Warszawska 24, 31-155 Kraków",
+			),
+		},
+	)
+
+	if !resolution.Accepted {
+		t.Fatalf("choosePlace() rejected a ten-point lead: score=%.2f runner-up=%.2f reasons=%v", resolution.Best.Score, resolution.Ranked[1].Score, resolution.Reasons)
+	}
+	if resolution.Best.Place.GetId() != "department" {
+		t.Errorf("winner ID = %q, want department", resolution.Best.Place.GetId())
+	}
+	if got := resolution.Best.Score - resolution.Ranked[1].Score; got < minimumPlaceScoreLead-scoreComparisonEpsilon {
+		t.Errorf("score lead = %.12f, want at least %.2f", got, minimumPlaceScoreLead)
+	}
+}
+
 func TestHasBuildingInitialismEvidence(t *testing.T) {
 	tests := []struct {
 		canonicalName string

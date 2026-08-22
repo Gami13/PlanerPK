@@ -12,7 +12,8 @@ import (
 
 const (
 	minimumPlaceScore         = 0.70
-	minimumPlaceScoreLead     = 0.15
+	minimumPlaceScoreLead     = 0.10
+	scoreComparisonEpsilon    = 1e-9
 	buildingEvidenceWeight    = 0.70
 	campusContextWeight       = 0.15
 	cityContextWeight         = 0.15
@@ -69,7 +70,7 @@ func choosePlace(canonicalName string, candidates []*placespb.Place) placeResolu
 	if best.Score < minimumPlaceScore {
 		return placeResolution{Best: best, Ranked: ranked, Reasons: append(best.Reasons, fmt.Sprintf("candidate confidence is below %.2f", minimumPlaceScore))}
 	}
-	if len(ranked) > 1 && best.Score-ranked[1].Score < minimumPlaceScoreLead {
+	if len(ranked) > 1 && best.Score-ranked[1].Score+scoreComparisonEpsilon < minimumPlaceScoreLead {
 		return placeResolution{Best: best, Ranked: ranked, Reasons: append(best.Reasons, fmt.Sprintf("best candidate does not lead runner-up by %.2f", minimumPlaceScoreLead))}
 	}
 	return placeResolution{Best: best, Ranked: ranked, Reasons: best.Reasons, Accepted: true}
