@@ -28,7 +28,6 @@ const (
 // Configuration contains parsed settings and paths derived from DATA_DIR.
 type Configuration struct {
 	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
-	LastColumn            int        `env:"LAST_COLUMN" envDefault:"40"`
 	MinutesBetween        int        `env:"MINUTES_BETWEEN" envDefault:"1"`
 	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
 	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"`

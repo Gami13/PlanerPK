@@ -96,7 +96,6 @@ The backend supports these environment variables:
 - `MINUTES_BETWEEN` — timetable update interval.
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
 - `TIMETABLE_URL` — source timetable page.
-- `LAST_COLUMN` — optional upper boundary for timetable data columns.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
 
 The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15. On each import, the timetable hour column, slot duration, and day boundaries are inferred from consistent time sequences in the worksheet; they are no longer configured through environment variables.

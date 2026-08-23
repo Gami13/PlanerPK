@@ -52,7 +52,7 @@ func main() {
 		"CZWARTEK": true, "PIĄTEK": true, "SOBOTA": true, "NIEDZIELA": true,
 	}
 
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= layout.DataEndColumn; col++ {
 		if skipCols[col] {
 			continue
 		}
@@ -124,7 +124,7 @@ func findHourColumns(file *excelize.File, sheetName string, layout extractor.Tim
 	}
 	// Check a few rows above the first day's start for "Godziny"
 	headerSearch := max(layout.Days[0].StartingRow-5, 0)
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= layout.DataEndColumn; col++ {
 		for row := headerSearch; row < layout.Days[0].StartingRow; row++ {
 			val := strings.TrimSpace(getCell(file, sheetName, row, col))
 			if strings.EqualFold(val, "Godziny") {

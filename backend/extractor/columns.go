@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
@@ -49,7 +48,7 @@ func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int, lay
 
 // rowHasDataContent checks if any data column in the row is non-empty.
 func rowHasDataContent(file *excelize.File, sheetName string, row int, layout TimetableLayout) bool {
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= layout.DataEndColumn; col++ {
 		if strings.TrimSpace(getCell(file, sheetName, row, col)) != "" {
 			return true
 		}
@@ -131,9 +130,9 @@ func buildColumnGroups(file *excelize.File, sheetName string, groupRow, category
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
 		slog.Int("firstCol", layout.HourColumn+1),
-		slog.Int("lastCol", config.Config.LastColumn))
+		slog.Int("lastCol", layout.DataEndColumn))
 
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= layout.DataEndColumn; col++ {
 		value := effectiveGroupValue(file, sheetName, groupRow, col, lookup)
 		category := effectiveCategory(file, sheetName, categoryRow, col, lookup)
 

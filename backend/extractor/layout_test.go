@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
-	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/xuri/excelize/v2"
 )
@@ -327,6 +326,7 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 	const sheet = "2025_2026"
 	setWorksheetValue(t, file, sheet, 0, 2, "Category")
 	setWorksheetValue(t, file, sheet, 1, 2, "Group A")
+	setWorksheetValue(t, file, sheet, 0, 8, "Unrelated worksheet data")
 	setTimeSequence(t, file, sheet, 1, 2, "07.30", "08.00")
 	setWorksheetValue(t, file, sheet, 2, 2, "Mathematics\nwykład")
 
@@ -335,9 +335,9 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 		t.Fatalf("DiscoverTimetableLayout() error = %v", err)
 	}
 
-	previousConfig := config.Config
-	defer func() { config.Config = previousConfig }()
-	config.Config.LastColumn = 3
+	if layout.DataEndColumn != 2 {
+		t.Errorf("DataEndColumn = %d, want 2", layout.DataEndColumn)
+	}
 
 	groups, err := BuildAvailableGroups(file, sheet, layout)
 	if err != nil {

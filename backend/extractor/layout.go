@@ -13,9 +13,10 @@ import (
 // TimetableLayout describes the timetable grid discovered in a worksheet.
 // Rows and columns use the zero-based indexes used by the extractor.
 type TimetableLayout struct {
-	HourColumn   int
-	SlotDuration time.Duration
-	Days         []types.Day
+	HourColumn    int
+	DataEndColumn int
+	SlotDuration  time.Duration
+	Days          []types.Day
 }
 
 // DiscoverTimetableLayout finds the leftmost worksheet column containing one
@@ -39,9 +40,11 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 		if !ok {
 			continue
 		}
+		candidate.DataEndColumn = discoverDataEndColumn(file, sheetName, rows, candidate)
 		slog.Info("Detected timetable layout",
 			slog.String("sheet", sheetName),
 			slog.Int("hour_column", candidate.HourColumn),
+			slog.Int("data_end_column", candidate.DataEndColumn),
 			slog.Duration("slot_duration", candidate.SlotDuration),
 			slog.Int("day_count", len(candidate.Days)))
 		return candidate, nil
@@ -51,6 +54,73 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 		"could not detect timetable layout in sheet %q: no column contains multiple consecutive time labels with a consistent interval",
 		sheetName,
 	)
+}
+
+// discoverDataEndColumn finds the right edge of the timetable header. The
+// worksheet may contain legend or auxiliary data farther to the right, so the
+// worksheet's absolute used range is not a safe timetable boundary.
+func discoverDataEndColumn(file *excelize.File, sheetName string, rows [][]string, layout TimetableLayout) int {
+	endColumn := layout.HourColumn
+	if len(layout.Days) == 0 {
+		return endColumn
+	}
+
+	headerRow := -1
+	for row := layout.Days[0].StartingRow - 1; row >= 0; row-- {
+		if rowHasDataContentInRows(rows, row, layout.HourColumn+1) {
+			headerRow = row
+			break
+		}
+	}
+	if headerRow == -1 {
+		return endColumn
+	}
+
+	if headerRow < len(rows) {
+		for column := layout.HourColumn + 1; column < len(rows[headerRow]); column++ {
+			if strings.TrimSpace(rows[headerRow][column]) != "" {
+				endColumn = column
+			}
+		}
+	}
+
+	mergeCells, err := file.GetMergeCells(sheetName)
+	if err != nil {
+		slog.Warn("Failed to inspect timetable header merges", slog.Any("error", err))
+		return endColumn
+	}
+	for _, mergeCell := range mergeCells {
+		startColumn, startRow, err := excelize.CellNameToCoordinates(mergeCell.GetStartAxis())
+		if err != nil {
+			continue
+		}
+		endMergeColumn, endRow, err := excelize.CellNameToCoordinates(mergeCell.GetEndAxis())
+		if err != nil {
+			continue
+		}
+
+		startColumn--
+		startRow--
+		endMergeColumn--
+		endRow--
+		if startRow <= headerRow && headerRow <= endRow && endMergeColumn >= layout.HourColumn+1 && strings.TrimSpace(mergeCell.GetCellValue()) != "" {
+			endColumn = max(endColumn, endMergeColumn)
+		}
+	}
+
+	return endColumn
+}
+
+func rowHasDataContentInRows(rows [][]string, row, firstColumn int) bool {
+	if row < 0 || row >= len(rows) {
+		return false
+	}
+	for column := firstColumn; column < len(rows[row]); column++ {
+		if strings.TrimSpace(rows[row][column]) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 const (
