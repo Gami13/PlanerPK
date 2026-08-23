@@ -67,21 +67,14 @@ func discoverDataEndColumn(file *excelize.File, sheetName string, rows [][]strin
 
 	headerRow := -1
 	for row := layout.Days[0].StartingRow - 1; row >= 0; row-- {
-		if rowHasDataContentInRows(rows, row, layout.HourColumn+1) {
+		if end := lastDataColumn(rows[row], layout.HourColumn+1); end >= 0 {
 			headerRow = row
+			endColumn = end
 			break
 		}
 	}
 	if headerRow == -1 {
 		return endColumn
-	}
-
-	if headerRow < len(rows) {
-		for column := layout.HourColumn + 1; column < len(rows[headerRow]); column++ {
-			if strings.TrimSpace(rows[headerRow][column]) != "" {
-				endColumn = column
-			}
-		}
 	}
 
 	mergeCells, err := file.GetMergeCells(sheetName)
@@ -99,11 +92,15 @@ func discoverDataEndColumn(file *excelize.File, sheetName string, rows [][]strin
 			continue
 		}
 
-		startColumn--
 		startRow--
+		startColumn--
 		endMergeColumn--
 		endRow--
-		if startRow <= headerRow && headerRow <= endRow && endMergeColumn >= layout.HourColumn+1 && strings.TrimSpace(mergeCell.GetCellValue()) != "" {
+		if startColumn <= endColumn &&
+			startRow <= headerRow &&
+			headerRow <= endRow &&
+			endMergeColumn >= layout.HourColumn+1 &&
+			strings.TrimSpace(mergeCell.GetCellValue()) != "" {
 			endColumn = max(endColumn, endMergeColumn)
 		}
 	}
@@ -111,16 +108,13 @@ func discoverDataEndColumn(file *excelize.File, sheetName string, rows [][]strin
 	return endColumn
 }
 
-func rowHasDataContentInRows(rows [][]string, row, firstColumn int) bool {
-	if row < 0 || row >= len(rows) {
-		return false
-	}
-	for column := firstColumn; column < len(rows[row]); column++ {
-		if strings.TrimSpace(rows[row][column]) != "" {
-			return true
+func lastDataColumn(row []string, firstColumn int) int {
+	for column := len(row) - 1; column >= firstColumn; column-- {
+		if strings.TrimSpace(row[column]) != "" {
+			return column
 		}
 	}
-	return false
+	return -1
 }
 
 const (
