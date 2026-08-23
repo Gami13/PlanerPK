@@ -15,8 +15,10 @@ import (
 type TimetableLayout struct {
 	HourColumn    int
 	DataEndColumn int
+	HeaderRow     int
 	SlotDuration  time.Duration
 	Days          []types.Day
+	mergeRanges   []mergeRange
 }
 
 // DiscoverTimetableLayout finds the leftmost worksheet column containing one
@@ -40,11 +42,17 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 		if !ok {
 			continue
 		}
-		candidate.DataEndColumn = discoverDataEndColumn(file, sheetName, rows, candidate)
+		mergeRanges, err := loadMergeRanges(file, sheetName)
+		if err != nil {
+			slog.Warn("Failed to inspect timetable header merges", slog.Any("error", err))
+		}
+		candidate.mergeRanges = mergeRanges
+		candidate.HeaderRow, candidate.DataEndColumn = discoverHeaderAndDataEnd(rows, candidate)
 		slog.Info("Detected timetable layout",
 			slog.String("sheet", sheetName),
 			slog.Int("hour_column", candidate.HourColumn),
 			slog.Int("data_end_column", candidate.DataEndColumn),
+			slog.Int("header_row", candidate.HeaderRow),
 			slog.Duration("slot_duration", candidate.SlotDuration),
 			slog.Int("day_count", len(candidate.Days)))
 		return candidate, nil
@@ -56,56 +64,35 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 	)
 }
 
-// discoverDataEndColumn finds the right edge of the timetable header. The
-// worksheet may contain legend or auxiliary data farther to the right, so the
-// worksheet's absolute used range is not a safe timetable boundary.
-func discoverDataEndColumn(file *excelize.File, sheetName string, rows [][]string, layout TimetableLayout) int {
-	endColumn := layout.HourColumn
+// discoverHeaderAndDataEnd finds the timetable header row and its right edge.
+// The worksheet may contain legend or auxiliary data farther to the right, so
+// the worksheet's absolute used range is not a safe timetable boundary.
+func discoverHeaderAndDataEnd(rows [][]string, layout TimetableLayout) (int, int) {
+	headerRow, endColumn := -1, layout.HourColumn
 	if len(layout.Days) == 0 {
-		return endColumn
+		return headerRow, endColumn
 	}
 
-	headerRow := -1
+	firstDataColumn := layout.HourColumn + 1
 	for row := layout.Days[0].StartingRow - 1; row >= 0; row-- {
-		if end := lastDataColumn(rows[row], layout.HourColumn+1); end >= 0 {
+		if end := lastDataColumn(rows[row], firstDataColumn); end >= 0 {
 			headerRow = row
 			endColumn = end
 			break
 		}
 	}
 	if headerRow == -1 {
-		return endColumn
+		return headerRow, endColumn
 	}
 
-	mergeCells, err := file.GetMergeCells(sheetName)
-	if err != nil {
-		slog.Warn("Failed to inspect timetable header merges", slog.Any("error", err))
-		return endColumn
-	}
-	for _, mergeCell := range mergeCells {
-		startColumn, startRow, err := excelize.CellNameToCoordinates(mergeCell.GetStartAxis())
-		if err != nil {
-			continue
-		}
-		endMergeColumn, endRow, err := excelize.CellNameToCoordinates(mergeCell.GetEndAxis())
-		if err != nil {
-			continue
-		}
-
-		startRow--
-		startColumn--
-		endMergeColumn--
-		endRow--
-		if startColumn <= endColumn &&
-			startRow <= headerRow &&
-			headerRow <= endRow &&
-			endMergeColumn >= layout.HourColumn+1 &&
-			strings.TrimSpace(mergeCell.GetCellValue()) != "" {
-			endColumn = max(endColumn, endMergeColumn)
+	for _, merge := range layout.mergeRanges {
+		if merge.StartCol <= endColumn && merge.StartRow <= headerRow && headerRow <= merge.EndRow &&
+			merge.EndCol >= firstDataColumn && strings.TrimSpace(merge.Value) != "" {
+			endColumn = max(endColumn, merge.EndCol)
 		}
 	}
 
-	return endColumn
+	return headerRow, endColumn
 }
 
 func lastDataColumn(row []string, firstColumn int) int {
