@@ -1,6 +1,7 @@
 import { PageTitle } from "#components/PageTitle";
 import * as stylex from "@stylexjs/stylex";
 import { createResource, Show, useContext } from "solid-js";
+import { A } from "@solidjs/router";
 import { AppContext } from "../appContext";
 import { Button } from "../Components/Button";
 import { UserCard } from "../Components/UserCard";
@@ -145,6 +146,9 @@ export function Home() {
 				<div {...attrs(stylex.props(styles.imageContainer))}>
 					<img {...attrs(stylex.props(styles.googleCalendarPreview))} src="/google-calendar-preview.png" />
 				</div>
+				<p>
+					<A href="/privacy-policy">Polityka prywatności</A>
+				</p>
 			</section>
 		</main>
 	);
