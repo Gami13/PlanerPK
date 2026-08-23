@@ -6,9 +6,10 @@ import (
 )
 
 type Day struct {
-	StartingRow int
-	EndingRow   int
-	WeekDay     time.Weekday
+	StartingRow  int
+	EndingRow    int
+	WeekDay      time.Weekday
+	StartingTime time.Time
 }
 type (
 	GroupTimetable = map[time.Weekday][]Class

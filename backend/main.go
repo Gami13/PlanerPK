@@ -91,7 +91,11 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	newGroups, err := extractor.BuildAvailableGroups(file, sheetName)
+	layout, err := extractor.DiscoverTimetableLayout(file, sheetName)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	newGroups, err := extractor.BuildAvailableGroups(file, sheetName, layout)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -100,7 +104,7 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
 		return nil, nil, nil, nil, err
 	}
-	newTimetable := extractor.BuildTimetable(newGroups, file, sheetName, newLegend, newBuildings)
+	newTimetable := extractor.BuildTimetable(newGroups, file, sheetName, newLegend, newBuildings, layout)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
 

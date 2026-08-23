@@ -28,16 +28,12 @@ const (
 // Configuration contains parsed settings and paths derived from DATA_DIR.
 type Configuration struct {
 	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
-	HourColumn            int        `env:"HOUR_COLUMN" envDefault:"1"`
-	DayStart              string     `env:"DAY_START" envDefault:"7.30"`
-	DayEnd                string     `env:"DAY_END" envDefault:"21.00"`
 	LastColumn            int        `env:"LAST_COLUMN" envDefault:"40"`
 	MinutesBetween        int        `env:"MINUTES_BETWEEN" envDefault:"1"`
 	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
 	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"`
 	GooglePlacesAPIKey    string     `env:"GOOGLE_PLACES_API_KEY"`
 	LogLevel              slog.Level `env:"LOG_LEVEL" envDefault:"DEBUG"`
-	DayStartTime          time.Time
 	TimetableUpdatePeriod time.Duration
 	TimetableSyncPeriod   time.Duration
 	StateDir              string
@@ -88,19 +84,6 @@ func parseEnvironment(environment map[string]string) (Configuration, error) {
 		return Configuration{}, fmt.Errorf("parse environment: %w", err)
 	}
 
-	dayStartTime, err := time.Parse("15.04", cfg.DayStart)
-	if err != nil {
-		return Configuration{}, fmt.Errorf("DAY_START must use HH.MM format: %w", err)
-	}
-	if _, err := time.Parse("15.04", cfg.DayEnd); err != nil {
-		return Configuration{}, fmt.Errorf("DAY_END must use HH.MM format: %w", err)
-	}
-	if cfg.HourColumn < 0 {
-		return Configuration{}, fmt.Errorf("HOUR_COLUMN must be non-negative")
-	}
-	if cfg.LastColumn <= cfg.HourColumn {
-		return Configuration{}, fmt.Errorf("LAST_COLUMN must be greater than HOUR_COLUMN")
-	}
 	if cfg.MinutesBetween <= 0 {
 		return Configuration{}, fmt.Errorf("MINUTES_BETWEEN must be greater than zero")
 	}
@@ -122,7 +105,6 @@ func parseEnvironment(environment map[string]string) (Configuration, error) {
 	cfg.TimetableStats = filepath.Join(cfg.StateDir, "current_timetable_stats.json")
 	databasePath := filepath.Join(cfg.StateDir, databaseFilename)
 	cfg.DatabaseSource = fmt.Sprintf("file:%s?%s", filepath.ToSlash(databasePath), databaseArguments)
-	cfg.DayStartTime = time.Date(0, 0, 0, dayStartTime.Hour(), dayStartTime.Minute(), 0, 0, time.UTC)
 	cfg.TimetableUpdatePeriod = time.Duration(cfg.MinutesBetween) * time.Minute
 	cfg.TimetableSyncPeriod = time.Duration(cfg.TimeBetweenSyncHours) * time.Hour
 	return cfg, nil

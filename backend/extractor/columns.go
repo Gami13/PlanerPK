@@ -18,45 +18,29 @@ type mergeRange struct {
 }
 
 // BuildAvailableGroups parses the Excel header rows and returns available column groups.
-func BuildAvailableGroups(file *excelize.File, sheetName string) ([]types.ColumnGroup, error) {
-	dataStartRow, err := findDataStartRow(file, sheetName)
-	if err != nil {
-		return nil, err
+func BuildAvailableGroups(file *excelize.File, sheetName string, layout TimetableLayout) ([]types.ColumnGroup, error) {
+	if len(layout.Days) == 0 {
+		return nil, fmt.Errorf("cannot build groups for sheet %q: timetable layout contains no day runs", sheetName)
 	}
+	dataStartRow := layout.Days[0].StartingRow
 
-	groupRow, categoryRow := findHeaderRows(file, sheetName, dataStartRow)
+	groupRow, categoryRow := findHeaderRows(file, sheetName, dataStartRow, layout)
 	slog.Debug("Header rows found",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
 		slog.Int("dataStartRow", dataStartRow))
 
 	mergeLookup := buildMergeLookup(file, sheetName)
-	groups := buildColumnGroups(file, sheetName, groupRow, categoryRow, mergeLookup)
+	groups := buildColumnGroups(file, sheetName, groupRow, categoryRow, mergeLookup, layout)
 
 	return groups, nil
 }
 
-// findDataStartRow finds the first row containing DAY_START in HOUR_COLUMN.
-func findDataStartRow(file *excelize.File, sheetName string) (int, error) {
-	rows, err := file.GetRows(sheetName)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rows: %w", err)
-	}
-
-	for i, row := range rows {
-		if len(row) > config.Config.HourColumn && row[config.Config.HourColumn] == config.Config.DayStart {
-			return i, nil
-		}
-	}
-
-	return 0, fmt.Errorf("could not find row with %q in hour column", config.Config.DayStart)
-}
-
 // findHeaderRows scans upward from dataStartRow to find the group name row
 // and the category row directly above it.
-func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int) (int, int) {
+func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int, layout TimetableLayout) (int, int) {
 	for row := dataStartRow - 1; row >= 0; row-- {
-		if rowHasDataContent(file, sheetName, row) {
+		if rowHasDataContent(file, sheetName, row, layout) {
 			return row, max(row-1, 0)
 		}
 	}
@@ -64,8 +48,8 @@ func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int) (in
 }
 
 // rowHasDataContent checks if any data column in the row is non-empty.
-func rowHasDataContent(file *excelize.File, sheetName string, row int) bool {
-	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+func rowHasDataContent(file *excelize.File, sheetName string, row int, layout TimetableLayout) bool {
+	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		if strings.TrimSpace(getCell(file, sheetName, row, col)) != "" {
 			return true
 		}
@@ -138,7 +122,7 @@ func effectiveGroupValue(file *excelize.File, sheetName string, row, col int, lo
 //  4. Reset the GK counter when the year digit changes (e.g. grupa 1x → 2x).
 //  5. Resolve categories from the row above, inheriting leftward when the
 //     direct value is empty or "Godziny".
-func buildColumnGroups(file *excelize.File, sheetName string, groupRow, categoryRow int, lookup map[[2]int]*mergeRange) []types.ColumnGroup {
+func buildColumnGroups(file *excelize.File, sheetName string, groupRow, categoryRow int, lookup map[[2]int]*mergeRange, layout TimetableLayout) []types.ColumnGroup {
 	var groups []types.ColumnGroup
 	gkCounter := 1
 	prevYearDigit := byte(0) // first digit of last "grupa XY" — reset GK when it changes
@@ -146,10 +130,10 @@ func buildColumnGroups(file *excelize.File, sheetName string, groupRow, category
 	slog.Debug("Building column groups",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
-		slog.Int("firstCol", config.Config.HourColumn+1),
+		slog.Int("firstCol", layout.HourColumn+1),
 		slog.Int("lastCol", config.Config.LastColumn))
 
-	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		value := effectiveGroupValue(file, sheetName, groupRow, col, lookup)
 		category := effectiveCategory(file, sheetName, categoryRow, col, lookup)
 

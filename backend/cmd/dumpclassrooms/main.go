@@ -36,6 +36,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
 		os.Exit(1)
 	}
+	layout, err := extractor.DiscoverTimetableLayout(file, sheetName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error detecting timetable layout: %v\n", err)
+		os.Exit(1)
+	}
 
 	uniqueClassrooms := make(map[string]struct{})
 
@@ -51,11 +56,11 @@ func main() {
 	}
 
 	// B. Extract from timetable grid classes
-	groups, err := extractor.BuildAvailableGroups(file, sheetName)
+	groups, err := extractor.BuildAvailableGroups(file, sheetName, layout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error building groups for %s: %v\n", xlsxPath, err)
 	} else {
-		timetable := extractor.BuildTimetable(groups, file, sheetName, legend, buildings)
+		timetable := extractor.BuildTimetable(groups, file, sheetName, legend, buildings, layout)
 		for _, groupTimetable := range timetable {
 			for _, classes := range groupTimetable {
 				for _, class := range classes {

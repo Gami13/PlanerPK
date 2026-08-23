@@ -34,11 +34,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	days := findDays(file, sheetName)
-	fmt.Fprintf(os.Stderr, "Found %d days\n", len(days))
+	layout, err := extractor.DiscoverTimetableLayout(file, sheetName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error detecting timetable layout: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(os.Stderr, "Found %d days\n", len(layout.Days))
 
 	// Find hour-reference columns to skip (header says "Godziny")
-	skipCols := findHourColumns(file, sheetName, days)
+	skipCols := findHourColumns(file, sheetName, layout)
 	fmt.Fprintf(os.Stderr, "Skipping %d hour-reference columns\n", len(skipCols))
 
 	var classTexts []string
@@ -48,12 +52,12 @@ func main() {
 		"CZWARTEK": true, "PIĄTEK": true, "SOBOTA": true, "NIEDZIELA": true,
 	}
 
-	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
 		if skipCols[col] {
 			continue
 		}
-		for _, day := range days {
-			for row := day.startRow; row <= day.endRow; row++ {
+		for _, day := range layout.Days {
+			for row := day.StartingRow; row <= day.EndingRow; row++ {
 				text := getCell(file, sheetName, row, col)
 				if text != "" && !dayNames[strings.TrimSpace(text)] {
 					classTexts = append(classTexts, text)
@@ -86,31 +90,6 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Written to %s\n", outPath)
 }
 
-type dayRange struct {
-	startRow int
-	endRow   int
-}
-
-func findDays(file *excelize.File, sheetName string) []dayRange {
-	var days []dayRange
-	rows, err := file.GetRows(sheetName)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting rows: %v\n", err)
-		return days
-	}
-	for i, row := range rows {
-		if len(row) > config.Config.HourColumn {
-			if row[config.Config.HourColumn] == config.Config.DayStart {
-				days = append(days, dayRange{startRow: i})
-			}
-			if row[config.Config.HourColumn] == config.Config.DayEnd && len(days) > 0 {
-				days[len(days)-1].endRow = i
-			}
-		}
-	}
-	return days
-}
-
 func getCell(file *excelize.File, sheet string, row int, col int) string {
 	column, err := excelize.ColumnNumberToName(col + 1)
 	if err != nil {
@@ -138,15 +117,15 @@ func findXlsxFile(dir string) (string, error) {
 
 // findHourColumns identifies columns whose header row contains "Godziny" — these
 // are hour-reference columns, not class data.
-func findHourColumns(file *excelize.File, sheetName string, days []dayRange) map[int]bool {
+func findHourColumns(file *excelize.File, sheetName string, layout extractor.TimetableLayout) map[int]bool {
 	skip := make(map[int]bool)
-	if len(days) == 0 {
+	if len(layout.Days) == 0 {
 		return skip
 	}
 	// Check a few rows above the first day's start for "Godziny"
-	headerSearch := max(days[0].startRow-5, 0)
-	for col := config.Config.HourColumn + 1; col <= config.Config.LastColumn; col++ {
-		for row := headerSearch; row < days[0].startRow; row++ {
+	headerSearch := max(layout.Days[0].StartingRow-5, 0)
+	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+		for row := headerSearch; row < layout.Days[0].StartingRow; row++ {
 			val := strings.TrimSpace(getCell(file, sheetName, row, col))
 			if strings.EqualFold(val, "Godziny") {
 				skip[col] = true

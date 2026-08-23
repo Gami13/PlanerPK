@@ -22,7 +22,7 @@ func TestParseEnvironmentDefaults(t *testing.T) {
 	if cfg.DataDir != wantDataDir {
 		t.Errorf("DataDir = %q, want %q", cfg.DataDir, wantDataDir)
 	}
-	if cfg.HourColumn != 1 || cfg.LastColumn != 40 {
+	if cfg.LastColumn != 40 {
 		t.Errorf("unexpected timetable defaults: %+v", cfg)
 	}
 	if cfg.TimetableUpdatePeriod != time.Minute || cfg.TimetableSyncPeriod != 72*time.Hour {
@@ -43,9 +43,6 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	dataDir := t.TempDir()
 	cfg, err := parseEnvironment(map[string]string{
 		"DATA_DIR":                dataDir,
-		"HOUR_COLUMN":             "2",
-		"DAY_START":               "8.15",
-		"DAY_END":                 "20.45",
 		"LAST_COLUMN":             "41",
 		"MINUTES_BETWEEN":         "5",
 		"TIME_BETWEEN_SYNC_HOURS": "12",
@@ -63,10 +60,7 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	if !strings.Contains(cfg.DatabaseSource, filepath.ToSlash(filepath.Join(dataDir, "state", "database.db"))) {
 		t.Errorf("DatabaseSource = %q", cfg.DatabaseSource)
 	}
-	if cfg.DayStartTime.Hour() != 8 || cfg.DayStartTime.Minute() != 15 {
-		t.Errorf("DayStartTime = %v", cfg.DayStartTime)
-	}
-	if cfg.HourColumn != 2 || cfg.LastColumn != 41 {
+	if cfg.LastColumn != 41 {
 		t.Errorf("unexpected timetable overrides: %+v", cfg)
 	}
 	if cfg.LogLevel != slog.LevelWarn {
@@ -86,12 +80,7 @@ func TestParseEnvironmentRejectsInvalidValues(t *testing.T) {
 		environment map[string]string
 		wantError   string
 	}{
-		{"malformed integer", map[string]string{"HOUR_COLUMN": "x"}, "parse environment"},
-		{"invalid start clock", map[string]string{"DAY_START": "08:15"}, "DAY_START"},
-		{"invalid end clock", map[string]string{"DAY_END": "noon"}, "DAY_END"},
 		{"invalid log level", map[string]string{"LOG_LEVEL": "verbose"}, "LogLevel"},
-		{"negative hour column", map[string]string{"HOUR_COLUMN": "-1"}, "HOUR_COLUMN"},
-		{"last column before hour column", map[string]string{"HOUR_COLUMN": "4", "LAST_COLUMN": "4"}, "LAST_COLUMN"},
 		{"zero update interval", map[string]string{"MINUTES_BETWEEN": "0"}, "MINUTES_BETWEEN"},
 		{"negative sync interval", map[string]string{"TIME_BETWEEN_SYNC_HOURS": "-1"}, "TIME_BETWEEN_SYNC_HOURS"},
 		{"empty data directory", map[string]string{"DATA_DIR": ""}, "DATA_DIR"},
@@ -104,6 +93,20 @@ func TestParseEnvironmentRejectsInvalidValues(t *testing.T) {
 				t.Fatalf("parseEnvironment() error = %v, want error containing %q", err, test.wantError)
 			}
 		})
+	}
+}
+
+func TestParseEnvironmentIgnoresObsoleteTimetableLayoutVariables(t *testing.T) {
+	cfg, err := parseEnvironment(map[string]string{
+		"HOUR_COLUMN": "not-an-integer",
+		"DAY_START":   "not-a-time",
+		"DAY_END":     "not-a-time",
+	})
+	if err != nil {
+		t.Fatalf("parseEnvironment() error = %v", err)
+	}
+	if cfg.LastColumn != 40 {
+		t.Errorf("LastColumn = %d, want default 40", cfg.LastColumn)
 	}
 }
 

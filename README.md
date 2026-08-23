@@ -96,8 +96,10 @@ The backend supports these environment variables:
 - `MINUTES_BETWEEN` — timetable update interval.
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
 - `TIMETABLE_URL` — source timetable page.
-- `HOUR_COLUMN`, `DAY_START`, `DAY_END`, and `LAST_COLUMN` — timetable spreadsheet layout settings. The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15.
+- `LAST_COLUMN` — optional upper boundary for timetable data columns.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
+
+The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15. On each import, the timetable hour column, slot duration, and day boundaries are inferred from consistent time sequences in the worksheet; they are no longer configured through environment variables.
 
 The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment, for example `https://planpk.gami.ovh/api`.
 

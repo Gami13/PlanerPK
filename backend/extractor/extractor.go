@@ -6,31 +6,29 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
-	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, layout TimetableLayout) types.Timetable {
 	timetable := make(types.Timetable)
-	days := getDaysStartEnd(file, sheetName)
 
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, sheetName, legend, buildings, days)
+		groupTimetable := buildTimetableForGroup(int64(group.Column), file, sheetName, legend, buildings, layout.Days, layout.SlotDuration)
 		timetable[int64(group.Column)] = groupTimetable
 
 	}
 	return timetable
 }
 
-func buildTimetableForGroup(groupColumn int64, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day) types.GroupTimetable {
+func buildTimetableForGroup(groupColumn int64, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day, slotDuration time.Duration) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := traverseDay(file, sheetName, day, groupColumn, legend, buildings)
+		classes := traverseDay(file, sheetName, day, groupColumn, legend, buildings, slotDuration)
 		timetable[day.WeekDay] = classes
 		slog.Debug("Processed day",
 			slog.String("day", day.WeekDay.String()),
@@ -40,39 +38,10 @@ func buildTimetableForGroup(groupColumn int64, file *excelize.File, sheetName st
 	return timetable
 }
 
-func getDaysStartEnd(file *excelize.File, sheetName string) []types.Day {
-	// Find starting rows for each day
-	var days []types.Day
-	rows, err := file.GetRows(sheetName)
-	if err != nil {
-		slog.Error("Failed to get rows from timetable", slog.Any("error", err))
-		return days
-	}
-	for number, row := range rows {
-		if len(row) > 1 {
-
-			if row[config.Config.HourColumn] == config.Config.DayStart {
-				day := types.Day{
-					StartingRow: number,
-					WeekDay:     time.Weekday((len(days) + 1) % 7),
-				}
-				days = append(days, day)
-			}
-			if row[config.Config.HourColumn] == config.Config.DayEnd {
-				days[len(days)-1].EndingRow = number
-			}
-
-		}
-	}
-	return days
-}
-
-const slotDuration = 15 * time.Minute
-
-func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings) []types.Class {
+func traverseDay(file *excelize.File, sheetName string, day types.Day, groupColumn int64, legend *legend.Legend, buildings *buildings.Buildings, slotDuration time.Duration) []types.Class {
 	var classes []types.Class
 
-	currentTime := config.Config.DayStartTime
+	currentTime := day.StartingTime
 
 	for i := day.StartingRow; i <= day.EndingRow; i++ {
 		classText := getCell(file, sheetName, i, int(groupColumn))
