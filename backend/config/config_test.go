@@ -22,9 +22,6 @@ func TestParseEnvironmentDefaults(t *testing.T) {
 	if cfg.DataDir != wantDataDir {
 		t.Errorf("DataDir = %q, want %q", cfg.DataDir, wantDataDir)
 	}
-	if cfg.LastColumn != 40 {
-		t.Errorf("unexpected timetable defaults: %+v", cfg)
-	}
 	if cfg.TimetableUpdatePeriod != time.Minute || cfg.TimetableSyncPeriod != 72*time.Hour {
 		t.Errorf("unexpected intervals: update=%s sync=%s", cfg.TimetableUpdatePeriod, cfg.TimetableSyncPeriod)
 	}
@@ -43,7 +40,6 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	dataDir := t.TempDir()
 	cfg, err := parseEnvironment(map[string]string{
 		"DATA_DIR":                dataDir,
-		"LAST_COLUMN":             "41",
 		"MINUTES_BETWEEN":         "5",
 		"TIME_BETWEEN_SYNC_HOURS": "12",
 		"TIMETABLE_URL":           "https://example.test/timetable",
@@ -59,9 +55,6 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	}
 	if !strings.Contains(cfg.DatabaseSource, filepath.ToSlash(filepath.Join(dataDir, "state", "database.db"))) {
 		t.Errorf("DatabaseSource = %q", cfg.DatabaseSource)
-	}
-	if cfg.LastColumn != 41 {
-		t.Errorf("unexpected timetable overrides: %+v", cfg)
 	}
 	if cfg.LogLevel != slog.LevelWarn {
 		t.Errorf("LogLevel = %s, want WARN", cfg.LogLevel)
@@ -97,16 +90,14 @@ func TestParseEnvironmentRejectsInvalidValues(t *testing.T) {
 }
 
 func TestParseEnvironmentIgnoresObsoleteTimetableLayoutVariables(t *testing.T) {
-	cfg, err := parseEnvironment(map[string]string{
+	_, err := parseEnvironment(map[string]string{
 		"HOUR_COLUMN": "not-an-integer",
 		"DAY_START":   "not-a-time",
 		"DAY_END":     "not-a-time",
+		"LAST_COLUMN": "not-an-integer",
 	})
 	if err != nil {
 		t.Fatalf("parseEnvironment() error = %v", err)
-	}
-	if cfg.LastColumn != 40 {
-		t.Errorf("LastColumn = %d, want default 40", cfg.LastColumn)
 	}
 }
 

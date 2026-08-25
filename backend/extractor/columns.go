@@ -5,100 +5,39 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
-
-// mergeRange stores parsed information about a single merged cell range.
-type mergeRange struct {
-	StartRow, StartCol int
-	EndRow, EndCol     int
-	Value              string
-}
 
 // BuildAvailableGroups parses the Excel header rows and returns available column groups.
 func BuildAvailableGroups(file *excelize.File, sheetName string, layout TimetableLayout) ([]types.ColumnGroup, error) {
 	if len(layout.Days) == 0 {
 		return nil, fmt.Errorf("cannot build groups for sheet %q: timetable layout contains no day runs", sheetName)
 	}
+	if layout.HeaderRow < 0 {
+		return nil, fmt.Errorf("cannot build groups for sheet %q: timetable header row was not detected", sheetName)
+	}
 	dataStartRow := layout.Days[0].StartingRow
 
-	groupRow, categoryRow := findHeaderRows(file, sheetName, dataStartRow, layout)
+	groupRow := layout.HeaderRow
+	categoryRow := max(groupRow-1, 0)
 	slog.Debug("Header rows found",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
 		slog.Int("dataStartRow", dataStartRow))
 
-	mergeLookup := buildMergeLookup(file, sheetName)
+	mergeRanges := layout.mergeRanges
+	if mergeRanges == nil {
+		var err error
+		mergeRanges, err = loadMergeRanges(file, sheetName)
+		if err != nil {
+			slog.Error("Failed to get merge cells", slog.Any("error", err))
+		}
+	}
+	mergeLookup := buildMergeLookup(mergeRanges)
 	groups := buildColumnGroups(file, sheetName, groupRow, categoryRow, mergeLookup, layout)
 
 	return groups, nil
-}
-
-// findHeaderRows scans upward from dataStartRow to find the group name row
-// and the category row directly above it.
-func findHeaderRows(file *excelize.File, sheetName string, dataStartRow int, layout TimetableLayout) (int, int) {
-	for row := dataStartRow - 1; row >= 0; row-- {
-		if rowHasDataContent(file, sheetName, row, layout) {
-			return row, max(row-1, 0)
-		}
-	}
-	return max(dataStartRow-1, 0), max(dataStartRow-2, 0)
-}
-
-// rowHasDataContent checks if any data column in the row is non-empty.
-func rowHasDataContent(file *excelize.File, sheetName string, row int, layout TimetableLayout) bool {
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
-		if strings.TrimSpace(getCell(file, sheetName, row, col)) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// buildMergeLookup parses all merge cells and maps each covered (row,col) to its mergeRange.
-func buildMergeLookup(file *excelize.File, sheetName string) map[[2]int]*mergeRange {
-	lookup := make(map[[2]int]*mergeRange)
-
-	mergeCells, err := file.GetMergeCells(sheetName)
-	if err != nil {
-		slog.Error("Failed to get merge cells", slog.Any("error", err))
-		return lookup
-	}
-
-	for _, mc := range mergeCells {
-		startCol, startRow, err := excelize.CellNameToCoordinates(mc.GetStartAxis())
-		if err != nil {
-			slog.Error("Failed to parse merge start", slog.Any("error", err))
-			continue
-		}
-		endCol, endRow, err := excelize.CellNameToCoordinates(mc.GetEndAxis())
-		if err != nil {
-			slog.Error("Failed to parse merge end", slog.Any("error", err))
-			continue
-		}
-
-		// Convert 1-based excelize coords to 0-based
-		startCol--
-		startRow--
-		endCol--
-		endRow--
-
-		mr := &mergeRange{
-			StartRow: startRow, StartCol: startCol,
-			EndRow: endRow, EndCol: endCol,
-			Value: mc.GetCellValue(),
-		}
-
-		for r := startRow; r <= endRow; r++ {
-			for c := startCol; c <= endCol; c++ {
-				lookup[[2]int{r, c}] = mr
-			}
-		}
-	}
-
-	return lookup
 }
 
 // effectiveGroupValue returns the group name for a cell, preferring the merge
@@ -126,14 +65,15 @@ func buildColumnGroups(file *excelize.File, sheetName string, groupRow, category
 	var groups []types.ColumnGroup
 	gkCounter := 1
 	prevYearDigit := byte(0) // first digit of last "grupa XY" — reset GK when it changes
+	firstDataColumn := layout.HourColumn + 1
 
 	slog.Debug("Building column groups",
 		slog.Int("groupRow", groupRow),
 		slog.Int("categoryRow", categoryRow),
-		slog.Int("firstCol", layout.HourColumn+1),
-		slog.Int("lastCol", config.Config.LastColumn))
+		slog.Int("firstCol", firstDataColumn),
+		slog.Int("lastCol", layout.DataEndColumn))
 
-	for col := layout.HourColumn + 1; col <= config.Config.LastColumn; col++ {
+	for col := firstDataColumn; col <= layout.DataEndColumn; col++ {
 		value := effectiveGroupValue(file, sheetName, groupRow, col, lookup)
 		category := effectiveCategory(file, sheetName, categoryRow, col, lookup)
 

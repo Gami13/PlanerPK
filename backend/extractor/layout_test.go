@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
-	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/xuri/excelize/v2"
 )
@@ -327,6 +326,7 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 	const sheet = "2025_2026"
 	setWorksheetValue(t, file, sheet, 0, 2, "Category")
 	setWorksheetValue(t, file, sheet, 1, 2, "Group A")
+	setWorksheetValue(t, file, sheet, 0, 8, "Unrelated worksheet data")
 	setTimeSequence(t, file, sheet, 1, 2, "07.30", "08.00")
 	setWorksheetValue(t, file, sheet, 2, 2, "Mathematics\nwykład")
 
@@ -335,9 +335,12 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 		t.Fatalf("DiscoverTimetableLayout() error = %v", err)
 	}
 
-	previousConfig := config.Config
-	defer func() { config.Config = previousConfig }()
-	config.Config.LastColumn = 3
+	if layout.DataEndColumn != 2 {
+		t.Errorf("DataEndColumn = %d, want 2", layout.DataEndColumn)
+	}
+	if layout.HeaderRow != 1 {
+		t.Errorf("HeaderRow = %d, want 1", layout.HeaderRow)
+	}
 
 	groups, err := BuildAvailableGroups(file, sheet, layout)
 	if err != nil {
@@ -364,5 +367,39 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 	}
 	if classes[0].Name != "Mathematics" {
 		t.Errorf("class name = %q, want Mathematics", classes[0].Name)
+	}
+}
+
+func TestDiscoverTimetableLayoutIncludesMergedHeaderSpan(t *testing.T) {
+	file := workbookWithSheets(t, "2025_2026")
+	defer file.Close()
+
+	const sheet = "2025_2026"
+	setWorksheetValue(t, file, sheet, 0, 2, "Category")
+	setWorksheetValue(t, file, sheet, 1, 2, "Group A")
+	if err := file.MergeCell(sheet, "C2", "E2"); err != nil {
+		t.Fatalf("MergeCell() error = %v", err)
+	}
+	setTimeSequence(t, file, sheet, 1, 2, "07.30", "08.00")
+
+	layout, err := DiscoverTimetableLayout(file, sheet)
+	if err != nil {
+		t.Fatalf("DiscoverTimetableLayout() error = %v", err)
+	}
+	if layout.DataEndColumn != 4 {
+		t.Fatalf("DataEndColumn = %d, want 4", layout.DataEndColumn)
+	}
+
+	groups, err := BuildAvailableGroups(file, sheet, layout)
+	if err != nil {
+		t.Fatalf("BuildAvailableGroups() error = %v", err)
+	}
+	if len(groups) != 3 {
+		t.Fatalf("groups = %+v, want three columns from merged header", groups)
+	}
+	for index, group := range groups {
+		if group.Column != index+2 {
+			t.Errorf("groups[%d].Column = %d, want %d", index, group.Column, index+2)
+		}
 	}
 }

@@ -13,9 +13,12 @@ import (
 // TimetableLayout describes the timetable grid discovered in a worksheet.
 // Rows and columns use the zero-based indexes used by the extractor.
 type TimetableLayout struct {
-	HourColumn   int
-	SlotDuration time.Duration
-	Days         []types.Day
+	HourColumn    int
+	DataEndColumn int
+	HeaderRow     int
+	SlotDuration  time.Duration
+	Days          []types.Day
+	mergeRanges   []mergeRange
 }
 
 // DiscoverTimetableLayout finds the leftmost worksheet column containing one
@@ -39,9 +42,17 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 		if !ok {
 			continue
 		}
+		mergeRanges, err := loadMergeRanges(file, sheetName)
+		if err != nil {
+			slog.Warn("Failed to inspect timetable header merges", slog.Any("error", err))
+		}
+		candidate.mergeRanges = mergeRanges
+		candidate.HeaderRow, candidate.DataEndColumn = discoverHeaderAndDataEnd(rows, candidate)
 		slog.Info("Detected timetable layout",
 			slog.String("sheet", sheetName),
 			slog.Int("hour_column", candidate.HourColumn),
+			slog.Int("data_end_column", candidate.DataEndColumn),
+			slog.Int("header_row", candidate.HeaderRow),
 			slog.Duration("slot_duration", candidate.SlotDuration),
 			slog.Int("day_count", len(candidate.Days)))
 		return candidate, nil
@@ -51,6 +62,46 @@ func DiscoverTimetableLayout(file *excelize.File, sheetName string) (TimetableLa
 		"could not detect timetable layout in sheet %q: no column contains multiple consecutive time labels with a consistent interval",
 		sheetName,
 	)
+}
+
+// discoverHeaderAndDataEnd finds the timetable header row and its right edge.
+// The worksheet may contain legend or auxiliary data farther to the right, so
+// the worksheet's absolute used range is not a safe timetable boundary.
+func discoverHeaderAndDataEnd(rows [][]string, layout TimetableLayout) (int, int) {
+	headerRow, endColumn := -1, layout.HourColumn
+	if len(layout.Days) == 0 {
+		return headerRow, endColumn
+	}
+
+	firstDataColumn := layout.HourColumn + 1
+	for row := layout.Days[0].StartingRow - 1; row >= 0; row-- {
+		if end := lastDataColumn(rows[row], firstDataColumn); end >= 0 {
+			headerRow = row
+			endColumn = end
+			break
+		}
+	}
+	if headerRow == -1 {
+		return headerRow, endColumn
+	}
+
+	for _, merge := range layout.mergeRanges {
+		if merge.StartCol <= endColumn && merge.StartRow <= headerRow && headerRow <= merge.EndRow &&
+			merge.EndCol >= firstDataColumn && strings.TrimSpace(merge.Value) != "" {
+			endColumn = max(endColumn, merge.EndCol)
+		}
+	}
+
+	return headerRow, endColumn
+}
+
+func lastDataColumn(row []string, firstColumn int) int {
+	for column := len(row) - 1; column >= firstColumn; column-- {
+		if strings.TrimSpace(row[column]) != "" {
+			return column
+		}
+	}
+	return -1
 }
 
 const (
