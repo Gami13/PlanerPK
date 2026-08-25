@@ -12,6 +12,7 @@ import { AppContext, type AppStore, updateLoggedInUser } from "./appContext";
 import { Authorize } from "./routes/Authorize";
 import { Home } from "./routes/Home";
 import { NotFound } from "./routes/NotFound";
+import { PrivacyPolicy } from "./routes/PrivacyPolicy";
 import { Settings } from "./routes/Settings";
 
 if (import.meta.env.DEV) {
@@ -46,6 +47,7 @@ render(
 			<Router root={App as unknown as Component<RouteSectionProps<unknown>>}>
 				<Route path="/" component={Home} />
 				<Route path="/authorize" component={Authorize} />
+				<Route path="/privacy-policy" component={PrivacyPolicy} />
 				<Route path="/settings" component={Settings} />
 				<Route path="**" component={NotFound} />
 			</Router>
