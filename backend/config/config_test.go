@@ -44,6 +44,7 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 		"TIME_BETWEEN_SYNC_HOURS": "12",
 		"TIMETABLE_URL":           "https://example.test/timetable",
 		"GOOGLE_PLACES_API_KEY":   "test-key",
+		"DISCORD_WEBHOOK_URL":     "https://discord.example/webhook",
 		"LOG_LEVEL":               "warn",
 	})
 	if err != nil {
@@ -64,6 +65,9 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	}
 	if cfg.GooglePlacesAPIKey == "" {
 		t.Error("Google Places should be configured")
+	}
+	if cfg.DiscordWebhookURL != "https://discord.example/webhook" {
+		t.Errorf("DiscordWebhookURL = %q", cfg.DiscordWebhookURL)
 	}
 }
 

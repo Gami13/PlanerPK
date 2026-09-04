@@ -1,13 +1,17 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/lmittmann/tint"
+	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"golang.org/x/oauth2"
 )
@@ -66,4 +70,40 @@ func InitializeLogging(logDir string, level slog.Level) error {
 		slog.String("log_level", level.String()))
 
 	return nil
+}
+
+func NotifyError(message string, args ...any) {
+	slog.Error(message, args...)
+	sendWebhook(message)
+}
+
+func NotifyInfo(message string, args ...any) {
+	slog.Info(message, args...)
+	sendWebhook(message)
+}
+
+func sendWebhook(message string) {
+	webhookURL := config.Config.DiscordWebhookURL
+	if webhookURL == "" {
+		return
+	}
+
+	payload, err := json.Marshal(map[string]string{"content": "@everyone " + message})
+	if err != nil {
+		slog.Warn("Failed to encode error notification", slog.Any("error", err))
+		return
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	response, err := client.Post(webhookURL, "application/json", bytes.NewReader(payload))
+	if err != nil {
+		slog.Warn("Failed to send error notification", slog.Any("error", err))
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		slog.Warn("Error notification webhook returned a non-success status",
+			slog.Int("status_code", response.StatusCode))
+	}
 }

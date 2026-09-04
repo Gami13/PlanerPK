@@ -32,6 +32,7 @@ type Configuration struct {
 	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
 	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"`
 	GooglePlacesAPIKey    string     `env:"GOOGLE_PLACES_API_KEY"`
+	DiscordWebhookURL     string     `env:"DISCORD_WEBHOOK_URL"`
 	LogLevel              slog.Level `env:"LOG_LEVEL" envDefault:"DEBUG"`
 	TimetableUpdatePeriod time.Duration
 	TimetableSyncPeriod   time.Duration

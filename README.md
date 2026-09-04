@@ -97,6 +97,7 @@ The backend supports these environment variables:
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
 - `TIMETABLE_URL` — source timetable page.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
+- `DISCORD_WEBHOOK_URL` — optional Discord webhook used for error notifications.
 
 The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15. On each import, the timetable hour column, slot duration, and day boundaries are inferred from consistent time sequences in the worksheet; they are no longer configured through environment variables.
 
