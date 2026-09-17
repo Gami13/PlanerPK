@@ -8,6 +8,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
 	"github.com/woodpkrs/PlanerPK/types"
+	"github.com/woodpkrs/PlanerPK/utils"
 	"github.com/woodpkrs/PlanerPK/webServer/handler"
 
 	"connectrpc.com/connect"
@@ -54,6 +55,6 @@ func Start(db db.Querier, cache *types.Cache) {
 
 	slog.Info("Web server listening", slog.String("port", config.ServerPort))
 	if err := server.ListenAndServe(); err != nil {
-		slog.Error("Web server failed", slog.Any("error", err))
+		utils.NotifyError("Web server failed", slog.Any("error", err))
 	}
 }

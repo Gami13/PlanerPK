@@ -37,15 +37,18 @@ func initializeXlsxInfo() {
 		return
 	}
 	if !errors.Is(err, os.ErrNotExist) {
+		utils.NotifyError("Failed to check if stats file exists", slog.Any("error", err))
 		panic("Failed to check if stats file exists: " + err.Error())
 	}
 
 	jsonText, err := json.Marshal(types.TimetableFileStats{})
 	if err != nil {
+		utils.NotifyError("Could not marshal json", slog.Any("error", err))
 		panic("Could not marshal json")
 	}
 	err = os.WriteFile(filename, jsonText, 0o644)
 	if err != nil {
+		utils.NotifyError("Could not init stats file", slog.Any("error", err))
 		panic("Could not init stats file")
 	}
 	slog.Info("Stats file initialized")
@@ -57,6 +60,7 @@ func initializeApp() (queries db.Querier) {
 
 	err := utils.InitializeLogging(config.Config.LogsDir, config.Config.LogLevel)
 	if err != nil {
+		utils.NotifyError("Failed to initialize logger", slog.Any("error", err))
 		panic("Failed to initialize logger: " + err.Error())
 	}
 	slog.Info("Configuration loaded",
@@ -65,12 +69,13 @@ func initializeApp() (queries db.Querier) {
 
 	database, err := sql.Open(config.DatabaseDriver, config.Config.DatabaseSource)
 	if err != nil {
+		utils.NotifyError("Failed to open database", slog.Any("error", err))
 		panic(err)
 	}
 
 	_, err = database.Exec(ddl)
 	if err != nil {
-		slog.Error("Failed to execute DDL statements", slog.Any("error", err))
+		utils.NotifyError("Failed to execute DDL statements", slog.Any("error", err))
 		panic(err)
 	}
 
@@ -149,7 +154,7 @@ func main() {
 
 	_, err := updateTimetableAndCache(queries, &cache, true)
 	if err != nil {
-		slog.Error("Failed to build initial cache", "error", err)
+		utils.NotifyError("Failed to build initial cache", slog.Any("error", err))
 		panic(err)
 	}
 
