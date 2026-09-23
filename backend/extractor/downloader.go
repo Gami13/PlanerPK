@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,10 +19,50 @@ import (
 	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/net/html"
 )
 
 var httpClient = &http.Client{
 	Timeout: 30 * time.Second,
+}
+
+var (
+	ErrNoXlsxFile        = fmt.Errorf("no .xlsx file found in the destination folder")
+	ErrTimetableNotFound = errors.New("timetable link for informatyka (stacjonarne) not found")
+)
+
+func isExcelURL(rawURL string) bool {
+	cleanURL := strings.TrimSpace(rawURL)
+	if cleanURL == "" {
+		return false
+	}
+	target := cleanURL
+	if parsed, err := url.Parse(cleanURL); err == nil && parsed.Path != "" {
+		target = parsed.Path
+	}
+	lower := strings.ToLower(target)
+	return strings.HasSuffix(lower, ".xls") || strings.HasSuffix(lower, ".xlsx")
+}
+
+func findTimetableLink(doc *html.Node, rawBaseURL string) (string, error) {
+	if doc == nil {
+		return "", ErrTimetableNotFound
+	}
+
+	base, _ := url.Parse(rawBaseURL)
+	for _, a := range htmlquery.Find(doc, "//a[@href]") {
+		href := strings.TrimSpace(htmlquery.SelectAttr(a, "href"))
+		content := strings.ToLower(href + " " + htmlquery.InnerText(a) + " " + htmlquery.SelectAttr(a, "title"))
+
+		if isExcelURL(href) && strings.Contains(content, "informatyka") && !strings.Contains(content, "niestacjonarne") {
+			if u, err := url.Parse(href); err == nil && base != nil && rawBaseURL != "" {
+				return base.ResolveReference(u).String(), nil
+			}
+			return href, nil
+		}
+	}
+
+	return "", ErrTimetableNotFound
 }
 
 func fetchTimetableUrl() (string, error) {
@@ -29,12 +70,13 @@ func fetchTimetableUrl() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get the timetable url: %w", err)
 	}
-	link := htmlquery.InnerText(htmlquery.FindOne(doc, "//html/body/div[2]/div[2]/div/div/main/article/div/ul[1]/li[1]/a/@href"))
+	link, err := findTimetableLink(doc, config.Config.TimetableURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to get the timetable url: %w", err)
+	}
 
 	return link, nil
 }
-
-var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
 
 func getCurrentXlsxPath() (filePath string, err error) {
 	entries, err := os.ReadDir(config.Config.CurrentTimetableDir)
