@@ -3,7 +3,6 @@ package extractor
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -26,26 +25,40 @@ func workbookWithSheets(t *testing.T, sheets ...string) *excelize.File {
 	return file
 }
 
-func TestResolveTimetableSheetSelectsAcademicYearByCalendarHalf(t *testing.T) {
-	file := workbookWithSheets(t, "Legenda", "2025_2026", "2026_2027", "Dane")
-	defer file.Close()
-
+func TestResolveTimetableSheetSelectsHighestAcademicYear(t *testing.T) {
 	tests := []struct {
-		name string
-		now  time.Time
-		want string
+		name   string
+		sheets []string
+		want   string
 	}{
-		{name: "January", now: time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC), want: "2025_2026"},
-		{name: "July 1", now: time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC), want: "2025_2026"},
-		{name: "September 14", now: time.Date(2026, time.September, 14, 23, 59, 0, 0, time.UTC), want: "2025_2026"},
-		{name: "September 15", now: time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC), want: "2026_2027"},
-		{name: "December", now: time.Date(2026, time.December, 31, 23, 59, 0, 0, time.UTC), want: "2026_2027"},
-		{name: "January next year", now: time.Date(2027, time.January, 1, 0, 0, 0, 0, time.UTC), want: "2026_2027"},
+		{
+			name:   "single academic year sheet",
+			sheets: []string{"Legenda", "2025_2026", "Dane"},
+			want:   "2025_2026",
+		},
+		{
+			name:   "multiple academic year sheets picks highest",
+			sheets: []string{"Legenda", "2025_2026", "2026_2027", "Dane"},
+			want:   "2026_2027",
+		},
+		{
+			name:   "out of order sheets still picks highest",
+			sheets: []string{"2026_2027", "Legenda", "2024_2025", "2025_2026"},
+			want:   "2026_2027",
+		},
+		{
+			name:   "only one valid sheet among junk",
+			sheets: []string{"2025_2028", "2025-2026", "2025_2026"},
+			want:   "2025_2026",
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := ResolveTimetableSheet(file, test.now)
+			file := workbookWithSheets(t, test.sheets...)
+			defer file.Close()
+
+			got, err := ResolveTimetableSheet(file)
 			if err != nil {
 				t.Fatalf("ResolveTimetableSheet() error = %v", err)
 			}
@@ -56,42 +69,21 @@ func TestResolveTimetableSheetSelectsAcademicYearByCalendarHalf(t *testing.T) {
 	}
 }
 
-func TestResolveTimetableSheetRejectsMissingExpectedSheet(t *testing.T) {
+func TestResolveTimetableSheetRejectsNoAcademicYearSheet(t *testing.T) {
 	file := workbookWithSheets(t, "Legenda", "2025_2028", "2025-2026", "2025_27")
 	defer file.Close()
 
-	_, err := ResolveTimetableSheet(file, time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC))
+	_, err := ResolveTimetableSheet(file)
 	if err == nil {
 		t.Fatal("ResolveTimetableSheet() error = nil, want missing-sheet error")
 	}
-	for _, want := range []string{"2025_2026", "Legenda", "2025_2028", "2025-2026", "2025_27"} {
+	for _, want := range []string{"Legenda", "2025_2028", "2025-2026", "2025_27"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error = %q, want it to contain %q", err, want)
 		}
 	}
 }
 
-func TestIsAcademicYearSheetName(t *testing.T) {
-	tests := []struct {
-		name string
-		want bool
-	}{
-		{name: "2025_2026", want: true},
-		{name: "1999_2000", want: true},
-		{name: "2025_2028", want: false},
-		{name: "2025-2026", want: false},
-		{name: "2025_27", want: false},
-		{name: "x2025_2026", want: false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := isAcademicYearSheetName(test.name); got != test.want {
-				t.Errorf("isAcademicYearSheetName(%q) = %v, want %v", test.name, got, test.want)
-			}
-		})
-	}
-}
 
 func TestExtractLegendUsesResolvedSheet(t *testing.T) {
 	file := workbookWithSheets(t, "Default", "2025_2026")

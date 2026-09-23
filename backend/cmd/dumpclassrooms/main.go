@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/config"
@@ -31,7 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer file.Close()
-	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	sheetName, err := extractor.ResolveTimetableSheet(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
 		os.Exit(1)

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/extractor"
@@ -17,7 +16,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	sheetName, err := extractor.ResolveTimetableSheet(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
 		os.Exit(1)

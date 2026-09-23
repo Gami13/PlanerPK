@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"time"
 
 	_ "modernc.org/sqlite"
 
@@ -63,7 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer extractor.CloseFile(file)
-	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	sheetName, err := extractor.ResolveTimetableSheet(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving timetable sheet: %v\n", err)
 		os.Exit(1)

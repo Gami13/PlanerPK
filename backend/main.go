@@ -92,7 +92,7 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 		return nil, nil, nil, nil, err
 	}
 	defer extractor.CloseFile(file)
-	sheetName, err := extractor.ResolveTimetableSheet(file, time.Now())
+	sheetName, err := extractor.ResolveTimetableSheet(file)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

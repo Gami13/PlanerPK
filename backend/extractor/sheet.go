@@ -6,23 +6,36 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/xuri/excelize/v2"
 )
 
 var academicYearSheetPattern = regexp.MustCompile(`^(\d{4})_(\d{4})$`)
 
-// ResolveTimetableSheet selects the worksheet for the academic year implied by
-// now. Dates before September 15 belong to the previous/current academic year;
-// dates on or after September 15 belong to the current/next academic year.
-func ResolveTimetableSheet(file *excelize.File, now time.Time) (string, error) {
-	target := academicYearSheetName(now)
+// ResolveTimetableSheet selects the worksheet whose name matches the
+// YYYY_YYYY academic-year pattern with the highest start year.
+//
+// This avoids hard-coding an expected year from the current date: it
+// gracefully picks the latest available sheet (e.g. "2025_2026") even
+// when the university hasn't yet published the next year's sheet.
+func ResolveTimetableSheet(file *excelize.File) (string, error) {
+	bestSheet := ""
+	bestStart := -1
+
 	for _, sheet := range file.GetSheetList() {
-		if sheet == target && isAcademicYearSheetName(sheet) {
-			slog.Info("Resolved timetable sheet", slog.String("sheet", sheet))
-			return sheet, nil
+		startYear, ok := academicYearStart(sheet)
+		if !ok {
+			continue
 		}
+		if startYear > bestStart {
+			bestStart = startYear
+			bestSheet = sheet
+		}
+	}
+
+	if bestSheet != "" {
+		slog.Info("resolved timetable sheet", slog.String("sheet", bestSheet))
+		return bestSheet, nil
 	}
 
 	sheets := file.GetSheetList()
@@ -30,30 +43,27 @@ func ResolveTimetableSheet(file *excelize.File, now time.Time) (string, error) {
 	if len(sheets) > 0 {
 		available = strings.Join(sheets, ", ")
 	}
-	return "", fmt.Errorf("timetable sheet %q not found; available sheets: %s", target, available)
+	return "", fmt.Errorf("no academic-year sheet (YYYY_YYYY) found; available sheets: %s", available)
 }
 
-func academicYearSheetName(now time.Time) string {
-	year := now.Year()
-	if now.Month() < time.September || (now.Month() == time.September && now.Day() < 15) {
-		return fmt.Sprintf("%04d_%04d", year-1, year)
-	}
-	return fmt.Sprintf("%04d_%04d", year, year+1)
-}
-
-func isAcademicYearSheetName(name string) bool {
+// academicYearStart returns the start year if name matches the YYYY_YYYY
+// academic-year pattern (e.g. "2025_2026" → 2025, true).
+func academicYearStart(name string) (int, bool) {
 	matches := academicYearSheetPattern.FindStringSubmatch(name)
 	if len(matches) != 3 {
-		return false
+		return 0, false
 	}
 
 	startYear, err := strconv.Atoi(matches[1])
 	if err != nil {
-		return false
+		return 0, false
 	}
 	endYear, err := strconv.Atoi(matches[2])
 	if err != nil {
-		return false
+		return 0, false
 	}
-	return endYear == startYear+1
+	if endYear != startYear+1 {
+		return 0, false
+	}
+	return startYear, true
 }
