@@ -57,7 +57,7 @@ export function PrivacyPolicy() {
 				</p>
 				<p>
 					Serwis jest prowadzony przez twórców projektu PlanerPK. W sprawach dotyczących prywatności można skontaktować się
-					pod adresem <a href="mailto:gamiofficial0@gmail.com">gamiofficial0@gmail.com</a>.
+					pod adresem <a href="mailto:gamiwastaken@gmail.com">gamiwastaken@gmail.com</a>.
 				</p>
 			</section>
 
@@ -146,7 +146,7 @@ export function PrivacyPolicy() {
 					Dane są przechowywane tak długo, jak długo konto jest używane lub jest potrzebne do obsługi synchronizacji. Aby
 					poprosić o usunięcie konta i danych przechowywanych przez Serwis, napisz na adres
 					{" "}
-					<a href="mailto:gamiofficial0@gmail.com">gamiofficial0@gmail.com</a>. Prośba powinna zawierać adres e-mail
+					<a href="mailto:gamiwastaken@gmail.com">gamiwastaken@gmail.com</a>. Prośba powinna zawierać adres e-mail
 					konta Google używanego w Serwisie.
 				</p>
 				<p>
