@@ -13,3 +13,10 @@
 ✔ Add option to override the time of the class (for groups that rescheduled their classes) @done(26-04-12 22:55)
 ✔ Turn atomic values into a struct @done(26-08-01 19:40)
 ☐ Rewrite the rate limiter, for now using just cloudflare is fine
+☐ Switch Google OAuth scope to `CalendarEventsOwnedScope` (`calendar.events.owned`) in `backend/config/config.go` & update scopes in Google Cloud Console
+☐ Refactor calendar sync to dedicated secondary calendar (enables `calendar.app.created` scope):
+  - Add `calendar_id TEXT` column to `users` table in `backend/schema.sql` / migrations
+  - Call `Calendars.Insert` on first sync to create dedicated "PlanerPK" calendar and save ID
+  - Replace hardcoded `"primary"` target with stored `calendar_id` across `backend/calendar/calendar.go`
+  - Call `Calendars.Delete` on user account deletion
+  - Switch OAuth scope to `calendar.CalendarAppCreatedScope` (`calendar.app.created`) to eliminate all personal calendar reads

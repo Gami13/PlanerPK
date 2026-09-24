@@ -47,127 +47,72 @@ export function PrivacyPolicy() {
 		<main {...attrs(stylex.props(styles.main))}>
 			<PageTitle title="Polityka prywatności" />
 			<h1 {...attrs(stylex.props(styles.heading))}>Polityka prywatności</h1>
-			<p {...attrs(stylex.props(styles.muted))}>Ostatnia aktualizacja: 24 sierpnia 2026 r.</p>
+			<p {...attrs(stylex.props(styles.muted))}>Ostatnia aktualizacja: 23 września 2026 r.</p>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>1. Informacje ogólne</h2>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>1. Administrator</h2>
 				<p>
-					PlanerPK (dalej: „Serwis”) pomaga użytkownikom przeglądać rozkłady zajęć Politechniki Krakowskiej i synchronizować
-					wybraną grupę zajęć z własnym Kalendarzem Google.
-				</p>
-				<p>
-					Serwis jest prowadzony przez twórców projektu PlanerPK. W sprawach dotyczących prywatności można skontaktować się
-					pod adresem <a href="mailto:gamiwastaken@gmail.com">gamiwastaken@gmail.com</a>.
+					PlanerPK („Serwis") jest prowadzony przez twórców Serwisu. Serwis synchronizuje rozkład zajęć
+					Politechniki Krakowskiej z Kalendarzem Google. Kontakt:{" "}
+					<a href="mailto:gami@gami.ovh">gami@gami.ovh</a>.
 				</p>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>2. Dane, które przetwarzamy</h2>
-				<p>W zależności od używanych funkcji Serwis może przetwarzać:</p>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>2. Przetwarzane dane i cel</h2>
+				<p>Serwis przetwarza wyłącznie dane niezbędne do działania:</p>
 				<ul {...attrs(stylex.props(styles.list))}>
-					<li>
-						podstawowe informacje z konta Google: adres e-mail, imię i nazwisko, imię oraz adres URL zdjęcia profilowego;
-					</li>
-					<li>
-						identyfikatory i tokeny OAuth Google, w tym token odświeżania, potrzebne do uwierzytelnienia użytkownika i
-						synchronizacji kalendarza;
-					</li>
-					<li>
-						wybraną kolumnę lub grupę zajęć oraz ustawienia użytkownika dotyczące aktywności konta i zmian w zajęciach;
-					</li>
-					<li>
-						informacje o wydarzeniach Kalendarza Google potrzebne do rozpoznania wydarzeń utworzonych przez Serwis i
-						porównania ich z aktualnym rozkładem;
-					</li>
-					<li>
-						informacje o nazwach i lokalizacjach budynków używane do opcjonalnego wyszukiwania miejsc na mapie.
-					</li>
+					<li>profil Google (e-mail, imię, zdjęcie) — wyświetlanie konta;</li>
+					<li>dane uwierzytelniające OAuth — logowanie i dostęp do API Google w imieniu użytkownika;</li>
+					<li>wydarzenia Kalendarza Google — synchronizacja rozkładu (Serwis nie modyfikuje wydarzeń, których sam nie utworzył);</li>
+					<li>wybraną grupę zajęć i ustawienia konta.</li>
 				</ul>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>3. Jak wykorzystujemy dane Google</h2>
-				<p>Dane Google wykorzystujemy wyłącznie do działania funkcji wybranych przez użytkownika:</p>
-				<ul {...attrs(stylex.props(styles.list))}>
-					<li>informacje profilowe służą do utworzenia i wyświetlenia konta użytkownika w Serwisie;</li>
-					<li>
-						dostęp do Kalendarza Google służy do odczytania wydarzeń z głównego kalendarza, znalezienia wydarzeń
-						utworzonych przez Serwis oraz utworzenia, aktualizacji lub usunięcia tych wydarzeń podczas synchronizacji;
-					</li>
-					<li>Serwis nie modyfikuje wydarzeń, których sam wcześniej nie utworzył;</li>
-					<li>
-						dane Google nie są sprzedawane, wykorzystywane do reklam, profilowania ani przekazywane w celu niezwiązanym z
-						funkcją synchronizacji;
-					</li>
-					<li>
-						Serwis nie wykorzystuje danych Google do trenowania modeli sztucznej inteligencji.
-					</li>
-				</ul>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>3. Wykorzystanie danych Google</h2>
 				<p>
-					Korzystanie z danych Google odbywa się zgodnie z wymaganiami Google API Services User Data Policy, w tym z
-					wymogami Limited Use.
+					Dane Google nie są sprzedawane, wykorzystywane do reklam, profilowania ani do trenowania modeli AI.
+					Korzystanie odbywa się zgodnie z{" "}
+					<a href="https://developers.google.com/terms/api-services-user-data-policy">
+						Google API Services User Data Policy
+					</a>
+					, w tym z wymogami Limited Use.
 				</p>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>4. Kalendarz Google</h2>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>4. Przechowywanie i bezpieczeństwo</h2>
 				<p>
-					Po udzieleniu zgody Serwis korzysta z uprawnień Google Calendar do synchronizacji rozkładu. Serwis może odczytać
-					wydarzenia z głównego kalendarza, aby rozpoznać własne wydarzenia i uniknąć ich duplikowania. Nowe wydarzenia
-					tworzone przez Serwis zawierają oznaczenie pozwalające odróżnić je od pozostałych wydarzeń użytkownika.
+					Dane są przechowywane w bazie danych na serwerze VPS administrowanym przez twórców Serwisu (Europa).
+					Komunikacja z Serwisem odbywa się przez HTTPS. Dostęp do serwera jest ograniczony do administratorów.
 				</p>
 				<p>
-					Użytkownik może cofnąć zgodę w ustawieniach swojego konta Google. Cofnięcie zgody może uniemożliwić dalszą
-					synchronizację, ale nie usuwa automatycznie wydarzeń już utworzonych w Kalendarzu Google.
-				</p>
-			</section>
-
-			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>5. Przechowywanie i udostępnianie danych</h2>
-				<p>
-					Dane konta, tokeny OAuth oraz ustawienia użytkownika są przechowywane na serwerze Serwisu w bazie danych
-					SQLite. Tokeny są używane wyłącznie do uwierzytelnienia żądań do Google w imieniu użytkownika i synchronizacji
-					jego kalendarza.
-				</p>
-				<p>
-					Serwis korzysta z usług Google API, w tym Google OAuth, Google Calendar i opcjonalnie Google Places. Nazwy
-					budynków mogą być przekazywane do Google Places wyłącznie w celu uzupełnienia informacji o lokalizacji; dane konta
-					Google nie są w tym celu przekazywane.
-				</p>
-				<p>
-					Serwis nie korzysta z narzędzi analitycznych ani reklamowych. Aplikacja korzysta z Google Fonts, dlatego przeglądarka
-					może nawiązać bezpośrednie połączenie z usługą Google Fonts w celu pobrania kroju pisma.
+					Dane przechowywane są tak długo, jak konto jest aktywne. Po usunięciu konta wszystkie powiązane dane
+					(profil, dane uwierzytelniające, ustawienia, nadpisania zajęć) są trwale usuwane z bazy danych.
 				</p>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>6. Okres przechowywania i usunięcie danych</h2>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>5. Podmioty trzecie</h2>
 				<p>
-					Dane są przechowywane tak długo, jak długo konto jest używane lub jest potrzebne do obsługi synchronizacji. Aby
-					poprosić o usunięcie konta i danych przechowywanych przez Serwis, napisz na adres
-					{" "}
-					<a href="mailto:gamiwastaken@gmail.com">gamiwastaken@gmail.com</a>. Prośba powinna zawierać adres e-mail
-					konta Google używanego w Serwisie.
-				</p>
-				<p>
-					Usunięcie danych Serwisu nie usuwa wydarzeń zapisanych w Kalendarzu Google. Wydarzenia można usunąć samodzielnie
-					w Kalendarzu Google lub poprosić o pomoc w wiadomości dotyczącej usunięcia konta.
+					Serwis komunikuje się z Google OAuth, Google Calendar i opcjonalnie Google Places (wyłącznie nazwy
+					budynków). Ruch sieciowy przechodzi przez Cloudflare (CDN/proxy). Serwis nie korzysta z narzędzi
+					analitycznych ani reklamowych. Przeglądarka może łączyć się z Google Fonts.
 				</p>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>7. Bezpieczeństwo</h2>
+				<h2 {...attrs(stylex.props(styles.sectionHeading))}>6. Prawa użytkownika i usunięcie danych</h2>
 				<p>
-					Stosujemy rozsądne środki techniczne i organizacyjne mające chronić dane przed nieuprawnionym dostępem,
-					utratą lub zmianą. Żadna usługa internetowa nie gwarantuje jednak całkowitego bezpieczeństwa danych.
+					Użytkownik ma prawo dostępu, sprostowania i usunięcia swoich danych. Zgodę na dostęp do Kalendarza
+					Google można cofnąć w{" "}
+					<a href="https://myaccount.google.com/permissions">ustawieniach konta Google</a>.
 				</p>
-			</section>
-
-			<section {...attrs(stylex.props(styles.section))}>
-				<h2 {...attrs(stylex.props(styles.sectionHeading))}>8. Zmiany polityki</h2>
 				<p>
-					Polityka może być aktualizowana, gdy zmieni się sposób działania Serwisu lub wymagania prawne. Aktualna wersja
-					jest zawsze dostępna na tej stronie.
+					Aby usunąć konto i wszystkie powiązane dane z Serwisu, napisz na{" "}
+					<a href="mailto:gami@gami.ovh">gami@gami.ovh</a>. Usunięcie danych Serwisu nie usuwa wydarzeń
+					już zapisanych w Kalendarzu Google.
 				</p>
 			</section>
 
