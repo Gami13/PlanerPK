@@ -370,6 +370,34 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 	}
 }
 
+func TestDiscoverTimetableLayoutUsesGLGroupRowInsteadOfWeekdayRow(t *testing.T) {
+	file := workbookWithSheets(t, "2026_2027")
+	defer file.Close()
+
+	const sheet = "2026_2027"
+	setWorksheetValue(t, file, sheet, 0, 2, "I st. sem. 1")
+	setWorksheetValue(t, file, sheet, 1, 2, "GL1")
+	setWorksheetValue(t, file, sheet, 2, 2, "PONIEDZIAŁEK")
+	setTimeSequence(t, file, sheet, 1, 3, "07:30", "08:00")
+	setWorksheetValue(t, file, sheet, 3, 2, "Matematyka\nwykład")
+
+	layout, err := DiscoverTimetableLayout(file, sheet)
+	if err != nil {
+		t.Fatalf("DiscoverTimetableLayout() error = %v", err)
+	}
+	if layout.HeaderRow != 1 {
+		t.Fatalf("HeaderRow = %d, want GL group row 1", layout.HeaderRow)
+	}
+
+	groups, err := BuildAvailableGroups(file, sheet, layout)
+	if err != nil {
+		t.Fatalf("BuildAvailableGroups() error = %v", err)
+	}
+	if len(groups) != 1 || groups[0].Label != "GL1" || groups[0].Category != "I st. sem. 1" {
+		t.Errorf("groups = %+v, want GL1 in category I st. sem. 1", groups)
+	}
+}
+
 func TestDiscoverTimetableLayoutIncludesMergedHeaderSpan(t *testing.T) {
 	file := workbookWithSheets(t, "2025_2026")
 	defer file.Close()

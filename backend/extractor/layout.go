@@ -85,6 +85,11 @@ func discoverHeaderAndDataEnd(rows [][]string, layout TimetableLayout) (int, int
 		return headerRow, endColumn
 	}
 
+	if groupRow := findGLGroupHeaderRow(rows, layout.HourColumn+1, layout.Days[0].StartingRow); groupRow >= 0 {
+		headerRow = groupRow
+		endColumn = max(endColumn, lastDataColumn(rows[groupRow], layout.HourColumn+1))
+	}
+
 	for _, merge := range layout.mergeRanges {
 		if merge.StartCol <= endColumn && merge.StartRow <= headerRow && headerRow <= merge.EndRow &&
 			merge.EndCol >= firstDataColumn && strings.TrimSpace(merge.Value) != "" {
@@ -93,6 +98,20 @@ func discoverHeaderAndDataEnd(rows [][]string, layout TimetableLayout) (int, int
 	}
 
 	return headerRow, endColumn
+}
+
+// findGLGroupHeaderRow scans upward from the timetable for the nearest row
+// containing a GL group label. Weekday-name rows can otherwise be mistaken
+// for the group header row.
+func findGLGroupHeaderRow(rows [][]string, firstDataColumn, dataStartRow int) int {
+	for row := min(dataStartRow-1, len(rows)-1); row >= 0; row-- {
+		for column := firstDataColumn; column < len(rows[row]); column++ {
+			if strings.Contains(strings.ToUpper(rows[row][column]), "GL") {
+				return row
+			}
+		}
+	}
+	return -1
 }
 
 func lastDataColumn(row []string, firstColumn int) int {
