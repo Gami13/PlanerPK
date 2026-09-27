@@ -7,6 +7,7 @@ import (
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -395,6 +396,54 @@ func TestDiscoverTimetableLayoutUsesGLGroupRowInsteadOfWeekdayRow(t *testing.T) 
 	}
 	if len(groups) != 1 || groups[0].Label != "GL1" || groups[0].Category != "I st. sem. 1" {
 		t.Errorf("groups = %+v, want GL1 in category I st. sem. 1", groups)
+	}
+}
+
+func TestBuildTimetableAddsMatchingSupplementalColumns(t *testing.T) {
+	file := workbookWithSheets(t, "2026_2027")
+	defer file.Close()
+
+	const sheet = "2026_2027"
+	setWorksheetValue(t, file, sheet, 2, 2, "Core subject\nwykład")
+	setWorksheetValue(t, file, sheet, 2, 3, "Shared elective\nwykład")
+	setWorksheetValue(t, file, sheet, 2, 4, "Shared elective\nwykład")
+	setWorksheetValue(t, file, sheet, 2, 5, "Other semester subject\nwykład")
+	setWorksheetValue(t, file, sheet, 2, 6, "Other semester language\nwykład")
+
+	groups := []types.ColumnGroup{
+		{Column: 2, Label: "GL1", Category: "I st. sem. 3"},
+		{Column: 3, Label: "Językowe (mieszane)", Category: "I st. sem. 3"},
+		{Column: 4, Label: "Obieralne (osobne grupy)", Category: "I st. sem. 3"},
+		{Column: 5, Label: "GL1", Category: "I st. sem. 5"},
+		{Column: 6, Label: "Językowe (mieszane)", Category: "I st. sem. 5"},
+	}
+	layout := TimetableLayout{
+		Days: []types.Day{{
+			StartingRow:  2,
+			EndingRow:    2,
+			WeekDay:      time.Monday,
+			StartingTime: time.Date(2026, 9, 28, 8, 0, 0, 0, time.UTC),
+		}},
+		SlotDuration: 30 * time.Minute,
+	}
+	lg := &legend.Legend{Teachers: map[string]legend.Teacher{}, Locations: map[string]legend.Location{}}
+	timetable := BuildTimetable(groups, file, sheet, lg, nil, layout)
+
+	semesterThree := timetable[2][time.Monday]
+	if len(semesterThree) != 2 {
+		t.Fatalf("semester 3 GL1 classes = %+v, want core plus one deduplicated supplemental class", semesterThree)
+	}
+	if semesterThree[0].Name != "Core subject" || semesterThree[1].Name != "Shared elective" {
+		t.Errorf("semester 3 GL1 classes = %+v, want core then shared elective", semesterThree)
+	}
+	semesterFive := timetable[5][time.Monday]
+	if len(semesterFive) != 2 || semesterFive[1].Name != "Other semester language" {
+		t.Errorf("semester 5 GL1 classes = %+v, want only matching language supplemental", semesterFive)
+	}
+
+	selectable := SelectableGroups(groups)
+	if len(selectable) != 2 || selectable[0].Column != 2 || selectable[1].Column != 5 {
+		t.Errorf("SelectableGroups() = %+v, want only regular groups", selectable)
 	}
 }
 

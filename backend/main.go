@@ -101,7 +101,7 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	newGroups, err := extractor.BuildAvailableGroups(file, sheetName, layout)
+	allGroups, err := extractor.BuildAvailableGroups(file, sheetName, layout)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -115,7 +115,8 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	} else {
 		slog.Info("Building location resolution is disabled")
 	}
-	newTimetable := extractor.BuildTimetable(newGroups, file, sheetName, newLegend, newBuildings, layout)
+	newTimetable := extractor.BuildTimetable(allGroups, file, sheetName, newLegend, newBuildings, layout)
+	newGroups := extractor.SelectableGroups(allGroups)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
 

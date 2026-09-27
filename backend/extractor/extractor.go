@@ -3,6 +3,8 @@ package extractor
 import (
 	"fmt"
 	"log/slog"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
@@ -13,13 +15,59 @@ import (
 
 func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, layout TimetableLayout) types.Timetable {
 	timetable := make(types.Timetable)
+	regularColumnsByCategory := make(map[string][]int64)
 
 	for _, group := range groups {
-		groupTimetable := buildTimetableForGroup(int64(group.Column), file, sheetName, legend, buildings, layout.Days, layout.SlotDuration)
-		timetable[int64(group.Column)] = groupTimetable
+		groupColumn := int64(group.Column)
+		groupTimetable := buildTimetableForGroup(groupColumn, file, sheetName, legend, buildings, layout.Days, layout.SlotDuration)
+		timetable[groupColumn] = groupTimetable
 
+		label := strings.ToLower(group.Label)
+		isSupplementalGroup := strings.Contains(label, "językowe") || strings.Contains(label, "obieralne")
+		if isSupplementalGroup {
+			for _, previousColumn := range regularColumnsByCategory[group.Category] {
+				mergeGroupTimetable(timetable[previousColumn], groupTimetable)
+			}
+		} else if group.Category != "" {
+			regularColumnsByCategory[group.Category] = append(regularColumnsByCategory[group.Category], groupColumn)
+		}
 	}
 	return timetable
+}
+
+// SelectableGroups excludes language/elective source columns from the group
+// picker; those classes are included in the matching regular group's timetable.
+func SelectableGroups(groups []types.ColumnGroup) []types.ColumnGroup {
+	selectable := make([]types.ColumnGroup, 0, len(groups))
+	for _, group := range groups {
+		label := strings.ToLower(group.Label)
+		isSupplementalGroup := strings.Contains(label, "językowe") || strings.Contains(label, "obieralne")
+		if !isSupplementalGroup {
+			selectable = append(selectable, group)
+		}
+	}
+	return selectable
+}
+
+func mergeGroupTimetable(destination, source types.GroupTimetable) {
+	for day, classes := range source {
+		merged := destination[day]
+		seen := make(map[string]struct{}, len(merged)+len(classes))
+		for _, class := range merged {
+			seen[class.Hash()] = struct{}{}
+		}
+		for _, class := range classes {
+			if _, exists := seen[class.Hash()]; exists {
+				continue
+			}
+			seen[class.Hash()] = struct{}{}
+			merged = append(merged, class)
+		}
+		sort.SliceStable(merged, func(i, j int) bool {
+			return merged[i].StartTime.Before(merged[j].StartTime)
+		})
+		destination[day] = merged
+	}
 }
 
 func buildTimetableForGroup(groupColumn int64, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, days []types.Day, slotDuration time.Duration) types.GroupTimetable {
