@@ -1,4 +1,4 @@
-package extractor
+package legacy
 
 import (
 	"reflect"
@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 )
@@ -28,7 +27,7 @@ var (
 )
 
 func parseTestClass(text string, lg *legend.Legend) types.Class {
-	return parseClassText(text, testStartTime, testEndTime, testDay, lg)
+	return ParseClassText(text, testStartTime, testEndTime, testDay, lg)
 }
 
 func TestParseClassText(t *testing.T) {
@@ -215,50 +214,6 @@ func TestParseClassText(t *testing.T) {
 	}
 }
 
-func TestResolveClassroomLocationPreservesRawLocation(t *testing.T) {
-	buildings := buildings.BuildBuildingsFromLegend(&legend.Legend{Locations: map[string]legend.Location{
-		"s. 1/15 Działownia": {
-			Shorthand: "s. 1/15 Działownia",
-			FullName:  "budynek Działownia",
-		},
-	}})
-	class := types.Class{Location: "s. Działowia 1/15"}
-	resolved := finalizeClasses([]types.Class{class}, buildings)
-	if len(resolved) != 1 {
-		t.Fatalf("finalizeClasses returned %d classes, want 1", len(resolved))
-	}
-	class = resolved[0]
-
-	if class.Location != "s. Działowia 1/15" {
-		t.Errorf("Location = %q, want original value", class.Location)
-	}
-	if len(class.ResolvedClassroomKeys) != 1 || class.ResolvedClassroomKeys[0] != "1 15 działownia" {
-		t.Errorf("ResolvedClassroomKeys = %#v, want normalized Działownia key", class.ResolvedClassroomKeys)
-	}
-}
-
-func TestFinalizeClassesResolvesEachSlashSplitLocation(t *testing.T) {
-	buildings := buildings.BuildBuildingsFromLegend(&legend.Legend{Locations: map[string]legend.Location{
-		"s. SJO": {Shorthand: "s. SJO", FullName: "budynek SJO"},
-		"s. N":   {Shorthand: "s. N", FullName: "budynek N"},
-	}})
-	parsed := parseTestClass(
-		"J. niemiecki/J.angielski C1\nćw.\nmgr D. Guzik/mgr E. Szabat     s. SJO/s. N",
-		mockLegend(),
-	)
-
-	classes := finalizeClasses([]types.Class{parsed}, buildings)
-	if len(classes) != 2 {
-		t.Fatalf("finalizeClasses returned %d classes, want 2", len(classes))
-	}
-	wantKeys := []string{"sjo", "n"}
-	for i, want := range wantKeys {
-		if len(classes[i].ResolvedClassroomKeys) != 1 || classes[i].ResolvedClassroomKeys[0] != want {
-			t.Errorf("class %d resolved keys = %#v, want [%s]", i, classes[i].ResolvedClassroomKeys, want)
-		}
-	}
-}
-
 func TestSplitSlashClasses(t *testing.T) {
 	legend := mockLegend()
 
@@ -295,7 +250,7 @@ func TestSplitSlashClasses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			parsed := parseTestClass(tt.input, legend)
-			got := splitSlashClasses(parsed)
+			got := SplitSlashClasses(parsed)
 			if len(got) != len(tt.want) {
 				t.Fatalf("got %d classes, want %d", len(got), len(tt.want))
 			}

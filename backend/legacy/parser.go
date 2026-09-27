@@ -1,4 +1,4 @@
-package extractor
+package legacy
 
 import (
 	"regexp"
@@ -21,7 +21,8 @@ var levelRegex = regexp.MustCompile(`^[A-C][12]$`)
 // Matches trailing language level in a name like "J.angielski C1"
 var trailingLevelRegex = regexp.MustCompile(`\s+([A-C][12])$`)
 
-func parseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day, legend *legend.Legend) (class types.Class) {
+// ParseClassText parses one class cell from the legacy heuristic format.
+func ParseClassText(text string, classStartTime time.Time, classEndTime time.Time, day types.Day, legend *legend.Legend) (class types.Class) {
 	class.Day = day.WeekDay
 	class.StartTime = classStartTime
 	class.EndTime = classEndTime
@@ -275,11 +276,11 @@ func isBareAcademicTitle(s string) bool {
 	return false
 }
 
-// splitSlashClasses splits a class with a slash-delimited Name into separate classes.
+// SplitSlashClasses splits a class with a slash-delimited Name into separate classes.
 // Fields like Teacher and Location are distributed by position when their segment
 // count matches the name count; otherwise the whole field is shared.
 // Level is assigned only to the last name (where it was originally extracted from).
-func splitSlashClasses(class types.Class) []types.Class {
+func SplitSlashClasses(class types.Class) []types.Class {
 	if !strings.Contains(class.Name, "/") {
 		return []types.Class{class}
 	}
@@ -297,6 +298,7 @@ func splitSlashClasses(class types.Class) []types.Class {
 			StartTime:      class.StartTime,
 			EndTime:        class.EndTime,
 			Teacher:        strings.TrimSpace(teachers[i]),
+			Audience:       class.Audience,
 			Location:       strings.TrimSpace(locations[i]),
 			AdditionalInfo: class.AdditionalInfo,
 			TotalHours:     class.TotalHours,

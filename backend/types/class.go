@@ -21,9 +21,12 @@ type Class struct {
 	// Location remains the original text shown in the calendar.
 	ResolvedClassroomKeys []string
 	Teacher               string
-	AdditionalInfo        string
-	Level                 string
-	TotalHours            string
+	// Audience is the group named by the record, which may differ from the
+	// selected timetable column (notably for languages and electives).
+	Audience       string
+	AdditionalInfo string
+	Level          string
+	TotalHours     string
 }
 
 func (c Class) String() string {
@@ -31,6 +34,9 @@ func (c Class) String() string {
 		c.Name, c.Type,
 		c.StartTime.Format("15:04"), c.EndTime.Format("15:04"),
 		c.Teacher, c.Location)
+	if c.Audience != "" {
+		text += fmt.Sprintf("  [%s]", c.Audience)
+	}
 	if c.Level != "" {
 		text += fmt.Sprintf("  [%s]", c.Level)
 	}
@@ -44,10 +50,18 @@ func (c Class) String() string {
 }
 
 func (c Class) Hash() string {
-	return fmt.Sprintf("%s|%d|%s|%s|%s", c.Summary(), c.Day, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Location)
+	hash := fmt.Sprintf("%s|%d|%s|%s|%s", c.summary(false), c.Day, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Location)
+	if c.Audience != "" {
+		hash += "|" + c.Audience
+	}
+	return hash
 }
 
 func (c Class) Summary() string {
+	return c.summary(true)
+}
+
+func (c Class) summary(includeAudience bool) string {
 	summary := ""
 	if len(c.Name) > 0 {
 		summary += c.Name
@@ -60,6 +74,9 @@ func (c Class) Summary() string {
 	}
 	if len(c.Teacher) > 0 {
 		summary += fmt.Sprintf(" - %s", c.Teacher)
+	}
+	if includeAudience && c.Audience != "" {
+		summary += fmt.Sprintf(" [%s]", c.Audience)
 	}
 	if len(c.TotalHours) > 0 {
 		summary += fmt.Sprintf(" | %s", c.TotalHours)
@@ -84,11 +101,18 @@ func (c Class) EndTimeRFC3339() string {
 }
 
 func (c Class) ToEvent(buildings *buildings.Buildings) calendar.Event {
-	var links []string
+	var description []string
+	if c.Audience != "" {
+		description = append(description, "Audience: "+c.Audience)
+	}
 	for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
 		if link := building.MapHTMLAnchor(); link != "" {
-			links = append(links, link)
+			description = append(description, link)
 		}
+	}
+	private := map[string]string{"added_by": ADDED_BY, "hash": c.Hash()}
+	if c.Audience != "" {
+		private["audience"] = c.Audience
 	}
 
 	return calendar.Event{
@@ -100,12 +124,9 @@ func (c Class) ToEvent(buildings *buildings.Buildings) calendar.Event {
 			DateTime: c.EndTimeRFC3339(),
 		},
 		Location:    c.Location,
-		Description: strings.Join(links, "<br>"),
+		Description: strings.Join(description, "<br>"),
 		ExtendedProperties: &calendar.EventExtendedProperties{
-			Private: map[string]string{
-				"added_by": ADDED_BY,
-				"hash":     c.Hash(),
-			},
+			Private: private,
 		},
 	}
 }

@@ -91,6 +91,41 @@ func TestDiscoverTimetableLayoutInfersThirtyMinuteSlots(t *testing.T) {
 	}
 }
 
+func TestDiscoverTimetableLayoutUsesWeekdayLabelsAcrossIrregularTimes(t *testing.T) {
+	file := workbookWithSheets(t, "2026_2027")
+	defer file.Close()
+	const sheet = "2026_2027"
+
+	setWorksheetValue(t, file, sheet, 1, 2, "PONIEDZIAŁEK")
+	setTimeSequence(t, file, sheet, 1, 2, "07:30", "07:45", "08:00")
+	setWorksheetValue(t, file, sheet, 5, 2, "WTOREK")
+	setTimeSequence(t, file, sheet, 1, 6, "07:30", "07:45", "08:00")
+	setWorksheetValue(t, file, sheet, 9, 2, "ŚRODA")
+	setTimeSequence(t, file, sheet, 1, 10, "07:30", "07:45", "07:55", "08:00", "08:15")
+
+	layout, err := DiscoverTimetableLayout(file, sheet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(layout.Days) != 3 {
+		t.Fatalf("day count = %d, want 3", len(layout.Days))
+	}
+	want := []struct {
+		weekday           time.Weekday
+		firstRow, lastRow int
+	}{
+		{time.Monday, 2, 4},
+		{time.Tuesday, 6, 8},
+		{time.Wednesday, 10, 14},
+	}
+	for i, expected := range want {
+		day := layout.Days[i]
+		if day.WeekDay != expected.weekday || day.StartingRow != expected.firstRow || day.EndingRow != expected.lastRow {
+			t.Errorf("day %d = %+v, want %s rows %d-%d", i, day, expected.weekday, expected.firstRow, expected.lastRow)
+		}
+	}
+}
+
 func TestDiscoverTimetableLayoutIgnoresBlankRowsBetweenTimeLabels(t *testing.T) {
 	file := workbookWithSheets(t, "2025_2026")
 	defer file.Close()
@@ -166,141 +201,6 @@ func TestDiscoverTimetableLayoutIgnoresNoiseMalformedTimesAndIsolatedCells(t *te
 	}
 	if layout.HourColumn != 3 {
 		t.Errorf("HourColumn = %d, want 3", layout.HourColumn)
-	}
-}
-
-func TestParseTimetableTimeUsesDisplayedValueOnly(t *testing.T) {
-	tests := []struct {
-		name       string
-		value      string
-		want       string
-		wantParsed bool
-	}{
-		{name: "two digit hour", value: "07:30", want: "07:30", wantParsed: true},
-		{name: "single digit hour", value: "7:30", want: "07:30", wantParsed: true},
-		{name: "dot separator", value: "08.15", want: "08:15", wantParsed: true},
-		{name: "fractional Excel serial", value: "0.3125", wantParsed: false},
-		{name: "decimal Excel clock", value: "7.3", wantParsed: false},
-		{name: "invalid clock", value: "25:00", wantParsed: false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			parsed, ok := parseTimetableTime(test.value)
-			if ok != test.wantParsed {
-				t.Fatalf("parseTimetableTime() ok = %v, want %v", ok, test.wantParsed)
-			}
-			if ok && parsed.Format("15:04") != test.want {
-				t.Errorf("parseTimetableTime() = %s, want %s", parsed.Format("15:04"), test.want)
-			}
-		})
-	}
-}
-
-func TestScanTimetableColumnSplitsUnexpectedPositiveGaps(t *testing.T) {
-	rows := [][]string{{"07:30"}, {"07:45"}, {"08:15"}, {"08:30"}}
-
-	runs := scanTimetableColumn(rows, 0)
-	if len(runs) != 2 {
-		t.Fatalf("scanTimetableColumn() returned %d runs, want 2", len(runs))
-	}
-	if len(runs[0].values) != 2 || len(runs[1].values) != 2 {
-		t.Errorf("run lengths = %d and %d, want 2 and 2", len(runs[0].values), len(runs[1].values))
-	}
-}
-
-func TestScanTimetableColumnSplitsAtNonIncreasingTime(t *testing.T) {
-	rows := [][]string{{"07:30"}, {"07:45"}, {"07:30"}, {"07:45"}}
-
-	runs := scanTimetableColumn(rows, 0)
-	if len(runs) != 2 {
-		t.Fatalf("scanTimetableColumn() returned %d runs, want 2", len(runs))
-	}
-	if len(runs[0].values) != 2 || len(runs[1].values) != 2 {
-		t.Errorf("day run lengths = %d and %d, want 2 and 2", len(runs[0].values), len(runs[1].values))
-	}
-}
-
-func TestExtractTimetableDaysSkipsIncompleteRuns(t *testing.T) {
-	tests := []struct {
-		name             string
-		runs             []timetableDayRun
-		wantDays         int
-		wantSlotDuration time.Duration
-		wantOK           bool
-	}{
-		{
-			name: "no complete day run",
-			runs: []timetableDayRun{
-				testTimetableDayRun(0, 1, 15*time.Minute, 450),
-			},
-		},
-		{
-			name: "first complete run",
-			runs: []timetableDayRun{
-				testTimetableDayRun(0, 1, 15*time.Minute, 450),
-				testTimetableDayRun(5, 2, 30*time.Minute, 450, 480),
-			},
-			wantDays:         1,
-			wantSlotDuration: 15 * time.Minute,
-			wantOK:           true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			days, slotDuration, ok := extractTimetableDays(test.runs)
-			if ok != test.wantOK {
-				t.Fatalf("extractTimetableDays() ok = %v, want %v", ok, test.wantOK)
-			}
-			if len(days) != test.wantDays {
-				t.Fatalf("extractTimetableDays() returned %d days, want %d", len(days), test.wantDays)
-			}
-			if slotDuration != test.wantSlotDuration {
-				t.Errorf("extractTimetableDays() slot duration = %s, want %s", slotDuration, test.wantSlotDuration)
-			}
-		})
-	}
-}
-
-func TestExtractTimetableDaysFiltersIncompatibleRuns(t *testing.T) {
-	runs := []timetableDayRun{
-		testTimetableDayRun(0, 1, 15*time.Minute, 450, 465, 480),
-		testTimetableDayRun(3, 1, 15*time.Minute, 450, 465),
-		testTimetableDayRun(10, 1, 30*time.Minute, 600, 630),
-	}
-
-	days, slotDuration, ok := extractTimetableDays(runs)
-	if !ok {
-		t.Fatal("extractTimetableDays() ok = false, want true")
-	}
-	if slotDuration != 15*time.Minute {
-		t.Errorf("extractTimetableDays() slot duration = %s, want 15m", slotDuration)
-	}
-	if len(days) != 2 {
-		t.Fatalf("extractTimetableDays() returned %d days, want 2", len(days))
-	}
-	if days[0].WeekDay != time.Monday || days[1].WeekDay != time.Tuesday {
-		t.Errorf("weekdays = %s and %s, want Monday and Tuesday", days[0].WeekDay, days[1].WeekDay)
-	}
-	if days[0].StartingRow != 0 || days[0].EndingRow != 2 || days[1].StartingRow != 3 || days[1].EndingRow != 4 {
-		t.Errorf("day rows = %d-%d and %d-%d, want 0-2 and 3-4", days[0].StartingRow, days[0].EndingRow, days[1].StartingRow, days[1].EndingRow)
-	}
-}
-
-func testTimetableDayRun(startRow, rowStride int, interval time.Duration, minutes ...int) timetableDayRun {
-	values := make([]timetableTimeValue, len(minutes))
-	for index, minuteOfDay := range minutes {
-		clockTime := time.Date(0, time.January, 1, minuteOfDay/60, minuteOfDay%60, 0, 0, time.UTC)
-		values[index] = timetableTimeValue{
-			rowIndex:  startRow + index*rowStride,
-			clockTime: clockTime,
-		}
-	}
-	return timetableDayRun{
-		values:    values,
-		interval:  interval,
-		rowStride: rowStride,
 	}
 }
 
@@ -411,11 +311,11 @@ func TestBuildTimetableAddsMatchingSupplementalColumns(t *testing.T) {
 	setWorksheetValue(t, file, sheet, 2, 6, "Other semester language\nwykład")
 
 	groups := []types.ColumnGroup{
-		{Column: 2, Label: "GL1", Category: "I st. sem. 3"},
 		{Column: 3, Label: "Językowe (mieszane)", Category: "I st. sem. 3"},
 		{Column: 4, Label: "Obieralne (osobne grupy)", Category: "I st. sem. 3"},
-		{Column: 5, Label: "GL1", Category: "I st. sem. 5"},
 		{Column: 6, Label: "Językowe (mieszane)", Category: "I st. sem. 5"},
+		{Column: 2, Label: "GL1", Category: "I st. sem. 3"},
+		{Column: 5, Label: "GL1", Category: "I st. sem. 5"},
 	}
 	layout := TimetableLayout{
 		Days: []types.Day{{

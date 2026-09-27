@@ -659,6 +659,7 @@ type ClassInfo struct {
 	EndTime       string                 `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	Location      string                 `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty"`
 	Teacher       string                 `protobuf:"bytes,8,opt,name=teacher,proto3" json:"teacher,omitempty"`
+	Audience      string                 `protobuf:"bytes,9,opt,name=audience,proto3" json:"audience,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -745,6 +746,13 @@ func (x *ClassInfo) GetLocation() string {
 func (x *ClassInfo) GetTeacher() string {
 	if x != nil {
 		return x.Teacher
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetAudience() string {
+	if x != nil {
+		return x.Audience
 	}
 	return ""
 }
@@ -1098,7 +1106,7 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"given_name\x18\x03 \x01(\tR\tgivenName\x12\x18\n" +
 	"\apicture\x18\x04 \x01(\tR\apicture\x12\x1b\n" +
 	"\tis_active\x18\x05 \x01(\bR\bisActive\x12#\n" +
-	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn\"\xc9\x01\n" +
+	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn\"\xe5\x01\n" +
 	"\tClassInfo\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\tR\x04hash\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1108,7 +1116,8 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"start_time\x18\x05 \x01(\tR\tstartTime\x12\x19\n" +
 	"\bend_time\x18\x06 \x01(\tR\aendTime\x12\x1a\n" +
 	"\blocation\x18\a \x01(\tR\blocation\x12\x18\n" +
-	"\ateacher\x18\b \x01(\tR\ateacher\"\x91\x01\n" +
+	"\ateacher\x18\b \x01(\tR\ateacher\x12\x1a\n" +
+	"\baudience\x18\t \x01(\tR\baudience\"\x91\x01\n" +
 	"\rClassOverride\x12\x1d\n" +
 	"\n" +
 	"class_hash\x18\x01 \x01(\tR\tclassHash\x12\x1d\n" +

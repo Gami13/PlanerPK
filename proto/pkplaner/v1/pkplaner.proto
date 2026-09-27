@@ -104,6 +104,7 @@ message ClassInfo {
   string end_time   = 6;
   string location   = 7;
   string teacher    = 8;
+  string audience   = 9;
 }
 
 // ClassOverride holds the override settings for a single class (identified by hash).

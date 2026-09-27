@@ -76,6 +76,7 @@ export function ClassCard(props: ClassCardProps) {
 					<time dateTime={props.classInfo.startTime}>{props.classInfo.startTime}</time>–
 					<time dateTime={props.classInfo.endTime}>{props.classInfo.endTime}</time>
 					<Show when={props.classInfo.teacher}> &nbsp;·&nbsp; {props.classInfo.teacher}</Show>
+					<Show when={props.classInfo.audience}> &nbsp;·&nbsp; {props.classInfo.audience}</Show>
 					<Show when={props.classInfo.location}> &nbsp;·&nbsp; {props.classInfo.location}</Show>
 				</p>
 			</header>

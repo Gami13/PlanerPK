@@ -50,7 +50,8 @@ export function OverridesSection(props: OverridesSectionProps) {
 									{cls.name}
 									<Show when={cls.type}> ({cls.type})</Show>
 									{" - "}
-									{DayLabels[cls.day] ?? cls.day} {cls.startTime}-{cls.endTime} -- {cls.teacher} @ {cls.location}
+									{DayLabels[cls.day] ?? cls.day} {cls.startTime}-{cls.endTime} -- {cls.teacher}
+									<Show when={cls.audience}> [{cls.audience}]</Show> @ {cls.location}
 								</option>
 							)}
 						</For>

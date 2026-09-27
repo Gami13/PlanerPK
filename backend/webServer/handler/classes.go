@@ -43,6 +43,7 @@ func (h *PKPlanerHandler) GetClasses(
 				EndTime:   class.EndTime.Format("15:04"),
 				Location:  class.Location,
 				Teacher:   class.Teacher,
+				Audience:  class.Audience,
 			})
 		}
 	}
