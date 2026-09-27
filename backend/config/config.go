@@ -48,6 +48,15 @@ type Configuration struct {
 	DatabaseSource        string
 }
 
+// FeatureFlags contains runtime features that can be enabled independently of
+// the rest of the application configuration.
+type FeatureFlags struct {
+	BuildingLocationsEnabled bool `env:"BUILDING_LOCATIONS_ENABLED" envDefault:"false"`
+}
+
+// FEATURE_FLAGS is populated by Load and treated as read-only afterward.
+var FEATURE_FLAGS FeatureFlags
+
 type oauthCredentials struct {
 	Web struct {
 		JavaScriptOrigins []string `json:"javascript_origins"`
@@ -65,6 +74,10 @@ func Load() {
 	if err != nil {
 		panic(fmt.Sprintf("load configuration: %v", err))
 	}
+	featureFlags, err := parseFeatureFlags(env.ToMap(os.Environ()))
+	if err != nil {
+		panic(fmt.Sprintf("load feature flags: %v", err))
+	}
 	if err := PrepareFilesystem(cfg); err != nil {
 		panic(fmt.Sprintf("prepare runtime directories: %v", err))
 	}
@@ -72,6 +85,15 @@ func Load() {
 		panic(fmt.Sprintf("load OAuth credentials: %v", err))
 	}
 	Config = cfg
+	FEATURE_FLAGS = featureFlags
+}
+
+func parseFeatureFlags(environment map[string]string) (FeatureFlags, error) {
+	flags, err := env.ParseAsWithOptions[FeatureFlags](env.Options{Environment: environment})
+	if err != nil {
+		return FeatureFlags{}, fmt.Errorf("parse feature flags: %w", err)
+	}
+	return flags, nil
 }
 
 func parseEnvironment(environment map[string]string) (Configuration, error) {

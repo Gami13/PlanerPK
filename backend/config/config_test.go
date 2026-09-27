@@ -36,6 +36,24 @@ func TestParseEnvironmentDefaults(t *testing.T) {
 	}
 }
 
+func TestParseFeatureFlags(t *testing.T) {
+	defaults, err := parseFeatureFlags(map[string]string{})
+	if err != nil {
+		t.Fatalf("parseFeatureFlags() error = %v", err)
+	}
+	if defaults.BuildingLocationsEnabled {
+		t.Error("building locations should be disabled by default")
+	}
+
+	enabled, err := parseFeatureFlags(map[string]string{"BUILDING_LOCATIONS_ENABLED": "true"})
+	if err != nil {
+		t.Fatalf("parseFeatureFlags() error = %v", err)
+	}
+	if !enabled.BuildingLocationsEnabled {
+		t.Error("building locations should be enabled when configured")
+	}
+}
+
 func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	dataDir := t.TempDir()
 	cfg, err := parseEnvironment(map[string]string{

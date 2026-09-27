@@ -37,10 +37,14 @@ The OAuth `credentials.json` file should be mounted read-only. It is never inclu
 
 ### Building-place cache upgrade
 
-The resolver rebuilds classroom mappings from the current timetable legend and
-only adds Google Maps links after confirming a Google Places result. Unresolved
-classroom matches and rejected place candidates are logged while imports
-continue without unsafe map links. See [Building place resolution](docs/building-place-resolution.md)
+Building-place resolution is controlled by `BUILDING_LOCATIONS_ENABLED` and is
+disabled by default. When enabled, the resolver rebuilds classroom mappings
+from the current timetable legend and only adds Google Maps links after
+confirming a Google Places result. Unresolved classroom matches and rejected
+place candidates are logged while imports continue without unsafe map links.
+When disabled, raw classroom/location text is still included in calendar events,
+but building mappings, place-cache updates, Google Places lookups, and map links
+are skipped. See [Building place resolution](docs/building-place-resolution.md)
 for matching, cache, and diagnostic behavior.
 
 When upgrading from the legacy seeded building/classroom schema, remove
@@ -97,6 +101,7 @@ The backend supports these environment variables:
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
 - `TIMETABLE_URL` — source timetable page.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
+- `BUILDING_LOCATIONS_ENABLED` — feature flag for classroom-to-building matching, place-cache updates, Google Places lookups, and map links; defaults to `false`.
 - `DISCORD_WEBHOOK_URL` — optional Discord webhook used for error notifications.
 
 The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15. On each import, the timetable hour column, slot duration, and day boundaries are inferred from consistent time sequences in the worksheet; they are no longer configured through environment variables.

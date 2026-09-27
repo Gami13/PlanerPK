@@ -65,6 +65,7 @@ func initializeApp() (queries db.Querier) {
 	}
 	slog.Info("Configuration loaded",
 		slog.String("data_dir", config.Config.DataDir),
+		slog.Bool("building_locations_enabled", config.FEATURE_FLAGS.BuildingLocationsEnabled),
 		slog.Bool("google_places_api_key_set", config.Config.GooglePlacesAPIKey != ""))
 
 	database, err := sql.Open(config.DatabaseDriver, config.Config.DatabaseSource)
@@ -105,9 +106,14 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 		return nil, nil, nil, nil, err
 	}
 	newLegend := extractor.ExtractLegend(file, sheetName)
-	newBuildings := buildings.BuildBuildingsFromLegend(newLegend)
-	if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
-		return nil, nil, nil, nil, err
+	var newBuildings *buildings.Buildings
+	if config.FEATURE_FLAGS.BuildingLocationsEnabled {
+		newBuildings = buildings.BuildBuildingsFromLegend(newLegend)
+		if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
+			return nil, nil, nil, nil, err
+		}
+	} else {
+		slog.Info("Building location resolution is disabled")
 	}
 	newTimetable := extractor.BuildTimetable(newGroups, file, sheetName, newLegend, newBuildings, layout)
 	return newGroups, newLegend, newBuildings, newTimetable, nil
