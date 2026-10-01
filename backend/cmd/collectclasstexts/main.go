@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/woodpkrs/PlanerPK/config"
-	"github.com/woodpkrs/PlanerPK/extractor"
+	"github.com/woodpkrs/PlanerPK/legacy/extractor"
 	"github.com/xuri/excelize/v2"
 )
 

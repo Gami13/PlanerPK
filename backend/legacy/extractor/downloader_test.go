@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/antchfx/htmlquery"
-	"github.com/woodpkrs/PlanerPK/config"
 	"golang.org/x/net/html"
 )
 
@@ -245,33 +244,5 @@ func TestIsExcelURL(t *testing.T) {
 				t.Errorf("isExcelURL(%q) = %v, want %v", tt.url, got, tt.expected)
 			}
 		})
-	}
-}
-
-func TestFetchTimetableUrl_Live(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping live test in short mode")
-	}
-
-	origURL := config.Config.TimetableURL
-	if origURL == "" {
-		config.Config.TimetableURL = "https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"
-		defer func() { config.Config.TimetableURL = origURL }()
-	}
-
-	link, err := fetchTimetableUrl()
-	if err != nil {
-		t.Fatalf("fetchTimetableUrl failed: %v", err)
-	}
-
-	lower := strings.ToLower(link)
-	if !strings.HasSuffix(lower, ".xls") && !strings.HasSuffix(lower, ".xlsx") {
-		t.Errorf("expected link to end with .xls or .xlsx, got %q", link)
-	}
-	if !strings.Contains(lower, "informatyka") {
-		t.Errorf("expected link to contain informatyka, got %q", link)
-	}
-	if strings.Contains(lower, "niestacjonarne") {
-		t.Errorf("expected link not to contain niestacjonarne, got %q", link)
 	}
 }
