@@ -90,40 +90,41 @@ func initializeApp() (queries db.Querier) {
 	return queries
 }
 
-func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *buildings.Buildings, types.Timetable, error) {
-	if _, err := snapshot.Load(http.DefaultClient, "https://ii.pk.edu.pl/~fkruzel/fk-planer-lti/public/plan-st/snapshot.php"); err != nil {
-		return nil, nil, nil, nil, err
+func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *buildings.Buildings, types.Timetable, *snapshot.State, error) {
+	newSnapshot, err := snapshot.Load(http.DefaultClient, "https://ii.pk.edu.pl/~fkruzel/fk-planer-lti/public/plan-st/snapshot.php")
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
 	}
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 	defer extractor.CloseFile(file)
 	sheetName, err := extractor.ResolveTimetableSheet(file)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 	layout, err := extractor.DiscoverTimetableLayout(file, sheetName)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 	allGroups, err := extractor.BuildAvailableGroups(file, sheetName, layout)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 	newLegend := extractor.ExtractLegend(file, sheetName)
 	var newBuildings *buildings.Buildings
 	if config.FEATURE_FLAGS.BuildingLocationsEnabled {
 		newBuildings = buildings.BuildBuildingsFromLegend(newLegend)
 		if err := buildings.ResolveBuildingPlacesForImport(context.Background(), queries, newBuildings); err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, err
 		}
 	} else {
 		slog.Info("Building location resolution is disabled")
 	}
 	newTimetable := extractor.BuildTimetable(allGroups, file, sheetName, newLegend, newBuildings, layout)
 	newGroups := extractor.SelectableGroups(allGroups)
-	return newGroups, newLegend, newBuildings, newTimetable, nil
+	return newGroups, newLegend, newBuildings, newTimetable, &newSnapshot, nil
 }
 
 func updateTimetableAndCache(queries db.Querier, cache *cache.Cache, isInitialRun bool) (hasChanged bool, err error) {
@@ -147,13 +148,14 @@ func updateTimetableAndCache(queries db.Querier, cache *cache.Cache, isInitialRu
 
 	}
 	if isInitialRun || hasChanged {
-		newGroups, newLegend, newBuildings, newTimetable, err := buildNewCache(queries)
+		newGroups, newLegend, newBuildings, newTimetable, newSnapshot, err := buildNewCache(queries)
 		if err != nil {
 			return false, err
 		}
 		cache.SetBuildings(newBuildings)
 		cache.SetAvailableGroups(&newGroups)
 		cache.SetLegend(newLegend)
+		cache.SetSnapshot(newSnapshot)
 		cache.SetTimetable(&newTimetable)
 	}
 

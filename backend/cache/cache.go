@@ -5,6 +5,7 @@ import (
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
 )
 
@@ -13,6 +14,7 @@ type Cache struct {
 	timetable       atomic.Pointer[types.Timetable]
 	legend          atomic.Pointer[legend.Legend]
 	buildings       atomic.Pointer[buildings.Buildings]
+	snapshot        atomic.Pointer[snapshot.State]
 }
 
 func (c *Cache) AvailableGroups() *[]types.ColumnGroup {
@@ -29,6 +31,14 @@ func (c *Cache) Timetable() *types.Timetable {
 
 func (c *Cache) SetTimetable(timetable *types.Timetable) {
 	c.timetable.Store(timetable)
+}
+
+func (c *Cache) Snapshot() *snapshot.State {
+	return c.snapshot.Load()
+}
+
+func (c *Cache) SetSnapshot(state *snapshot.State) {
+	c.snapshot.Store(state)
 }
 
 func (c *Cache) Legend() *legend.Legend {
