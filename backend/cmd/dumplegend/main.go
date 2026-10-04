@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/woodpkrs/PlanerPK/config"
-	"github.com/woodpkrs/PlanerPK/legacy/extractor"
+	"github.com/woodpkrs/PlanerPK/extractor"
 )
 
 func main() {
