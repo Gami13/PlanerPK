@@ -8,63 +8,21 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
-	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
-	"github.com/antchfx/htmlquery"
 	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
-	"golang.org/x/net/html"
 )
 
 var httpClient = &http.Client{
 	Timeout: 30 * time.Second,
 }
 
-var (
-	ErrNoXlsxFile        = fmt.Errorf("no .xlsx file found in the destination folder")
-	ErrTimetableNotFound = errors.New("timetable link for informatyka (stacjonarne) not found")
-)
-
-func isExcelURL(rawURL string) bool {
-	cleanURL := strings.TrimSpace(rawURL)
-	if cleanURL == "" {
-		return false
-	}
-	target := cleanURL
-	if parsed, err := url.Parse(cleanURL); err == nil && parsed.Path != "" {
-		target = parsed.Path
-	}
-	lower := strings.ToLower(target)
-	return strings.HasSuffix(lower, ".xls") || strings.HasSuffix(lower, ".xlsx")
-}
-
-func findTimetableLink(doc *html.Node, rawBaseURL string) (string, error) {
-	if doc == nil {
-		return "", ErrTimetableNotFound
-	}
-
-	base, _ := url.Parse(rawBaseURL)
-	for _, a := range htmlquery.Find(doc, "//a[@href]") {
-		href := strings.TrimSpace(htmlquery.SelectAttr(a, "href"))
-		content := strings.ToLower(href + " " + htmlquery.InnerText(a) + " " + htmlquery.SelectAttr(a, "title"))
-
-		if isExcelURL(href) && strings.Contains(content, "informatyka") && !strings.Contains(content, "niestacjonarne") {
-			if u, err := url.Parse(href); err == nil && base != nil && rawBaseURL != "" {
-				return base.ResolveReference(u).String(), nil
-			}
-			return href, nil
-		}
-	}
-
-	return "", ErrTimetableNotFound
-}
+var ErrNoXlsxFile = fmt.Errorf("no .xlsx file found in the destination folder")
 
 func getCurrentXlsxPath() (filePath string, err error) {
 	entries, err := os.ReadDir(config.Config.CurrentTimetableDir)
@@ -164,6 +122,10 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 		destination = filepath.Join(config.Config.TimetableDownloadsDir, filepath.Base(params["filename"]))
 	}
 
+	if !strings.EqualFold(filepath.Ext(destination), ".xlsx") {
+		return types.TimetableFileStats{}, fmt.Errorf("unsupported timetable format: %s (expected .xlsx)", destination)
+	}
+
 	file, err := os.Create(destination)
 	if err != nil {
 		return types.TimetableFileStats{}, fmt.Errorf("failed to create the timetable file: %w", err)
@@ -189,6 +151,9 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 
 func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err error) {
 	origin := stats.Path
+	if !strings.EqualFold(filepath.Ext(origin), ".xlsx") {
+		return "", fmt.Errorf("unsupported timetable format: %s (expected .xlsx)", origin)
+	}
 
 	timetableDestination := config.Config.CurrentTimetableDir
 	doesExist := true
@@ -200,16 +165,10 @@ func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err e
 			return "", err
 		}
 	}
-	var newXlsxPath string
-	if strings.EqualFold(filepath.Ext(origin), ".xlsx") {
-		newXlsxPath = filepath.Join(timetableDestination, filepath.Base(origin))
-		var data []byte
-		data, err = os.ReadFile(origin)
-		if err == nil {
-			err = os.WriteFile(newXlsxPath, data, 0o644)
-		}
-	} else {
-		newXlsxPath, err = xls2xlsx(origin, timetableDestination)
+	newXlsxPath := filepath.Join(timetableDestination, filepath.Base(origin))
+	data, err := os.ReadFile(origin)
+	if err == nil {
+		err = os.WriteFile(newXlsxPath, data, 0o644)
 	}
 	if err != nil {
 		return "", err
@@ -225,20 +184,6 @@ func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err e
 		}
 	}
 	return newXlsxPath, nil
-}
-
-// Convert an .xls file to an .xlsx file
-// Returns the path to the .xlsx file
-func xls2xlsx(src string, dest string) (string, error) {
-	// Windows
-	if runtime.GOOS == "windows" {
-		cmd := exec.Command("scalc", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
-
-		return filepath.Join(dest, filepath.Base(src)+"x"), cmd.Run()
-	}
-	// Linux
-	cmd := exec.Command("libreoffice", "--headless", "--convert-to", "xlsx", "--outdir", dest, src)
-	return filepath.Join(dest, filepath.Base(src)+"x"), cmd.Run()
 }
 
 func OpenCurrentTimetableFile() (*excelize.File, error) {

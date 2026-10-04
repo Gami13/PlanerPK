@@ -87,7 +87,6 @@
             buf
             sqlc
             pnpm
-            libreoffice
           ];
         };
 
@@ -181,8 +180,6 @@
                 description = "Planer PK Backend & Frontend";
                 wantedBy = [ "multi-user.target" ];
                 after = [ "network.target" ];
-
-                path = [ pkgs.libreoffice ];
 
                 environment = {
                   API_BASE_URL = cfg.apiBaseUrl;

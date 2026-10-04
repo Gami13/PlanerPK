@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	rm -f /etc/apt/apt.conf.d/docker-clean && \
 	apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	ca-certificates libreoffice-calc gosu gettext-base && \
+	ca-certificates gosu gettext-base && \
 	useradd -r -u 1000 -g users -d /home/google -m google && \
 	mkdir -p /home/google/.config /data && \
 	chown -R google:users /home/google /data

@@ -11,7 +11,7 @@ Running the Go binary, `go run`, or `nix run` directly on the host is not suppor
 
 ## Docker workflow
 
-The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS frontend, compiles the Go backend, and installs LibreOffice Calc for headless `.xls` to `.xlsx` conversion.
+The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS frontend and compiles the Go backend. Timetables are downloaded directly as `.xlsx` files.
 
 The container has two filesystem areas:
 
