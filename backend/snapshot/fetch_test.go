@@ -28,9 +28,9 @@ func TestFetchSnapshot(t *testing.T) {
 	}))
 	defer server.Close()
 
-	got, err := fetchSnapshot(server.Client(), server.URL)
+	got, err := Fetch(server.Client(), server.URL)
 	if err != nil || string(got) != body {
-		t.Fatalf("fetchSnapshot() = %q, %v; want %q", got, err, body)
+		t.Fatalf("Fetch() = %q, %v; want %q", got, err, body)
 	}
 }
 
@@ -60,9 +60,9 @@ func TestFetchSnapshotRejectsInvalidResponses(t *testing.T) {
 			}))
 			defer server.Close()
 
-			got, err := fetchSnapshot(server.Client(), server.URL)
+			got, err := Fetch(server.Client(), server.URL)
 			if err == nil || !strings.Contains(err.Error(), tt.wantError) || got != nil {
-				t.Fatalf("fetchSnapshot() = %q, %v; want nil and error containing %q", got, err, tt.wantError)
+				t.Fatalf("Fetch() = %q, %v; want nil and error containing %q", got, err, tt.wantError)
 			}
 		})
 	}
@@ -78,10 +78,10 @@ func TestFetchSnapshotDoesNotTrustContentLength(t *testing.T) {
 			Request:       req,
 		}, nil
 	})}
-	got, err := fetchSnapshot(client, "https://example.test/snapshot.php")
+	got, err := Fetch(client, "https://example.test/snapshot.php")
 	var sizeErr *http.MaxBytesError
 	if !errors.As(err, &sizeErr) || got != nil {
-		t.Fatalf("fetchSnapshot() = %q, %v; want size error and no data", got, err)
+		t.Fatalf("Fetch() = %q, %v; want size error and no data", got, err)
 	}
 }
 
@@ -90,9 +90,9 @@ func TestFetchSnapshotHonorsClientTimeout(t *testing.T) {
 		<-req.Context().Done()
 		return nil, req.Context().Err()
 	})}
-	got, err := fetchSnapshot(client, "https://example.test/snapshot.php")
+	got, err := Fetch(client, "https://example.test/snapshot.php")
 	if !errors.Is(err, context.DeadlineExceeded) || got != nil || client.Timeout != 10*time.Millisecond {
-		t.Fatalf("fetchSnapshot() = %q, %v; want deadline exceeded and no data", got, err)
+		t.Fatalf("Fetch() = %q, %v; want deadline exceeded and no data", got, err)
 	}
 }
 
@@ -105,9 +105,9 @@ func TestFetchSnapshotRejectsBadRequest(t *testing.T) {
 		{nil, "https://example.test/snapshot.php"},
 		{client, "://bad-url"},
 	} {
-		got, err := fetchSnapshot(tt.client, tt.url)
+		got, err := Fetch(tt.client, tt.url)
 		if err == nil || got != nil {
-			t.Fatalf("fetchSnapshot(%q) = %q, %v; want error and no data", tt.url, got, err)
+			t.Fatalf("Fetch(%q) = %q, %v; want error and no data", tt.url, got, err)
 		}
 	}
 }

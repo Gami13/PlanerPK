@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-// decodeSnapshot decodes the source envelope. Scheduling validation happens
+// Decode decodes the source envelope. Scheduling validation happens
 // separately; a missing or null state is never a valid snapshot.
-func decodeSnapshot(data []byte) (Response, error) {
+func Decode(data []byte) (Response, error) {
 	var envelope struct {
 		State          *State          `json:"state"`
 		CalendarExport *CalendarExport `json:"calendarExport"`

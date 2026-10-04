@@ -2,6 +2,16 @@
 
 Scripts for extracting and processing classText samples from the timetable Excel file. Run all commands from the `backend/` directory.
 
+## Snapshot subject index
+
+Fetch the online snapshot and inspect its subject index (without importing or syncing):
+
+```sh
+go run ./cmd/indexsnapshot
+```
+
+The command takes no parameters and uses the published snapshot endpoint. Output is JSON; index totals go to stderr.
+
 ## Pipeline
 
 ```sh

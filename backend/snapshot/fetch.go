@@ -13,9 +13,9 @@ const (
 	snapshotTimeout  = 30 * time.Second
 )
 
-// fetchSnapshot retrieves a bounded JSON response without decoding or publishing it.
+// Fetch retrieves a bounded JSON response without decoding or publishing it.
 // It caps the request timeout without modifying the supplied client.
-func fetchSnapshot(client *http.Client, url string) ([]byte, error) {
+func Fetch(client *http.Client, url string) ([]byte, error) {
 	if client == nil {
 		return nil, fmt.Errorf("fetch snapshot: nil HTTP client")
 	}
