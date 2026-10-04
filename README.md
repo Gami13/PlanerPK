@@ -99,7 +99,7 @@ The backend supports these environment variables:
 - `LOG_LEVEL` — `DEBUG`, `INFO`, `WARN`, or `ERROR`.
 - `MINUTES_BETWEEN` — timetable update interval.
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
-- `TIMETABLE_URL` — source timetable page.
+- `TIMETABLE_URL` — direct timetable download URL.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
 - `BUILDING_LOCATIONS_ENABLED` — feature flag for classroom-to-building matching, place-cache updates, Google Places lookups, and map links; defaults to `false`.
 - `DISCORD_WEBHOOK_URL` — optional Discord webhook used for error notifications.

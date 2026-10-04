@@ -30,7 +30,7 @@ type Configuration struct {
 	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
 	MinutesBetween        int        `env:"MINUTES_BETWEEN" envDefault:"1"`
 	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
-	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://it.pk.edu.pl/studenci/na-studiach/rozklady-zajec/"`
+	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://ii.pk.edu.pl/~fkruzel/fk-planer-lti/public/plan-st/download.php"`
 	GooglePlacesAPIKey    string     `env:"GOOGLE_PLACES_API_KEY"`
 	DiscordWebhookURL     string     `env:"DISCORD_WEBHOOK_URL"`
 	LogLevel              slog.Level `env:"LOG_LEVEL" envDefault:"DEBUG"`

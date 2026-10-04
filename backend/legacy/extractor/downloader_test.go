@@ -2,12 +2,52 @@ package extractor
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/woodpkrs/PlanerPK/config"
 	"golang.org/x/net/html"
 )
+
+func TestDirectXlsxDownloadAndRefresh(t *testing.T) {
+	previous := config.Config
+	t.Cleanup(func() { config.Config = previous })
+	config.Config.TimetableDownloadsDir = t.TempDir()
+	config.Config.CurrentTimetableDir = t.TempDir()
+	config.Config.TimetableStats = filepath.Join(t.TempDir(), "stats.json")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Disposition", `attachment; filename="Plan-ST-2026-2027.xlsx"`)
+		w.Header().Set("Content-Length", "4")
+		if r.Method != http.MethodHead {
+			_, _ = w.Write([]byte("xlsx"))
+		}
+	}))
+	defer server.Close()
+	config.Config.TimetableURL = server.URL + "/download.php"
+	stats, err := DownloadTimetable(config.Config.TimetableURL)
+	if err != nil || filepath.Base(stats.Path) != "Plan-ST-2026-2027.xlsx" {
+		t.Fatalf("download = %+v, %v", stats, err)
+	}
+	for range 2 {
+		path, err := ProcessTimetable(stats)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil || string(data) != "xlsx" {
+			t.Fatalf("processed workbook = %q, %v", data, err)
+		}
+	}
+	changed, url, err := DoesTimetableNeedUpdating()
+	if err != nil || !changed || url != config.Config.TimetableURL {
+		t.Fatalf("refresh without Last-Modified = %v, %q, %v", changed, url, err)
+	}
+}
 
 func parseHTML(t *testing.T, htmlContent string) *html.Node {
 	t.Helper()

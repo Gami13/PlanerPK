@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -65,19 +66,6 @@ func findTimetableLink(doc *html.Node, rawBaseURL string) (string, error) {
 	return "", ErrTimetableNotFound
 }
 
-func fetchTimetableUrl() (string, error) {
-	doc, err := htmlquery.LoadURL(config.Config.TimetableURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to get the timetable url: %w", err)
-	}
-	link, err := findTimetableLink(doc, config.Config.TimetableURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to get the timetable url: %w", err)
-	}
-
-	return link, nil
-}
-
 func getCurrentXlsxPath() (filePath string, err error) {
 	entries, err := os.ReadDir(config.Config.CurrentTimetableDir)
 	if err != nil {
@@ -129,10 +117,7 @@ func getLatestTimetableInfo() (stats types.TimetableFileStats, err error) {
 }
 
 func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
-	remoteTimetableUrl, err := fetchTimetableUrl()
-	if err != nil {
-		return false, "", err
-	}
+	remoteTimetableUrl := config.Config.TimetableURL
 
 	response, err := httpClient.Head(remoteTimetableUrl)
 	if err != nil {
@@ -151,7 +136,7 @@ func DoesTimetableNeedUpdating() (hasChanged bool, fileURL string, err error) {
 
 	remoteLastModified := response.Header.Get("Last-Modified")
 	remoteContentLength := response.Header.Get("Content-Length")
-	if localFileInfo.LastModified != remoteLastModified || localFileInfo.ContentLength != remoteContentLength {
+	if remoteLastModified == "" || localFileInfo.LastModified != remoteLastModified || localFileInfo.ContentLength != remoteContentLength {
 		slog.Info("Last modified", "local", localFileInfo.LastModified, "remote", remoteLastModified)
 		slog.Info("Content length", "local", localFileInfo.ContentLength, "remote", remoteContentLength)
 		return true, remoteTimetableUrl, nil
@@ -174,6 +159,9 @@ func DownloadTimetable(url string) (stats types.TimetableFileStats, err error) {
 	}()
 	if response.StatusCode != http.StatusOK {
 		return types.TimetableFileStats{}, fmt.Errorf("HTTP %d: %s", response.StatusCode, response.Status)
+	}
+	if _, params, err := mime.ParseMediaType(response.Header.Get("Content-Disposition")); err == nil && params["filename"] != "" {
+		destination = filepath.Join(config.Config.TimetableDownloadsDir, filepath.Base(params["filename"]))
 	}
 
 	file, err := os.Create(destination)
@@ -212,11 +200,21 @@ func ProcessTimetable(stats types.TimetableFileStats) (newFilePath string, err e
 			return "", err
 		}
 	}
-	newXlsxPath, err := xls2xlsx(origin, timetableDestination)
+	var newXlsxPath string
+	if strings.EqualFold(filepath.Ext(origin), ".xlsx") {
+		newXlsxPath = filepath.Join(timetableDestination, filepath.Base(origin))
+		var data []byte
+		data, err = os.ReadFile(origin)
+		if err == nil {
+			err = os.WriteFile(newXlsxPath, data, 0o644)
+		}
+	} else {
+		newXlsxPath, err = xls2xlsx(origin, timetableDestination)
+	}
 	if err != nil {
 		return "", err
 	}
-	if doesExist {
+	if doesExist && currentXlsxPath != newXlsxPath {
 
 		err = os.Remove(currentXlsxPath)
 		if err != nil {
