@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/webServer"
 
@@ -88,6 +90,9 @@ func initializeApp() (queries db.Querier) {
 }
 
 func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *buildings.Buildings, types.Timetable, error) {
+	if _, err := snapshot.Load(http.DefaultClient, "https://ii.pk.edu.pl/~fkruzel/fk-planer-lti/public/plan-st/snapshot.php"); err != nil {
+		return nil, nil, nil, nil, err
+	}
 	file, err := extractor.OpenCurrentTimetableFile()
 	if err != nil {
 		return nil, nil, nil, nil, err
