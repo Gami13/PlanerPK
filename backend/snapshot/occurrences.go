@@ -41,8 +41,16 @@ var weekdays = map[string]time.Weekday{
 }
 
 // Occurrences generates weekly or explicitly dated slots in the process
-// timezone. Calendar exceptions are not applied yet.
+// timezone, excluding full-day closures. Other calendar exceptions are not applied yet.
 func (block Block) Occurrences(calendar AcademicCalendar) ([]Occurrence, error) {
+	occurrences, err := block.baseOccurrences(calendar)
+	if err != nil {
+		return nil, err
+	}
+	return calendar.excludeClosures(occurrences)
+}
+
+func (block Block) baseOccurrences(calendar AcademicCalendar) ([]Occurrence, error) {
 	if block.Frequency == frequencyOneOff || block.Frequency == frequencyFirstOctoberWeek {
 		return nil, nil
 	}
@@ -70,6 +78,31 @@ func (block Block) Occurrences(calendar AcademicCalendar) ([]Occurrence, error) 
 	default:
 		return nil, fmt.Errorf("block %s: unsupported frequency %q", block.ID, block.Frequency)
 	}
+}
+
+func (calendar AcademicCalendar) excludeClosures(occurrences []Occurrence) ([]Occurrence, error) {
+	for _, closure := range calendar.Closures {
+		from, err := time.ParseInLocation(time.DateOnly, closure.From, time.Local)
+		if err != nil {
+			return nil, fmt.Errorf("closure start: %w", err)
+		}
+		to, err := time.ParseInLocation(time.DateOnly, closure.To, time.Local)
+		if err != nil {
+			return nil, fmt.Errorf("closure end: %w", err)
+		}
+		if to.Before(from) {
+			return nil, fmt.Errorf("closure end precedes start")
+		}
+		to = to.AddDate(0, 0, 1)
+		remaining := make([]Occurrence, 0, len(occurrences))
+		for _, occurrence := range occurrences {
+			if occurrence.Start.Before(from) || !occurrence.Start.Before(to) {
+				remaining = append(remaining, occurrence)
+			}
+		}
+		occurrences = remaining
+	}
+	return occurrences, nil
 }
 
 func (block Block) weeklyOccurrences(start, end time.Time, weekday time.Weekday, anchor time.Time) []Occurrence {

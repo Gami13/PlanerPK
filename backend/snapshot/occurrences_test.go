@@ -45,6 +45,31 @@ func TestWeeklyOccurrences(t *testing.T) {
 	}
 }
 
+func TestOccurrencesExcludeFullDayClosures(t *testing.T) {
+	day, start := "MON", 480
+	block := Block{Day: &day, Start: &start, Duration: 90, Frequency: "co_tydzien"}
+	calendar := AcademicCalendar{Start: "2026-10-01", End: "2026-10-31", Closures: []DateRange{
+		{From: "2026-10-05", To: "2026-10-05"},
+		{From: "2026-10-12", To: "2026-10-19"},
+		{From: "2026-10-19", To: "2026-10-20"},
+	}}
+	got, err := block.Occurrences(calendar)
+	if err != nil || len(got) != 1 || got[0].Start.Format(time.DateOnly) != "2026-10-26" {
+		t.Fatalf("occurrences = %+v, error = %v, want only 26 October", got, err)
+	}
+	date := "2026-10-19"
+	block.Frequency, block.Date = "konkretna_data", &date
+	if got, err = block.Occurrences(calendar); err != nil || len(got) != 0 {
+		t.Fatalf("closed concrete date: occurrences = %+v, error = %v", got, err)
+	}
+	for _, invalid := range []DateRange{{From: "bad", To: date}, {From: date, To: "bad"}, {From: "2026-10-20", To: date}} {
+		calendar.Closures = []DateRange{invalid}
+		if _, err := block.Occurrences(calendar); err == nil {
+			t.Fatalf("accepted invalid closure: %+v", invalid)
+		}
+	}
+}
+
 func TestHalfSemesterAndDatedOccurrences(t *testing.T) {
 	day, start, date := "MON", 480, "2026-10-07"
 	calendar := AcademicCalendar{Start: "2026-10-01", End: "2026-10-31", HalfBoundary: "2026-10-19"}
