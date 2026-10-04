@@ -21,11 +21,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	response, err := snapshot.DecodeSnapshot(data)
+	response, err := snapshot.Decode(data)
 	if err != nil {
 		return err
 	}
-	index := snapshot.IndexBySubject(response.State.Blocks)
+	index := snapshot.NewSubjectIndex(response.State.Blocks)
 	fmt.Fprintf(os.Stderr, "%d blocks indexed under %d subjects\n", len(response.State.Blocks), len(index))
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")

@@ -11,7 +11,7 @@ func TestDecodeSnapshotFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := DecodeSnapshot(data)
+	got, err := Decode(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestDecodeSnapshotFixture(t *testing.T) {
 }
 
 func TestDecodeSnapshotAcceptsOptionalAndAdditiveFields(t *testing.T) {
-	got, err := DecodeSnapshot([]byte(`{"state":{"schemaVersion":1,"newField":true,"blocks":[{"id":"b1","day":null,"start":null,"additionalCohorts":null,"newBlockField":42}]},"newEnvelopeField":{}}`))
+	got, err := Decode([]byte(`{"state":{"schemaVersion":1,"newField":true,"blocks":[{"id":"b1","day":null,"start":null,"additionalCohorts":null,"newBlockField":42}]},"newEnvelopeField":{}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestDecodeSnapshotRejectsMissingOrInvalidState(t *testing.T) {
 		{"trailing data", `{"state":{}} {}`, "decode snapshot"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := DecodeSnapshot([]byte(tt.input))
+			got, err := Decode([]byte(tt.input))
 			if err == nil || !strings.Contains(err.Error(), tt.want) || got.State.SchemaVersion != 0 || got.CalendarExport != nil {
 				t.Fatalf("Decode(%q) = %+v, %v; want error containing %q and empty response", tt.input, got, err, tt.want)
 			}

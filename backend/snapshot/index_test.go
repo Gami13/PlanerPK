@@ -15,14 +15,14 @@ func TestIndexBySubjectRetainsCandidates(t *testing.T) {
 		{ID: "other", Subject: "Other"},
 		{ID: "distinct", Subject: "subject"},
 	}
-	got := IndexBySubject(blocks)
-	want := map[string][]Block{
+	got := NewSubjectIndex(blocks)
+	want := SubjectIndex{
 		"Subject": blocks[:3], "Other": blocks[3:4], "subject": blocks[4:],
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("index = %#v; want %#v", got, want)
 	}
-	if len(IndexBySubject(nil)) != 0 {
+	if len(NewSubjectIndex(nil)) != 0 {
 		t.Fatal("empty input must produce an empty index")
 	}
 }
@@ -32,12 +32,12 @@ func TestIndexBySubjectPreservesFixtureBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	response, err := DecodeSnapshot(data)
+	response, err := Decode(data)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var indexed []Block
-	for subject, blocks := range IndexBySubject(response.State.Blocks) {
+	for subject, blocks := range NewSubjectIndex(response.State.Blocks) {
 		for _, block := range blocks {
 			if block.Subject != subject {
 				t.Fatalf("block %q indexed under %q", block.ID, subject)
