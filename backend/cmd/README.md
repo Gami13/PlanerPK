@@ -14,6 +14,10 @@ The command takes no parameters and uses the published snapshot endpoint. Output
 
 ## Pipeline
 
+`go run ./cmd/matchsnapshot` compares the current Excel workbook with the online snapshot.
+Unique rows show only the group, subject/activity, and block ID; ambiguous and unmatched rows keep full details. Totals go to stderr.
+It takes no parameters; `DATA_DIR` defaults to `../data`. Repeated classes across columns count separately.
+
 ```sh
 go run ./cmd/collectclasstexts/
 go run ./cmd/dedupclasstexts/
