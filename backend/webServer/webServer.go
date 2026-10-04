@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/woodpkrs/PlanerPK/cache"
 	"github.com/woodpkrs/PlanerPK/config"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
-	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/utils"
 	"github.com/woodpkrs/PlanerPK/webServer/handler"
 
@@ -31,7 +31,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	}).Handler(next)
 }
 
-func Start(db db.Querier, cache *types.Cache) {
+func Start(db db.Querier, cache *cache.Cache) {
 	query := db
 	pkPlanerHandler := handler.NewPKPlanerHandler(query, cache)
 

@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"github.com/woodpkrs/PlanerPK/cache"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/gen/pkplaner/v1/pkplanerv1connect"
-	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/utils"
 )
 
@@ -11,10 +11,10 @@ import (
 type PKPlanerHandler struct {
 	pkplanerv1connect.UnimplementedPKPlanerServiceHandler
 	Query db.Querier
-	cache *types.Cache
+	cache *cache.Cache
 }
 
-func NewPKPlanerHandler(query db.Querier, cache *types.Cache) *PKPlanerHandler {
+func NewPKPlanerHandler(query db.Querier, cache *cache.Cache) *PKPlanerHandler {
 	if query == nil {
 		utils.NotifyError("Query is nil")
 		panic("Query is nil!")

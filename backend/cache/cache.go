@@ -1,32 +1,33 @@
-package types
+package cache
 
 import (
 	"sync/atomic"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 type Cache struct {
-	availableGroups atomic.Pointer[[]ColumnGroup]
-	timetable       atomic.Pointer[Timetable]
+	availableGroups atomic.Pointer[[]types.ColumnGroup]
+	timetable       atomic.Pointer[types.Timetable]
 	legend          atomic.Pointer[legend.Legend]
 	buildings       atomic.Pointer[buildings.Buildings]
 }
 
-func (c *Cache) AvailableGroups() *[]ColumnGroup {
+func (c *Cache) AvailableGroups() *[]types.ColumnGroup {
 	return c.availableGroups.Load()
 }
 
-func (c *Cache) SetAvailableGroups(groups *[]ColumnGroup) {
+func (c *Cache) SetAvailableGroups(groups *[]types.ColumnGroup) {
 	c.availableGroups.Store(groups)
 }
 
-func (c *Cache) Timetable() *Timetable {
+func (c *Cache) Timetable() *types.Timetable {
 	return c.timetable.Load()
 }
 
-func (c *Cache) SetTimetable(timetable *Timetable) {
+func (c *Cache) SetTimetable(timetable *types.Timetable) {
 	c.timetable.Store(timetable)
 }
 

@@ -14,6 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
+	"github.com/woodpkrs/PlanerPK/cache"
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/legend"
@@ -125,7 +126,7 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	return newGroups, newLegend, newBuildings, newTimetable, nil
 }
 
-func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, cache *cache.Cache, isInitialRun bool) (hasChanged bool, err error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -162,7 +163,7 @@ func updateTimetableAndCache(queries db.Querier, cache *types.Cache, isInitialRu
 func main() {
 	queries := initializeApp()
 
-	var cache types.Cache
+	var cache cache.Cache
 
 	_, err := updateTimetableAndCache(queries, &cache, true)
 	if err != nil {
@@ -185,7 +186,7 @@ func main() {
 	}
 }
 
-func updateAllTimetables(queries db.Querier, cache *types.Cache) {
+func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
