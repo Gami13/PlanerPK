@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error building groups for %s: %v\n", xlsxPath, err)
 	} else {
-		timetable := extractor.BuildTimetable(groups, file, sheetName, legend, buildings, layout)
+		timetable := extractor.BuildTimetable(groups, file, sheetName, legend, buildings, layout, nil)
 		for _, groupTimetable := range timetable {
 			for _, classes := range groupTimetable {
 				for _, class := range classes {

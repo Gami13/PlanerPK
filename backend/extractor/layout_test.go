@@ -255,7 +255,7 @@ func TestBuildExtractionUsesDetectedLayout(t *testing.T) {
 		Teachers:  map[string]legend.Teacher{},
 		Locations: map[string]legend.Location{},
 	}
-	timetable := BuildTimetable(groups, file, sheet, lg, buildings.BuildBuildingsFromLegend(lg), layout)
+	timetable := BuildTimetable(groups, file, sheet, lg, buildings.BuildBuildingsFromLegend(lg), layout, nil)
 	classes := timetable[2][time.Monday]
 	if len(classes) != 1 {
 		t.Fatalf("Monday classes = %+v, want one class", classes)
@@ -327,7 +327,7 @@ func TestBuildTimetableAddsMatchingSupplementalColumns(t *testing.T) {
 		SlotDuration: 30 * time.Minute,
 	}
 	lg := &legend.Legend{Teachers: map[string]legend.Teacher{}, Locations: map[string]legend.Location{}}
-	timetable := BuildTimetable(groups, file, sheet, lg, nil, layout)
+	timetable := BuildTimetable(groups, file, sheet, lg, nil, layout, nil)
 
 	semesterThree := timetable[2][time.Monday]
 	if len(semesterThree) != 2 {

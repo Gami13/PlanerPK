@@ -8,16 +8,17 @@ import (
 
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
 
-func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, layout TimetableLayout) types.Timetable {
+func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName string, legend *legend.Legend, buildings *buildings.Buildings, layout TimetableLayout, index snapshot.SubjectIndex) types.Timetable {
 	traverse := newDayTraverser(detectCellFormat(file, sheetName, groups, layout.Days), file, sheetName, legend, layout.SlotDuration)
 	timetable := make(types.Timetable)
 	for _, group := range groups {
 		column := int64(group.Column)
-		timetable[column] = buildTimetableForGroup(column, layout.Days, buildings, traverse)
+		timetable[column] = buildTimetableForGroup(column, layout.Days, buildings, traverse, index)
 	}
 	mergeSupplementalTimetables(timetable, groups)
 	return timetable
@@ -78,13 +79,13 @@ func mergeGroupTimetable(destination, source types.GroupTimetable) {
 	}
 }
 
-func buildTimetableForGroup(column int64, days []types.Day, buildings *buildings.Buildings, traverse dayTraverser) types.GroupTimetable {
+func buildTimetableForGroup(column int64, days []types.Day, buildings *buildings.Buildings, traverse dayTraverser, index snapshot.SubjectIndex) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := resolveLocations(traverse(day, column), buildings)
+		classes := finalizeClasses(traverse(day, column), buildings, index)
 		timetable[day.WeekDay] = classes
 		logClasses(classes, buildings)
 		slog.Debug("Processed day",
@@ -117,11 +118,17 @@ func logClasses(classes []types.Class, buildings *buildings.Buildings) {
 	}
 }
 
-func resolveLocations(classes []types.Class, buildings *buildings.Buildings) []types.Class {
-	if buildings != nil {
-		for i := range classes {
-			if classes[i].Location != "" {
-				classes[i].ResolvedClassroomKeys = buildings.ResolveClassroomKeys(classes[i].Location)
+func finalizeClasses(classes []types.Class, buildings *buildings.Buildings, index snapshot.SubjectIndex) []types.Class {
+	for i := range classes {
+		if buildings != nil && classes[i].Location != "" {
+			classes[i].ResolvedClassroomKeys = buildings.ResolveClassroomKeys(classes[i].Location)
+		}
+		if index != nil {
+			candidates := index.Candidates(classes[i])
+			if len(candidates) == 1 {
+				classes[i].SnapshotBlockID = candidates[0].ID
+			} else {
+				slog.Warn("Class has no unique snapshot match", "class", classes[i].String(), "day", classes[i].Day, "candidates", len(candidates))
 			}
 		}
 	}

@@ -52,7 +52,7 @@ func run() error {
 	}
 	index := snapshot.NewSubjectIndex(response.State.Blocks)
 	legend := extractor.ExtractLegend(file, sheet)
-	timetable := extractor.BuildTimetable(groups, file, sheet, legend, nil, layout)
+	timetable := extractor.BuildTimetable(groups, file, sheet, legend, nil, layout, nil)
 	counts := map[string]int{}
 	fmt.Println("status\tgroup\tcategory\tday\tstart\tclass\tblock_ids")
 	for _, group := range groups {

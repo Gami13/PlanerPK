@@ -122,7 +122,8 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	} else {
 		slog.Info("Building location resolution is disabled")
 	}
-	newTimetable := extractor.BuildTimetable(allGroups, file, sheetName, newLegend, newBuildings, layout)
+	index := snapshot.NewSubjectIndex(newSnapshot.Blocks)
+	newTimetable := extractor.BuildTimetable(allGroups, file, sheetName, newLegend, newBuildings, layout, index)
 	newGroups := extractor.SelectableGroups(allGroups)
 	return newGroups, newLegend, newBuildings, newTimetable, &newSnapshot, nil
 }

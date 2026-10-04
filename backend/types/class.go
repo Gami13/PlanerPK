@@ -27,6 +27,8 @@ type Class struct {
 	AdditionalInfo string
 	Level          string
 	TotalHours     string
+
+	SnapshotBlockID string
 }
 
 func (c Class) String() string {

@@ -101,7 +101,7 @@ func TestBuildTimetableStructuredMergedCellDoesNotMergeRecords(t *testing.T) {
 		Days:         []types.Day{{StartingRow: 0, EndingRow: 23, WeekDay: time.Monday, StartingTime: time.Date(2026, 9, 28, 15, 30, 0, 0, time.UTC)}},
 		SlotDuration: 15 * time.Minute,
 	}
-	timetable := BuildTimetable([]types.ColumnGroup{{Column: 1, Label: "Obieralne"}}, file, "2026_2027", nil, nil, layout)
+	timetable := BuildTimetable([]types.ColumnGroup{{Column: 1, Label: "Obieralne"}}, file, "2026_2027", nil, nil, layout, nil)
 	classes := timetable[1][time.Monday]
 	if len(classes) != 4 {
 		t.Fatalf("merged cell produced %d classes, want 4: %+v", len(classes), classes)
@@ -123,10 +123,10 @@ func TestClassHashIncludesStructuredAudience(t *testing.T) {
 
 func TestStructuredClassNameWithSlashIsNotLegacySplit(t *testing.T) {
 	day := types.Day{WeekDay: time.Monday, StartingTime: testStartTime}
-	classes := resolveLocations(parseStructuredClassText(
+	classes := finalizeClasses(parseStructuredClassText(
 		"Subject A/Subject B — W\nProfessor\nGL1\n08:00–09:30 · ONLINE",
 		day,
-	), nil)
+	), nil, nil)
 	if len(classes) != 1 || classes[0].Name != "Subject A/Subject B" {
 		t.Fatalf("classes = %+v, want one unsplit structured class", classes)
 	}
