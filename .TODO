@@ -13,6 +13,9 @@
 ✔ Add option to override the time of the class (for groups that rescheduled their classes) @done(26-04-12 22:55)
 ✔ Turn atomic values into a struct @done(26-08-01 19:40)
 ☐ Rewrite the rate limiter, for now using just cloudflare is fine
+☐ Deferred: support snapshot `academicCalendar.replacementDays` (replacement dates follow the timetable of the dates they replace); skip during the current timetable migration
+☐ Deferred: support snapshot block `allowedDates` and `excludedDates`; both intentionally skipped during the current timetable migration
+☐ Deferred: support snapshot `academicCalendar.regularStationaryStart`; intentionally skipped during the current timetable migration
 ☐ Switch Google OAuth scope to `CalendarEventsOwnedScope` (`calendar.events.owned`) in `backend/config/config.go` & update scopes in Google Cloud Console
 ☐ Refactor calendar sync to dedicated secondary calendar (enables `calendar.app.created` scope):
   - Add `calendar_id TEXT` column to `users` table in `backend/schema.sql` / migrations
