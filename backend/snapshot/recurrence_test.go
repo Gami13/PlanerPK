@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -61,6 +62,63 @@ func TestWeeklyRecurrence(t *testing.T) {
 	block.Frequency = frequencyConcreteDate
 	if _, err := block.WeeklyRecurrence(calendar); err == nil {
 		t.Fatal("accepted unsupported concrete-date recurrence")
+	}
+}
+
+func TestRecurrenceClosureExclusions(t *testing.T) {
+	zone, err := time.LoadLocation("Europe/Warsaw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := time.Local
+	time.Local = zone
+	t.Cleanup(func() { time.Local = previous })
+	day, start := "MON", 480
+	calendar := AcademicCalendar{
+		Start: "2026-10-19", End: "2026-11-16", ParityAnchor: "2026-09-28",
+		Closures:        []DateRange{{From: "2026-10-19", To: "2026-10-26"}, {From: "2026-10-26", To: "2026-10-26"}, {From: "2026-11-16", To: "2026-11-16"}},
+		PartialClosures: []PartialClosure{{Date: "2026-11-02", Start: 480, End: 540}},
+	}
+	for _, tt := range []struct {
+		name, frequency  string
+		parity, from, to int
+		want             []string
+	}{
+		{"weekly overlap", frequencyWeekly, 0, 480, 540, []string{"RRULE:FREQ=WEEKLY;UNTIL=20261116T070000Z", "EXDATE:20261019T060000Z", "EXDATE:20261026T070000Z", "EXDATE:20261102T070000Z", "EXDATE:20261116T070000Z"}},
+		{"A week", frequencyAlternating, teachingWeekA, 480, 540, []string{"RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261109T070000Z", "EXDATE:20261026T070000Z"}},
+		{"B week fully closed", frequencyAlternating, teachingWeekB, 480, 540, nil},
+		{"class ends at closure start", frequencyWeekly, 0, 570, 660, []string{"RRULE:FREQ=WEEKLY;UNTIL=20261116T070000Z", "EXDATE:20261019T060000Z", "EXDATE:20261026T070000Z", "EXDATE:20261116T070000Z"}},
+		{"class starts at closure end", frequencyWeekly, 0, 420, 480, []string{"RRULE:FREQ=WEEKLY;UNTIL=20261116T070000Z", "EXDATE:20261019T060000Z", "EXDATE:20261026T070000Z", "EXDATE:20261116T070000Z"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			block := Block{Day: &day, Start: &start, Duration: 90, Frequency: tt.frequency, TeachingWeekParity: &tt.parity}
+			calendar.PartialClosures[0].Start, calendar.PartialClosures[0].End = tt.from, tt.to
+			got, err := block.WeeklyRecurrence(calendar)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.want == nil {
+				if got != nil {
+					t.Fatalf("fully closed schedule = %+v, want nil", got)
+				}
+				return
+			}
+			if got == nil || !slices.Equal(got.Rules, tt.want) {
+				t.Fatalf("recurrence = %+v, want rules %v", got, tt.want)
+			}
+			wantFirst := "2026-10-19"
+			if tt.frequency == frequencyAlternating {
+				wantFirst = "2026-10-26"
+			}
+			if got.First.Start.Format(time.DateOnly) != wantFirst {
+				t.Fatalf("series start changed to %s, want %s", got.First.Start, wantFirst)
+			}
+		})
+	}
+	block := Block{Day: &day, Start: &start, Duration: 90, Frequency: frequencyWeekly}
+	calendar.PartialClosures[0].Date = "bad"
+	if _, err := block.WeeklyRecurrence(calendar); err == nil {
+		t.Fatal("accepted invalid closure date")
 	}
 }
 

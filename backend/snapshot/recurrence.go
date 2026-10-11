@@ -1,14 +1,19 @@
 package snapshot
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+const recurrenceTimeLayout = "20060102T150405Z"
 
 type Recurrence struct {
 	First Occurrence
 	Rules []string
 }
 
-// WeeklyRecurrence encodes the base weekly or A/B schedule, including semester halves.
-// Closure exclusions are not encoded yet. A nil result means no classes.
+// WeeklyRecurrence encodes weekly or A/B schedules, semester halves, and closures.
+// First retains the base series start, even if excluded. A nil result means no classes.
 func (block Block) WeeklyRecurrence(calendar AcademicCalendar) (*Recurrence, error) {
 	rule := "RRULE:FREQ=WEEKLY"
 	if block.Frequency == frequencyAlternating {
@@ -20,12 +25,26 @@ func (block Block) WeeklyRecurrence(calendar AcademicCalendar) (*Recurrence, err
 	if err != nil {
 		return nil, err
 	}
-	if len(occurrences) == 0 {
+	remaining, err := calendar.excludeClosures(occurrences)
+	if err != nil {
+		return nil, err
+	}
+	if len(remaining) == 0 {
 		return nil, nil
 	}
+	included := make(map[time.Time]bool, len(remaining))
+	for _, occurrence := range remaining {
+		included[occurrence.Start] = true
+	}
 	last := occurrences[len(occurrences)-1].Start
+	rules := []string{rule + ";UNTIL=" + last.UTC().Format(recurrenceTimeLayout)}
+	for _, occurrence := range occurrences {
+		if !included[occurrence.Start] {
+			rules = append(rules, "EXDATE:"+occurrence.Start.UTC().Format(recurrenceTimeLayout))
+		}
+	}
 	return &Recurrence{
 		First: occurrences[0],
-		Rules: []string{rule + ";UNTIL=" + last.UTC().Format("20060102T150405Z")},
+		Rules: rules,
 	}, nil
 }
