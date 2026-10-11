@@ -41,7 +41,8 @@ var weekdays = map[string]time.Weekday{
 }
 
 // Occurrences generates weekly or explicitly dated slots in the process
-// timezone, excluding full-day closures. Other calendar exceptions are not applied yet.
+// timezone, excluding full-day and overlapping partial-day closures.
+// Other calendar exceptions are not applied yet.
 func (block Block) Occurrences(calendar AcademicCalendar) ([]Occurrence, error) {
 	occurrences, err := block.baseOccurrences(calendar)
 	if err != nil {
@@ -102,6 +103,26 @@ func (calendar AcademicCalendar) excludeClosures(occurrences []Occurrence) ([]Oc
 		}
 		occurrences = remaining
 	}
+	for _, closure := range calendar.PartialClosures {
+		date, err := time.ParseInLocation(time.DateOnly, closure.Date, time.Local)
+		if err != nil {
+			return nil, fmt.Errorf("partial closure date: %w", err)
+		}
+		if closure.Start < 0 || closure.End > minutesPerDay || closure.End <= closure.Start {
+			return nil, fmt.Errorf("partial closure: invalid start or end")
+		}
+		closureStart := localTimeOn(date, closure.Start)
+		closureEnd := localTimeOn(date, closure.End)
+		remaining := make([]Occurrence, 0, len(occurrences))
+		for _, occurrence := range occurrences {
+			overlapsClosure := occurrence.Start.Before(closureEnd) && occurrence.End.After(closureStart)
+			if overlapsClosure {
+				continue
+			}
+			remaining = append(remaining, occurrence)
+		}
+		occurrences = remaining
+	}
 	return occurrences, nil
 }
 
@@ -143,8 +164,13 @@ func (block Block) alternatingOccurrences(calendar AcademicCalendar, start, end 
 }
 
 func (block Block) occurrenceOn(date time.Time) Occurrence {
-	start := time.Date(date.Year(), date.Month(), date.Day(), *block.Start/minutesPerHour, *block.Start%minutesPerHour, 0, 0, time.Local)
+	start := localTimeOn(date, *block.Start)
 	return Occurrence{Start: start, End: start.Add(time.Duration(block.Duration) * time.Minute)}
+}
+
+func localTimeOn(date time.Time, minutes int) time.Time {
+	hour, minute := minutes/minutesPerHour, minutes%minutesPerHour
+	return time.Date(date.Year(), date.Month(), date.Day(), hour, minute, 0, 0, time.Local)
 }
 
 func (block Block) occurrenceBounds(calendar AcademicCalendar) (time.Time, time.Time, error) {

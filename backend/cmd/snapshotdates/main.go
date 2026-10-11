@@ -21,12 +21,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(os.Stderr, "Full-day closures applied; partial closures, replacement days, and date exceptions are not applied yet. Times use the process timezone.")
+	fmt.Fprintln(os.Stderr, "Full-day and partial-day closures applied; replacement days and date exceptions are not applied yet. Times use the process timezone.")
 	fmt.Println("block_id\tsubject\tactivity\tdate\tstart\tend")
 	meetings, omitted := 0, 0
 	var excluded []string
 	baseCalendar := state.AcademicCalendar
 	baseCalendar.Closures = nil
+	baseCalendar.PartialClosures = nil
 	for _, block := range state.Blocks {
 		occurrences, err := block.Occurrences(state.AcademicCalendar)
 		if err != nil {
@@ -53,7 +54,7 @@ func run() error {
 			}
 		}
 	}
-	fmt.Println("\nExcluded classes (full-day closures):")
+	fmt.Println("\nExcluded classes (full-day and partial-day closures):")
 	fmt.Println("block_id\tsubject\tactivity\tdate\tstart\tend")
 	for _, row := range excluded {
 		fmt.Println(row)

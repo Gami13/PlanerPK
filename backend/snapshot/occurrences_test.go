@@ -70,6 +70,50 @@ func TestOccurrencesExcludeFullDayClosures(t *testing.T) {
 	}
 }
 
+func TestOccurrencesExcludePartialDayClosures(t *testing.T) {
+	day, date := "THU", "2026-12-17"
+	calendar := AcademicCalendar{Start: date, End: "2026-12-24", PartialClosures: []PartialClosure{{Date: date, Start: 660, End: 840}}}
+	for _, tt := range []struct {
+		name            string
+		start, duration int
+		want            int
+	}{
+		{"before", 450, 90, 2},
+		{"ends at closure start", 570, 90, 2},
+		{"overlaps start", 555, 135, 1},
+		{"inside", 720, 90, 1},
+		{"same interval", 660, 180, 1},
+		{"spans closure", 600, 300, 1},
+		{"overlaps end", 825, 90, 1},
+		{"starts at closure end", 840, 90, 2},
+		{"after", 870, 90, 2},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			block := Block{Day: &day, Start: &tt.start, Duration: tt.duration, Frequency: frequencyWeekly}
+			got, err := block.Occurrences(calendar)
+			if err != nil || len(got) != tt.want || got[len(got)-1].Start.Format(time.DateOnly) != calendar.End {
+				t.Fatalf("occurrences = %+v, error = %v, want %d including 24 December", got, err, tt.want)
+			}
+			for _, occurrence := range got {
+				if occurrence.Start.Hour()*minutesPerHour+occurrence.Start.Minute() != tt.start || occurrence.End.Sub(occurrence.Start) != time.Duration(tt.duration)*time.Minute {
+					t.Fatalf("class time changed: %+v", occurrence)
+				}
+			}
+		})
+	}
+	start := 720
+	block := Block{Day: &day, Start: &start, Duration: 90, Frequency: frequencyConcreteDate, Date: &date}
+	if got, err := block.Occurrences(calendar); err != nil || len(got) != 0 {
+		t.Fatalf("closed concrete date: occurrences = %+v, error = %v", got, err)
+	}
+	for _, invalid := range []PartialClosure{{Date: "bad", Start: 660, End: 840}, {Date: date, Start: -1, End: 840}, {Date: date, Start: 660, End: minutesPerDay + 1}, {Date: date, Start: 840, End: 660}, {Date: date, Start: 660, End: 660}} {
+		calendar.PartialClosures = []PartialClosure{invalid}
+		if _, err := block.Occurrences(calendar); err == nil {
+			t.Fatalf("accepted invalid partial closure: %+v", invalid)
+		}
+	}
+}
+
 func TestHalfSemesterAndDatedOccurrences(t *testing.T) {
 	day, start, date := "MON", 480, "2026-10-07"
 	calendar := AcademicCalendar{Start: "2026-10-01", End: "2026-10-31", HalfBoundary: "2026-10-19"}
