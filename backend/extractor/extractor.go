@@ -18,7 +18,7 @@ func BuildTimetable(groups []types.ColumnGroup, file *excelize.File, sheetName s
 	timetable := make(types.Timetable)
 	for _, group := range groups {
 		column := int64(group.Column)
-		timetable[column] = buildTimetableForGroup(column, layout.Days, buildings, traverse, index)
+		timetable[column] = buildTimetableForGroup(group, layout.Days, buildings, traverse, index)
 	}
 	mergeSupplementalTimetables(timetable, groups)
 	return timetable
@@ -79,13 +79,14 @@ func mergeGroupTimetable(destination, source types.GroupTimetable) {
 	}
 }
 
-func buildTimetableForGroup(column int64, days []types.Day, buildings *buildings.Buildings, traverse dayTraverser, index snapshot.SubjectIndex) types.GroupTimetable {
+func buildTimetableForGroup(group types.ColumnGroup, days []types.Day, buildings *buildings.Buildings, traverse dayTraverser, index snapshot.SubjectIndex) types.GroupTimetable {
 	timetable := make(types.GroupTimetable)
 
 	slog.Debug("Found days in timetable", slog.Int("count", len(days)))
 
 	for _, day := range days {
-		classes := finalizeClasses(traverse(day, column), buildings, index)
+		classes := classesForGroup(traverse(day, int64(group.Column)), group.Label)
+		classes = finalizeClasses(classes, buildings, index)
 		timetable[day.WeekDay] = classes
 		logClasses(classes, buildings)
 		slog.Debug("Processed day",

@@ -1,6 +1,8 @@
 package extractor
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -118,6 +120,45 @@ func TestClassHashIncludesStructuredAudience(t *testing.T) {
 	second.Audience = "GL2"
 	if first.Hash() == second.Hash() {
 		t.Error("classes for different audiences have identical hashes")
+	}
+}
+
+func TestBuildTimetableFiltersMergedCellAudiences(t *testing.T) {
+	file := workbookWithSheets(t, "2026_2027")
+	defer file.Close()
+	const sheet = "2026_2027"
+	var records []string
+	for i, audience := range []string{"cały rocznik / wskazani uczestnicy", "C1 (GL1+GL2)", "C2 (GL3+GL4)", "C3 (GL5+GL6)", "GL2", "GL20", "other audience"} {
+		records = append(records, fmt.Sprintf("Subject %d — C\nTeacher\n%s\n08:00–09:30 · ONLINE\nco tydz.", i, audience))
+	}
+	setWorksheetValue(t, file, sheet, 0, 1, strings.Join(records, "\n\n"))
+	if err := file.MergeCell(sheet, "B1", "D6"); err != nil {
+		t.Fatal(err)
+	}
+	setWorksheetValue(t, file, sheet, 0, 4, "Elective — L\nTeacher\nGL20\n08:00–09:30 · ONLINE\nco tydz.")
+	groups := []types.ColumnGroup{
+		{Column: 1, Label: "GL2", Category: "semester"},
+		{Column: 2, Label: "GL3", Category: "semester"},
+		{Column: 3, Label: "GL5", Category: "semester"},
+		{Column: 4, Label: "Obieralne", Category: "semester"},
+	}
+	layout := TimetableLayout{
+		Days:         []types.Day{{StartingRow: 0, EndingRow: 5, WeekDay: time.Wednesday, StartingTime: testStartTime}},
+		SlotDuration: 15 * time.Minute,
+	}
+	timetable := BuildTimetable(groups, file, sheet, nil, nil, layout, nil)
+	for column, want := range map[int64]string{
+		1: "Subject 0,Subject 1,Subject 4,Subject 6,Elective",
+		2: "Subject 0,Subject 2,Subject 6,Elective",
+		3: "Subject 0,Subject 3,Subject 6,Elective",
+	} {
+		var names []string
+		for _, class := range timetable[column][time.Wednesday] {
+			names = append(names, class.Name)
+		}
+		if got := strings.Join(names, ","); got != want {
+			t.Errorf("column %d classes = %s, want %s", column, got, want)
+		}
 	}
 }
 
