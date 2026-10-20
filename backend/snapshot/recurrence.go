@@ -3,9 +3,9 @@ package snapshot
 import (
 	"fmt"
 	"time"
-)
 
-const recurrenceTimeLayout = "20060102T150405Z"
+	"github.com/woodpkrs/PlanerPK/types"
+)
 
 type Recurrence struct {
 	First Occurrence
@@ -15,7 +15,7 @@ type Recurrence struct {
 // WeeklyRecurrence encodes weekly or A/B schedules, semester halves, and closures.
 // First retains the base series start, even if excluded. A nil result means no classes.
 func (block Block) WeeklyRecurrence(calendar AcademicCalendar) (*Recurrence, error) {
-	rule := "RRULE:FREQ=WEEKLY"
+	rule := types.RecurrenceRulePrefix + "FREQ=WEEKLY"
 	if block.Frequency == frequencyAlternating {
 		rule += fmt.Sprintf(";INTERVAL=%d", weeksPerParityCycle)
 	} else if block.Frequency != frequencyWeekly && block.Frequency != frequencyFirstHalf && block.Frequency != frequencySecondHalf {
@@ -37,10 +37,10 @@ func (block Block) WeeklyRecurrence(calendar AcademicCalendar) (*Recurrence, err
 		included[occurrence.Start] = true
 	}
 	last := occurrences[len(occurrences)-1].Start
-	rules := []string{rule + ";UNTIL=" + last.UTC().Format(recurrenceTimeLayout)}
+	rules := []string{rule + types.RecurrenceUntil + last.UTC().Format(types.RecurrenceTimeLayout)}
 	for _, occurrence := range occurrences {
 		if !included[occurrence.Start] {
-			rules = append(rules, "EXDATE:"+occurrence.Start.UTC().Format(recurrenceTimeLayout))
+			rules = append(rules, types.RecurrenceExDate+occurrence.Start.UTC().Format(types.RecurrenceTimeLayout))
 		}
 	}
 	return &Recurrence{
