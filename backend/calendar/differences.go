@@ -70,7 +70,7 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 
 			// No override — emit normally.
 			if !hasOverride {
-				event := class.ToEvent(buildings)
+				event := class.ToEvent(buildings, nil)
 				newEvents[event.ExtendedProperties.Private["hash"]] = &event
 				continue
 			}
@@ -109,7 +109,7 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 // so the ghost is visually distinct from real events on the calendar website.
 // The Transparency field marks the slot as "Free" in availability checks.
 func buildGhostEvent(class types.Class, buildings *buildings.Buildings) calendar.Event {
-	event := class.ToEvent(buildings)
+	event := class.ToEvent(buildings, nil)
 	event.Transparency = "transparent"
 	event.ColorId = "8" // Graphite — muted gray, signals a placeholder
 	// Use a distinct hash so GCal treats this as a separate event.
@@ -121,7 +121,7 @@ func buildGhostEvent(class types.Class, buildings *buildings.Buildings) calendar
 // startHour must be "HH:MM" or empty.
 func buildRealEvent(class types.Class, startHour string, buildings *buildings.Buildings) calendar.Event {
 	if startHour == "" {
-		return class.ToEvent(buildings)
+		return class.ToEvent(buildings, nil)
 	}
 
 	var h, m int
@@ -129,7 +129,7 @@ func buildRealEvent(class types.Class, startHour string, buildings *buildings.Bu
 		slog.Error("Failed to parse start_hour override, using original time",
 			slog.String("start_hour", startHour),
 			slog.Any("error", err))
-		return class.ToEvent(buildings)
+		return class.ToEvent(buildings, nil)
 	}
 
 	originalStart := class.StartTime
@@ -147,5 +147,5 @@ func buildRealEvent(class types.Class, startHour string, buildings *buildings.Bu
 	shiftedClass.StartTime = shiftedStart
 	shiftedClass.EndTime = shiftedEnd
 
-	return shiftedClass.ToEvent(buildings)
+	return shiftedClass.ToEvent(buildings, nil)
 }

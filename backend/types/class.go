@@ -102,7 +102,24 @@ func (c Class) EndTimeRFC3339() string {
 	return c.timeOnDay(c.EndTime).Format(time.RFC3339)
 }
 
-func (c Class) ToEvent(buildings *buildings.Buildings) calendar.Event {
+// ClassSchedule holds resolved dates and optional recurrence rules, without
+// coupling event construction to the source of the schedule.
+type ClassSchedule struct {
+	Start      time.Time
+	End        time.Time
+	Recurrence []string
+}
+
+// ToEvent preserves legacy next-weekday scheduling when schedule is nil.
+func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) calendar.Event {
+	var start, end string
+	var recurrence []string
+	if schedule == nil {
+		start, end = c.StartTimeRFC3339(), c.EndTimeRFC3339()
+	} else {
+		start, end = schedule.Start.Format(time.RFC3339), schedule.End.Format(time.RFC3339)
+		recurrence = append([]string(nil), schedule.Recurrence...)
+	}
 	var description []string
 	if c.Audience != "" {
 		description = append(description, "Audience: "+c.Audience)
@@ -120,11 +137,12 @@ func (c Class) ToEvent(buildings *buildings.Buildings) calendar.Event {
 	return calendar.Event{
 		Summary: c.Summary(),
 		Start: &calendar.EventDateTime{
-			DateTime: c.StartTimeRFC3339(),
+			DateTime: start,
 		},
 		End: &calendar.EventDateTime{
-			DateTime: c.EndTimeRFC3339(),
+			DateTime: end,
 		},
+		Recurrence:  recurrence,
 		Location:    c.Location,
 		Description: strings.Join(description, "<br>"),
 		ExtendedProperties: &calendar.EventExtendedProperties{
