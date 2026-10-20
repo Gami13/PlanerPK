@@ -4,6 +4,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 func TestClassSchedule(t *testing.T) {
@@ -48,8 +50,12 @@ func TestClassSchedule(t *testing.T) {
 				}
 				return
 			}
-			if got == nil || got.Start.Format(time.RFC3339) != tt.first+"T08:00:00Z" || got.End.Format(time.RFC3339) != tt.first+"T09:30:00Z" || !slices.Equal(got.Recurrence, tt.rules) {
+			if got == nil || got.Start.Format(time.RFC3339) != tt.first+"T08:00:00Z" || got.End.Format(time.RFC3339) != tt.first+"T09:30:00Z" {
 				t.Fatalf("schedule = %+v, want %s 08:00–09:30 and rules %v", got, tt.first, tt.rules)
+			}
+			event := (types.Class{}).ToEvent(nil, got)
+			if !slices.Equal(event.Recurrence, tt.rules) {
+				t.Fatalf("event recurrence = %v, want %v", event.Recurrence, tt.rules)
 			}
 		})
 	}

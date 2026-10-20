@@ -28,7 +28,7 @@ func TestWeeklyRecurrence(t *testing.T) {
 			block := Block{Day: &day, Start: &start, Duration: 90, Frequency: tt.frequency}
 			got, err := block.WeeklyRecurrence(calendar)
 			wantRule := "RRULE:FREQ=WEEKLY;UNTIL=" + tt.until
-			if err != nil || got == nil || got.Start.Format(time.RFC3339) != tt.first || got.End.Sub(got.Start) != 90*time.Minute || len(got.Recurrence) != 1 || got.Recurrence[0] != wantRule {
+			if err != nil || got == nil || got.Start.Format(time.RFC3339) != tt.first || got.End.Sub(got.Start) != 90*time.Minute || len(got.Recurrence.Exclusions) != 0 || got.Recurrence.ToRRULE() != wantRule {
 				t.Fatalf("recurrence = %+v, error = %v; want first %s and %s", got, err, tt.first, wantRule)
 			}
 		})
@@ -39,10 +39,7 @@ func TestWeeklyRecurrence(t *testing.T) {
 	if err != nil || got == nil {
 		t.Fatalf("recurrence = %+v, error = %v", got, err)
 	}
-	until, err := time.Parse("20060102T150405Z", strings.TrimPrefix(got.Recurrence[0], "RRULE:FREQ=WEEKLY;UNTIL="))
-	if err != nil {
-		t.Fatal(err)
-	}
+	until := got.Recurrence.Until
 	var dates []string
 	for date := got.Start; !date.After(until); date = date.AddDate(0, 0, 7) {
 		dates = append(dates, date.Format(time.RFC3339))
@@ -103,7 +100,7 @@ func TestRecurrenceClosureExclusions(t *testing.T) {
 				}
 				return
 			}
-			if got == nil || !slices.Equal(got.Recurrence, tt.want) {
+			if got == nil || !slices.Equal(append([]string{got.Recurrence.ToRRULE()}, got.Recurrence.ToEXDATE()...), tt.want) {
 				t.Fatalf("recurrence = %+v, want rules %v", got, tt.want)
 			}
 			wantFirst := "2026-10-19"
@@ -144,7 +141,7 @@ func TestAlternatingRecurrence(t *testing.T) {
 			block.TeachingWeekParity = &tt.parity
 			got, err := block.WeeklyRecurrence(calendar)
 			wantRule := "RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=" + tt.until
-			if err != nil || got == nil || len(got.Recurrence) != 1 || got.Recurrence[0] != wantRule {
+			if err != nil || got == nil || len(got.Recurrence.Exclusions) != 0 || got.Recurrence.ToRRULE() != wantRule {
 				t.Fatalf("recurrence = %+v, error = %v; want %s", got, err, wantRule)
 			}
 			until, err := time.Parse("20060102T150405Z", tt.until)

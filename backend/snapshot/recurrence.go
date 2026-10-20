@@ -40,6 +40,6 @@ func (block Block) WeeklyRecurrence(calendar AcademicCalendar) (*types.ClassSche
 	return &types.ClassSchedule{
 		Start:      occurrences[0].Start,
 		End:        occurrences[0].End,
-		Recurrence: append([]string{recurrence.ToRRULE()}, recurrence.ToEXDATE()...),
+		Recurrence: &recurrence,
 	}, nil
 }

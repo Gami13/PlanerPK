@@ -3,18 +3,21 @@ package calendar
 import (
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/utils"
 )
 
-// shiftClassSchedule handles the bounded RRULE and UTC EXDATE forms emitted by
-// snapshot. The original schedule remains unchanged for ghost events.
+// shiftClassSchedule moves one class's meetings to a new local start time.
+// The original schedule remains unchanged for ghost events.
 func shiftClassSchedule(schedule types.ClassSchedule, startHour string) (types.ClassSchedule, error) {
 	shifted := schedule
-	shifted.Recurrence = slices.Clone(schedule.Recurrence)
+	if schedule.Recurrence != nil {
+		recurrence := *schedule.Recurrence
+		recurrence.Exclusions = slices.Clone(recurrence.Exclusions)
+		shifted.Recurrence = &recurrence
+	}
 	if startHour == "" {
 		return shifted, nil
 	}
@@ -30,52 +33,13 @@ func shiftClassSchedule(schedule types.ClassSchedule, startHour string) (types.C
 
 	// Move UNTIL so the last class stays included, and EXDATE so cancelled
 	// classes still match the series at its new start time.
-	for i, rule := range schedule.Recurrence {
-		shifted.Recurrence[i], err = shiftRecurrenceRule(rule, newStartTime, schedule.Start.Location())
-		if err != nil {
-			return types.ClassSchedule{}, err
+	if recurrence := shifted.Recurrence; recurrence != nil {
+		location := schedule.Start.Location()
+		recurrence.Until = utils.CombineDateAndTime(recurrence.Until.In(location), newStartTime)
+		for i, date := range recurrence.Exclusions {
+			recurrence.Exclusions[i] = utils.CombineDateAndTime(date.In(location), newStartTime)
 		}
 	}
 
 	return shifted, nil
-}
-
-// RRULE describes how a class repeats (for example, every week); its UNTIL
-// timestamp is the cutoff for the last meeting. EXDATE identifies one meeting
-// to skip by its start timestamp. Both must follow the overridden start time
-// so the last meeting stays included and skipped meetings stay excluded.
-func shiftRecurrenceRule(rule string, newStartTime time.Time, location *time.Location) (string, error) {
-	if timestamp, isExclusion := strings.CutPrefix(rule, types.RecurrenceExDate); isExclusion {
-		shifted, err := shiftRecurrenceTimestamp(timestamp, newStartTime, location)
-		if err != nil {
-			return "", err
-		}
-		return types.RecurrenceExDate + shifted, nil
-	}
-
-	if strings.HasPrefix(rule, types.RecurrenceRulePrefix) {
-		recurrence, until, hasUntil := strings.Cut(rule, types.RecurrenceUntil)
-		if !hasUntil {
-			return "", fmt.Errorf("recurrence rule missing UNTIL: %q", rule)
-		}
-
-		shifted, err := shiftRecurrenceTimestamp(until, newStartTime, location)
-		if err != nil {
-			return "", err
-		}
-		return recurrence + types.RecurrenceUntil + shifted, nil
-	}
-
-	return "", fmt.Errorf("unsupported recurrence rule %q", rule)
-}
-
-func shiftRecurrenceTimestamp(timestamp string, newStartTime time.Time, location *time.Location) (string, error) {
-	date, err := time.Parse(types.RecurrenceTimeLayout, timestamp)
-	if err != nil {
-		return "", fmt.Errorf("recurrence timestamp: %w", err)
-	}
-	localDate := date.In(location)
-	shiftedDate := utils.CombineDateAndTime(localDate, newStartTime)
-
-	return shiftedDate.UTC().Format(types.RecurrenceTimeLayout), nil
 }

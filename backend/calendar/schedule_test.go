@@ -2,6 +2,7 @@ package calendar
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -14,27 +15,46 @@ func TestShiftClassSchedule(t *testing.T) {
 		t.Fatal(err)
 	}
 	original := types.ClassSchedule{
-		Start:      time.Date(2026, 10, 19, 8, 0, 0, 0, zone),
-		End:        time.Date(2026, 10, 19, 9, 30, 0, 0, zone),
-		Recurrence: []string{"RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261102T070000Z", "EXDATE:20261019T060000Z", "EXDATE:20261102T070000Z"},
+		Start: time.Date(2026, 10, 19, 8, 0, 0, 0, zone),
+		End:   time.Date(2026, 10, 19, 9, 30, 0, 0, zone),
+		Recurrence: &types.WeeklyRecurrence{
+			Interval: 2,
+			Until:    time.Date(2026, 11, 2, 8, 0, 0, 0, zone),
+			Exclusions: []time.Time{
+				time.Date(2026, 10, 19, 8, 0, 0, 0, zone),
+				time.Date(2026, 11, 2, 8, 0, 0, 0, zone),
+			},
+		},
 	}
 	wantRules := []string{"RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20261102T093000Z", "EXDATE:20261019T083000Z", "EXDATE:20261102T093000Z"}
-	for _, rules := range [][]string{nil, original.Recurrence} {
-		before := append([]string(nil), rules...)
+	for _, recurrence := range []*types.WeeklyRecurrence{nil, original.Recurrence} {
 		schedule := original
-		schedule.Recurrence = rules
+		schedule.Recurrence = recurrence
+		var before types.WeeklyRecurrence
+		if recurrence != nil {
+			before = *recurrence
+			before.Exclusions = slices.Clone(recurrence.Exclusions)
+		}
 		got, err := shiftClassSchedule(schedule, "10:30")
 		if err != nil || got.Start.Format(time.RFC3339) != "2026-10-19T10:30:00+02:00" || got.End.Format(time.RFC3339) != "2026-10-19T12:00:00+02:00" {
 			t.Fatalf("shifted schedule = %+v, error = %v", got, err)
 		}
-		if rules != nil && !reflect.DeepEqual(got.Recurrence, wantRules) {
-			t.Fatalf("rules = %v, want %v", got.Recurrence, wantRules)
+		event := (types.Class{}).ToEvent(nil, &got)
+		if recurrence != nil && !reflect.DeepEqual(event.Recurrence, wantRules) {
+			t.Fatalf("rules = %v, want %v", event.Recurrence, wantRules)
 		}
-		if rules == nil && got.Recurrence != nil {
+		if recurrence == nil && got.Recurrence != nil {
 			t.Fatal("single event gained recurrence")
 		}
 		unchanged, err := shiftClassSchedule(schedule, "")
-		if err != nil || !reflect.DeepEqual(unchanged, schedule) || !reflect.DeepEqual(rules, before) {
+		if err != nil || !reflect.DeepEqual(unchanged, schedule) {
+			t.Fatal("empty override changed schedule")
+		}
+		if recurrence != nil {
+			unchanged.Recurrence.Until = time.Time{}
+			unchanged.Recurrence.Exclusions[0] = time.Time{}
+		}
+		if recurrence != nil && !reflect.DeepEqual(*recurrence, before) {
 			t.Fatal("original schedule changed")
 		}
 	}

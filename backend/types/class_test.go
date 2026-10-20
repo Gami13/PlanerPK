@@ -29,23 +29,34 @@ func TestToEventResolvedSchedule(t *testing.T) {
 		EndTime:   time.Date(2000, 1, 1, 9, 0, 0, 0, time.Local),
 	}
 	legacy := class.ToEvent(nil, nil)
-	for _, rules := range [][]string{nil, {"RRULE:FREQ=WEEKLY;UNTIL=20261028T080000Z", "EXDATE:20261014T080000Z"}} {
+	recurrence := &WeeklyRecurrence{
+		Interval:   1,
+		Until:      time.Date(2026, 10, 28, 8, 0, 0, 0, time.UTC),
+		Exclusions: []time.Time{time.Date(2026, 10, 14, 8, 0, 0, 0, time.UTC)},
+	}
+	for _, tt := range []struct {
+		recurrence *WeeklyRecurrence
+		rules      []string
+	}{
+		{},
+		{recurrence, []string{"RRULE:FREQ=WEEKLY;UNTIL=20261028T080000Z", "EXDATE:20261014T080000Z"}},
+	} {
 		schedule := ClassSchedule{
 			Start:      time.Date(2026, 10, 7, 10, 0, 0, 0, time.Local),
 			End:        time.Date(2026, 10, 7, 11, 30, 0, 0, time.Local),
-			Recurrence: rules,
+			Recurrence: tt.recurrence,
 		}
 		event := class.ToEvent(nil, &schedule)
 		if event.Start.DateTime != schedule.Start.Format(time.RFC3339) || event.End.DateTime != schedule.End.Format(time.RFC3339) {
 			t.Errorf("resolved dates not preserved: %v – %v", event.Start, event.End)
 		}
-		if !reflect.DeepEqual(event.Recurrence, rules) {
-			t.Errorf("Recurrence = %v, want %v", event.Recurrence, rules)
+		if !reflect.DeepEqual(event.Recurrence, tt.rules) {
+			t.Errorf("Recurrence = %v, want %v", event.Recurrence, tt.rules)
 		}
-		if len(rules) > 0 {
+		if tt.recurrence != nil {
 			event.Recurrence[0] = "changed"
-			if schedule.Recurrence[0] == "changed" {
-				t.Error("event recurrence aliases schedule")
+			if schedule.Recurrence.ToRRULE() != tt.rules[0] {
+				t.Error("event mutation changed schedule recurrence")
 			}
 		}
 		event.Start, event.End, event.Recurrence = legacy.Start, legacy.End, legacy.Recurrence

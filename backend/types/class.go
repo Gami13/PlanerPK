@@ -107,7 +107,7 @@ func (c Class) EndTimeRFC3339() string {
 type ClassSchedule struct {
 	Start      time.Time
 	End        time.Time
-	Recurrence []string
+	Recurrence *WeeklyRecurrence
 }
 
 // ToEvent preserves legacy next-weekday scheduling when schedule is nil.
@@ -118,7 +118,9 @@ func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) 
 		start, end = c.StartTimeRFC3339(), c.EndTimeRFC3339()
 	} else {
 		start, end = schedule.Start.Format(time.RFC3339), schedule.End.Format(time.RFC3339)
-		recurrence = append([]string(nil), schedule.Recurrence...)
+		if schedule.Recurrence != nil {
+			recurrence = append([]string{schedule.Recurrence.ToRRULE()}, schedule.Recurrence.ToEXDATE()...)
+		}
 	}
 	var description []string
 	if c.Audience != "" {
