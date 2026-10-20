@@ -28,7 +28,7 @@ func TestWeeklyRecurrence(t *testing.T) {
 			block := Block{Day: &day, Start: &start, Duration: 90, Frequency: tt.frequency}
 			got, err := block.WeeklyRecurrence(calendar)
 			wantRule := "RRULE:FREQ=WEEKLY;UNTIL=" + tt.until
-			if err != nil || got == nil || got.First.Start.Format(time.RFC3339) != tt.first || got.First.End.Sub(got.First.Start) != 90*time.Minute || len(got.Rules) != 1 || got.Rules[0] != wantRule {
+			if err != nil || got == nil || got.Start.Format(time.RFC3339) != tt.first || got.End.Sub(got.Start) != 90*time.Minute || len(got.Recurrence) != 1 || got.Recurrence[0] != wantRule {
 				t.Fatalf("recurrence = %+v, error = %v; want first %s and %s", got, err, tt.first, wantRule)
 			}
 		})
@@ -39,12 +39,12 @@ func TestWeeklyRecurrence(t *testing.T) {
 	if err != nil || got == nil {
 		t.Fatalf("recurrence = %+v, error = %v", got, err)
 	}
-	until, err := time.Parse("20060102T150405Z", strings.TrimPrefix(got.Rules[0], "RRULE:FREQ=WEEKLY;UNTIL="))
+	until, err := time.Parse("20060102T150405Z", strings.TrimPrefix(got.Recurrence[0], "RRULE:FREQ=WEEKLY;UNTIL="))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var dates []string
-	for date := got.First.Start; !date.After(until); date = date.AddDate(0, 0, 7) {
+	for date := got.Start; !date.After(until); date = date.AddDate(0, 0, 7) {
 		dates = append(dates, date.Format(time.RFC3339))
 	}
 	if strings.Join(dates, ",") != "2026-10-19T08:00:00+02:00,2026-10-26T08:00:00+01:00,2026-11-02T08:00:00+01:00" {
@@ -103,15 +103,15 @@ func TestRecurrenceClosureExclusions(t *testing.T) {
 				}
 				return
 			}
-			if got == nil || !slices.Equal(got.Rules, tt.want) {
+			if got == nil || !slices.Equal(got.Recurrence, tt.want) {
 				t.Fatalf("recurrence = %+v, want rules %v", got, tt.want)
 			}
 			wantFirst := "2026-10-19"
 			if tt.frequency == frequencyAlternating {
 				wantFirst = "2026-10-26"
 			}
-			if got.First.Start.Format(time.DateOnly) != wantFirst {
-				t.Fatalf("series start changed to %s, want %s", got.First.Start, wantFirst)
+			if got.Start.Format(time.DateOnly) != wantFirst {
+				t.Fatalf("series start changed to %s, want %s", got.Start, wantFirst)
 			}
 		})
 	}
@@ -144,7 +144,7 @@ func TestAlternatingRecurrence(t *testing.T) {
 			block.TeachingWeekParity = &tt.parity
 			got, err := block.WeeklyRecurrence(calendar)
 			wantRule := "RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=" + tt.until
-			if err != nil || got == nil || len(got.Rules) != 1 || got.Rules[0] != wantRule {
+			if err != nil || got == nil || len(got.Recurrence) != 1 || got.Recurrence[0] != wantRule {
 				t.Fatalf("recurrence = %+v, error = %v; want %s", got, err, wantRule)
 			}
 			until, err := time.Parse("20060102T150405Z", tt.until)
@@ -152,17 +152,17 @@ func TestAlternatingRecurrence(t *testing.T) {
 				t.Fatal(err)
 			}
 			var dates []string
-			for date := got.First.Start; !date.After(until); date = date.AddDate(0, 0, 14) {
+			for date := got.Start; !date.After(until); date = date.AddDate(0, 0, 14) {
 				dates = append(dates, date.Format(time.RFC3339))
 			}
-			if strings.Join(dates, ",") != tt.dates || got.First.End.Sub(got.First.Start) != 90*time.Minute {
+			if strings.Join(dates, ",") != tt.dates || got.End.Sub(got.Start) != 90*time.Minute {
 				t.Fatalf("alternating recurrence = %+v, dates = %v; want %s", got, dates, tt.dates)
 			}
 		})
 	}
 	parity := teachingWeekA
 	block.TeachingWeekParity, calendar.ParityAnchor = &parity, "2026-10-05"
-	if got, err := block.WeeklyRecurrence(calendar); err != nil || got == nil || got.First.Start.Format(time.DateOnly) != "2026-10-21" {
+	if got, err := block.WeeklyRecurrence(calendar); err != nil || got == nil || got.Start.Format(time.DateOnly) != "2026-10-21" {
 		t.Fatalf("shifted parity anchor: recurrence = %+v, error = %v", got, err)
 	}
 	invalidParity := 2

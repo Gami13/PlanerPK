@@ -15,13 +15,5 @@ func (block Block) ClassSchedule(calendar AcademicCalendar) (*types.ClassSchedul
 		}
 		return &types.ClassSchedule{Start: occurrences[0].Start, End: occurrences[0].End}, nil
 	}
-	recurrence, err := block.WeeklyRecurrence(calendar)
-	if err != nil || recurrence == nil {
-		return nil, err
-	}
-	return &types.ClassSchedule{
-		Start:      recurrence.First.Start,
-		End:        recurrence.First.End,
-		Recurrence: recurrence.Rules,
-	}, nil
+	return block.WeeklyRecurrence(calendar)
 }
