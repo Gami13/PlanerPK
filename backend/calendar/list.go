@@ -8,9 +8,9 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// listManagedEvents reads series and exceptions, never expanded instances.
+// getCurrentEvents reads managed series and exceptions, never expanded instances.
 // No rolling cutoff: a series may start before today and still need updating.
-func listManagedEvents(ctx context.Context, srv *calendar.Service, calendarID string) ([]*calendar.Event, error) {
+func getCurrentEvents(ctx context.Context, srv *calendar.Service, calendarID string) ([]*calendar.Event, error) {
 	if calendarID == "" || calendarID == "primary" {
 		return nil, fmt.Errorf("dedicated calendar ID is required")
 	}

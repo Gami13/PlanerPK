@@ -55,7 +55,7 @@ func TestListManagedEvents(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := listManagedEvents(ctx, srv, "dedicated")
+			got, err := getCurrentEvents(ctx, srv, "dedicated")
 			if fail {
 				if err == nil || got != nil {
 					t.Fatalf("events = %+v, error = %v; want no partial result", got, err)
@@ -70,7 +70,7 @@ func TestListManagedEvents(t *testing.T) {
 				}
 			}
 			for _, id := range []string{"", "primary"} {
-				if _, err := listManagedEvents(ctx, srv, id); err == nil {
+				if _, err := getCurrentEvents(ctx, srv, id); err == nil {
 					t.Errorf("accepted invalid calendar ID %q", id)
 				}
 			}

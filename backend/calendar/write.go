@@ -7,10 +7,10 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// applyEventDiff writes an already reviewed diff to a dedicated calendar.
+// applyEventChanges writes an already reviewed diff to a dedicated calendar.
 // It stops at the first failure, with no rollback; callers must not mark that
 // sync successful.
-func applyEventDiff(ctx context.Context, srv *calendar.Service, calendarID string, diff eventDiff) error {
+func applyEventChanges(ctx context.Context, srv *calendar.Service, calendarID string, diff eventDiff) error {
 	if calendarID == "" || calendarID == "primary" {
 		return fmt.Errorf("dedicated calendar ID is required")
 	}

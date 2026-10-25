@@ -61,18 +61,18 @@ func TestApplyEventDiff(t *testing.T) {
 			proposed := &calendar.Event{Summary: "Subject"}
 			diff := eventDiff{ToAdd: []*calendar.Event{proposed}, Changed: []eventChange{{current, proposed}}, ToDelete: []*calendar.Event{current}}
 			for _, id := range []string{"", "primary"} {
-				if err := applyEventDiff(ctx, srv, id, diff); err == nil {
+				if err := applyEventChanges(ctx, srv, id, diff); err == nil {
 					t.Error("accepted invalid calendar")
 				}
 			}
 			diff.Exceptions = []*calendar.Event{{RecurringEventId: "existing"}}
-			if err := applyEventDiff(ctx, srv, "dedicated", diff); err == nil || len(methods) != 0 {
+			if err := applyEventChanges(ctx, srv, "dedicated", diff); err == nil || len(methods) != 0 {
 				t.Fatal("exception guard must fail before any writes")
 			}
 			diff.Exceptions = nil
 			// Exceptions on an unrelated series must not block this diff.
 			diff.Exceptions = []*calendar.Event{{RecurringEventId: "unrelated"}}
-			err = applyEventDiff(ctx, srv, "dedicated", diff)
+			err = applyEventChanges(ctx, srv, "dedicated", diff)
 			want := []string{"POST", "PATCH", "DELETE"}
 			if failAt != 0 {
 				want = want[:failAt]

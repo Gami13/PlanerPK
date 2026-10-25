@@ -21,7 +21,7 @@ func TestResolvedEventDiffs(t *testing.T) {
 	exception.Id, exception.RecurringEventId, exception.Status = "exception", changed.Id, "cancelled"
 	current := []*calendar.Event{exception, keep, changed, removed, ghost}
 	proposed := []*calendar.Event{makeEvent("keep"), modified, added, makeEvent("keep_ghost")}
-	diff, err := compareEventsByOverrideIDAndContent(current, proposed)
+	diff, err := calculateEventDiffs(current, proposed)
 	want := eventDiff{ToDelete: []*calendar.Event{removed}, ToAdd: []*calendar.Event{added},
 		Unchanged: []*calendar.Event{keep, ghost}, Exceptions: []*calendar.Event{exception},
 		Changed: []eventChange{{Current: changed, Proposed: modified}}}
@@ -38,7 +38,7 @@ func TestResolvedEventDiffs(t *testing.T) {
 		{[]*calendar.Event{nil}, proposed},
 		{current, []*calendar.Event{exception}},
 	} {
-		got, err := compareEventsByOverrideIDAndContent(pair.current, pair.proposed)
+		got, err := calculateEventDiffs(pair.current, pair.proposed)
 		if err == nil || !reflect.DeepEqual(got, eventDiff{}) {
 			t.Fatalf("invalid input returned diff = %+v, error = %v", got, err)
 		}

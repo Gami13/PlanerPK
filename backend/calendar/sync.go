@@ -81,7 +81,7 @@ func syncCalendarEvents(ctx context.Context, srv *calendar.Service, queries db.Q
 	if err != nil {
 		return err
 	}
-	current, err := listManagedEvents(ctx, srv, id)
+	current, err := getCurrentEvents(ctx, srv, id)
 	if err != nil {
 		return err
 	}
@@ -89,9 +89,9 @@ func syncCalendarEvents(ctx context.Context, srv *calendar.Service, queries db.Q
 	for i := range events {
 		proposed[i] = &events[i]
 	}
-	diff, err := compareEventsByOverrideIDAndContent(current, proposed)
+	diff, err := calculateEventDiffs(current, proposed)
 	if err != nil {
 		return err
 	}
-	return applyEventDiff(ctx, srv, id, diff)
+	return applyEventChanges(ctx, srv, id, diff)
 }

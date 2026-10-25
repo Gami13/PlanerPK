@@ -20,5 +20,5 @@ func BuildTimetableDiff(timetable types.GroupTimetable, state *snapshot.State, o
 	for i := range events {
 		proposed[i] = &events[i]
 	}
-	return compareEventsByOverrideIDAndContent(current, proposed)
+	return calculateEventDiffs(current, proposed)
 }
