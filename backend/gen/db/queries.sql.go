@@ -25,7 +25,7 @@ func (q *Queries) DeleteOverride(ctx context.Context, arg DeleteOverrideParams) 
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users
 `
 
@@ -50,6 +50,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.Expiry,
 			&i.ExpiresIn,
 			&i.ChosenColumn,
+			&i.CalendarID,
 			&i.IsActive,
 			&i.LastSynced,
 		); err != nil {
@@ -163,7 +164,7 @@ func (q *Queries) GetTokenByAccessToken(ctx context.Context, accessToken string)
 }
 
 const getUserByAccessToken = `-- name: GetUserByAccessToken :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users WHERE access_token = ?1
 `
 
@@ -182,6 +183,7 @@ func (q *Queries) GetUserByAccessToken(ctx context.Context, accessToken string) 
 		&i.Expiry,
 		&i.ExpiresIn,
 		&i.ChosenColumn,
+		&i.CalendarID,
 		&i.IsActive,
 		&i.LastSynced,
 	)
@@ -189,7 +191,7 @@ func (q *Queries) GetUserByAccessToken(ctx context.Context, accessToken string) 
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users
 WHERE email = ?1
 `
@@ -209,6 +211,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email *string) (User, erro
 		&i.Expiry,
 		&i.ExpiresIn,
 		&i.ChosenColumn,
+		&i.CalendarID,
 		&i.IsActive,
 		&i.LastSynced,
 	)
@@ -270,6 +273,20 @@ type UpdateUserActiveParams struct {
 
 func (q *Queries) UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserActive, arg.IsActive, arg.AccessToken)
+	return err
+}
+
+const updateUserCalendarID = `-- name: UpdateUserCalendarID :exec
+UPDATE users SET calendar_id = ?1 WHERE id = ?2
+`
+
+type UpdateUserCalendarIDParams struct {
+	CalendarID string `json:"calendar_id"`
+	ID         int64  `json:"id"`
+}
+
+func (q *Queries) UpdateUserCalendarID(ctx context.Context, arg UpdateUserCalendarIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserCalendarID, arg.CalendarID, arg.ID)
 	return err
 }
 
@@ -335,7 +352,7 @@ ON CONFLICT(email) DO UPDATE SET
     refresh_token = excluded.refresh_token,
     expiry        = excluded.expiry,
     expires_in    = excluded.expires_in
-RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 `
 
 type UpsertUserParams struct {
@@ -375,6 +392,7 @@ func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) (User, e
 		&i.Expiry,
 		&i.ExpiresIn,
 		&i.ChosenColumn,
+		&i.CalendarID,
 		&i.IsActive,
 		&i.LastSynced,
 	)

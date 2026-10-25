@@ -19,6 +19,7 @@ type Querier interface {
 	UpdateBuildingPlace(ctx context.Context, arg UpdateBuildingPlaceParams) error
 	UpdateChosenColumn(ctx context.Context, arg UpdateChosenColumnParams) error
 	UpdateUserActive(ctx context.Context, arg UpdateUserActiveParams) error
+	UpdateUserCalendarID(ctx context.Context, arg UpdateUserCalendarIDParams) error
 	UpdateUserSyncTime(ctx context.Context, accessToken string) error
 	UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPlaceParams) error
 	UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error

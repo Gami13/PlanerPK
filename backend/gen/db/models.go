@@ -40,6 +40,7 @@ type User struct {
 	Expiry       time.Time `json:"expiry"`
 	ExpiresIn    int64     `json:"expires_in"`
 	ChosenColumn *int64    `json:"chosen_column"`
+	CalendarID   string    `json:"calendar_id"`
 	IsActive     *bool     `json:"is_active"`
 	LastSynced   time.Time `json:"last_synced"`
 }

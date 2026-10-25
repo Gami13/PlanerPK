@@ -10,15 +10,15 @@ ON CONFLICT(email) DO UPDATE SET
     refresh_token = excluded.refresh_token,
     expiry        = excluded.expiry,
     expires_in    = excluded.expires_in
-RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced;
+RETURNING id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced;
 
 -- name: GetUserByEmail :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users
 WHERE email = sqlc.arg(email);
 
 -- name: GetAllUsers :many
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users;
 
 -- name: UpdateChosenColumn :exec
@@ -31,11 +31,14 @@ UPDATE users SET is_active = sqlc.arg(is_active) WHERE access_token = sqlc.arg(a
 SELECT access_token, token_type, refresh_token, expiry, expires_in FROM users WHERE access_token = sqlc.arg(access_token);
 
 -- name: GetUserByAccessToken :one
-SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, is_active, last_synced
+SELECT id, email, name, given_name, picture, access_token, token_type, refresh_token, expiry, expires_in, chosen_column, calendar_id, is_active, last_synced
 FROM users WHERE access_token = sqlc.arg(access_token);
 
 -- name: UpdateUserSyncTime :exec
 UPDATE users SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now')) WHERE access_token = sqlc.arg(access_token);
+
+-- name: UpdateUserCalendarID :exec
+UPDATE users SET calendar_id = sqlc.arg(calendar_id) WHERE id = sqlc.arg(id);
 
 -- name: GetOverridesForUser :many
 SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent FROM overrides WHERE user_id = sqlc.arg(user_id);

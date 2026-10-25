@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     expiry TIMESTAMP NOT NULL,
     expires_in INTEGER NOT NULL,
     chosen_column INTEGER DEFAULT -1,
+    calendar_id TEXT NOT NULL DEFAULT '',
     is_active BOOLEAN DEFAULT 1,
     last_synced TIMESTAMP NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now'))
 );
