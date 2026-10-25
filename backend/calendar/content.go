@@ -5,19 +5,25 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"slices"
+	"time"
 
 	"google.golang.org/api/calendar/v3"
 )
 
 // eventContentHash fingerprints importer-owned contents, not Google metadata or
-// override identity. Recurrence ordering does not change the fingerprint.
+// override identity. Recurrence ordering and equivalent timestamp offsets do not
+// change the fingerprint; the recurrence timezone is still compared separately.
 func eventContentHash(event calendar.Event) string {
 	type eventTime struct{ Date, DateTime, TimeZone string }
 	timeFields := func(value *calendar.EventDateTime) eventTime {
 		if value == nil {
 			return eventTime{}
 		}
-		return eventTime{value.Date, value.DateTime, value.TimeZone}
+		dateTime := value.DateTime
+		if parsed, err := time.Parse(time.RFC3339Nano, dateTime); err == nil {
+			dateTime = parsed.UTC().Format(time.RFC3339Nano)
+		}
+		return eventTime{value.Date, dateTime, value.TimeZone}
 	}
 	rules := append([]string{}, event.Recurrence...)
 	slices.Sort(rules)

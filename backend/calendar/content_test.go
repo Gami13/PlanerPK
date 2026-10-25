@@ -39,3 +39,30 @@ func TestEventContentHash(t *testing.T) {
 		t.Fatal("metadata or rule ordering changed the content hash")
 	}
 }
+
+func TestEventContentHashTimestampOffsets(t *testing.T) {
+	makeEvent := func(start, end, zone string) calendar.Event {
+		return calendar.Event{
+			Start: &calendar.EventDateTime{DateTime: start, TimeZone: zone},
+			End:   &calendar.EventDateTime{DateTime: end, TimeZone: zone},
+		}
+	}
+	local := makeEvent("2026-10-21T08:00:00+02:00", "2026-10-21T09:30:00+02:00", "Europe/Warsaw")
+	want := eventContentHash(local)
+	for _, tt := range []struct {
+		name, start, end, zone string
+		same                   bool
+	}{
+		{"UTC representation", "2026-10-21T06:00:00Z", "2026-10-21T07:30:00Z", "Europe/Warsaw", true},
+		{"fractional zeros", "2026-10-21T06:00:00.000Z", "2026-10-21T07:30:00.000Z", "Europe/Warsaw", true},
+		{"different time", "2026-10-21T07:00:00Z", "2026-10-21T08:30:00Z", "Europe/Warsaw", false},
+		{"different recurrence zone", "2026-10-21T06:00:00Z", "2026-10-21T07:30:00Z", "UTC", false},
+		{"invalid time", "invalid", "2026-10-21T07:30:00Z", "Europe/Warsaw", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if same := eventContentHash(makeEvent(tt.start, tt.end, tt.zone)) == want; same != tt.same {
+				t.Fatalf("same content = %v; want %v", same, tt.same)
+			}
+		})
+	}
+}
