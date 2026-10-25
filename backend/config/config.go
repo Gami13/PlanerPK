@@ -29,13 +29,11 @@ const (
 type Configuration struct {
 	DataDir               string     `env:"DATA_DIR" envDefault:"./data"`
 	MinutesBetween        int        `env:"MINUTES_BETWEEN" envDefault:"1"`
-	TimeBetweenSyncHours  int        `env:"TIME_BETWEEN_SYNC_HOURS" envDefault:"72"`
 	TimetableURL          string     `env:"TIMETABLE_URL" envDefault:"https://ii.pk.edu.pl/~fkruzel/fk-planer-lti/public/plan-st/download.php"`
 	GooglePlacesAPIKey    string     `env:"GOOGLE_PLACES_API_KEY"`
 	DiscordWebhookURL     string     `env:"DISCORD_WEBHOOK_URL"`
 	LogLevel              slog.Level `env:"LOG_LEVEL" envDefault:"DEBUG"`
 	TimetableUpdatePeriod time.Duration
-	TimetableSyncPeriod   time.Duration
 	StateDir              string
 	LogsDir               string
 	StaticDir             string
@@ -109,9 +107,6 @@ func parseEnvironment(environment map[string]string) (Configuration, error) {
 	if cfg.MinutesBetween <= 0 {
 		return Configuration{}, fmt.Errorf("MINUTES_BETWEEN must be greater than zero")
 	}
-	if cfg.TimeBetweenSyncHours < 0 {
-		return Configuration{}, fmt.Errorf("TIME_BETWEEN_SYNC_HOURS must be non-negative")
-	}
 
 	dataDir, err := filepath.Abs(filepath.Clean(cfg.DataDir))
 	if err != nil {
@@ -128,7 +123,6 @@ func parseEnvironment(environment map[string]string) (Configuration, error) {
 	databasePath := filepath.Join(cfg.StateDir, databaseFilename)
 	cfg.DatabaseSource = fmt.Sprintf("file:%s?%s", filepath.ToSlash(databasePath), databaseArguments)
 	cfg.TimetableUpdatePeriod = time.Duration(cfg.MinutesBetween) * time.Minute
-	cfg.TimetableSyncPeriod = time.Duration(cfg.TimeBetweenSyncHours) * time.Hour
 	return cfg, nil
 }
 

@@ -22,8 +22,8 @@ func TestParseEnvironmentDefaults(t *testing.T) {
 	if cfg.DataDir != wantDataDir {
 		t.Errorf("DataDir = %q, want %q", cfg.DataDir, wantDataDir)
 	}
-	if cfg.TimetableUpdatePeriod != time.Minute || cfg.TimetableSyncPeriod != 72*time.Hour {
-		t.Errorf("unexpected intervals: update=%s sync=%s", cfg.TimetableUpdatePeriod, cfg.TimetableSyncPeriod)
+	if cfg.TimetableUpdatePeriod != time.Minute {
+		t.Errorf("unexpected update interval: %s", cfg.TimetableUpdatePeriod)
 	}
 	if cfg.DataDir != wantDataDir {
 		t.Errorf("DataDir = %q", cfg.DataDir)
@@ -57,13 +57,12 @@ func TestParseFeatureFlags(t *testing.T) {
 func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	dataDir := t.TempDir()
 	cfg, err := parseEnvironment(map[string]string{
-		"DATA_DIR":                dataDir,
-		"MINUTES_BETWEEN":         "5",
-		"TIME_BETWEEN_SYNC_HOURS": "12",
-		"TIMETABLE_URL":           "https://example.test/timetable",
-		"GOOGLE_PLACES_API_KEY":   "test-key",
-		"DISCORD_WEBHOOK_URL":     "https://discord.example/webhook",
-		"LOG_LEVEL":               "warn",
+		"DATA_DIR":              dataDir,
+		"MINUTES_BETWEEN":       "5",
+		"TIMETABLE_URL":         "https://example.test/timetable",
+		"GOOGLE_PLACES_API_KEY": "test-key",
+		"DISCORD_WEBHOOK_URL":   "https://discord.example/webhook",
+		"LOG_LEVEL":             "warn",
 	})
 	if err != nil {
 		t.Fatalf("parseEnvironment() error = %v", err)
@@ -78,8 +77,8 @@ func TestParseEnvironmentOverridesAndDerivedPaths(t *testing.T) {
 	if cfg.LogLevel != slog.LevelWarn {
 		t.Errorf("LogLevel = %s, want WARN", cfg.LogLevel)
 	}
-	if cfg.TimetableUpdatePeriod != 5*time.Minute || cfg.TimetableSyncPeriod != 12*time.Hour {
-		t.Errorf("unexpected intervals: update=%s sync=%s", cfg.TimetableUpdatePeriod, cfg.TimetableSyncPeriod)
+	if cfg.TimetableUpdatePeriod != 5*time.Minute {
+		t.Errorf("unexpected update interval: %s", cfg.TimetableUpdatePeriod)
 	}
 	if cfg.GooglePlacesAPIKey == "" {
 		t.Error("Google Places should be configured")
@@ -97,7 +96,6 @@ func TestParseEnvironmentRejectsInvalidValues(t *testing.T) {
 	}{
 		{"invalid log level", map[string]string{"LOG_LEVEL": "verbose"}, "LogLevel"},
 		{"zero update interval", map[string]string{"MINUTES_BETWEEN": "0"}, "MINUTES_BETWEEN"},
-		{"negative sync interval", map[string]string{"TIME_BETWEEN_SYNC_HOURS": "-1"}, "TIME_BETWEEN_SYNC_HOURS"},
 		{"empty data directory", map[string]string{"DATA_DIR": ""}, "DATA_DIR"},
 	}
 

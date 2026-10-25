@@ -68,6 +68,12 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	}
 
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
+	h.syncUserTimetable(user)
+	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
+}
+
+// User setting changes sync immediately, independently of the global cache gate.
+func (h *PKPlanerHandler) syncUserTimetable(user db.User) {
 	allTimetables := h.cache.Timetable()
 	state := h.cache.Snapshot()
 	b := h.cache.Buildings()
@@ -77,6 +83,4 @@ func (h *PKPlanerHandler) SetChosenColumn(
 			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
 		}
 	}()
-
-	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }

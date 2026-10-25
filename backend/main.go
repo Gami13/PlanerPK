@@ -128,7 +128,7 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 	return newGroups, newLegend, newBuildings, newTimetable, &newSnapshot, nil
 }
 
-func updateTimetableAndCache(queries db.Querier, cache *cache.Cache, isInitialRun bool) (hasChanged bool, err error) {
+func updateTimetableAndCache(queries db.Querier, cache *cache.Cache) (bool, error) {
 	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
@@ -148,17 +148,20 @@ func updateTimetableAndCache(queries db.Querier, cache *cache.Cache, isInitialRu
 		}
 
 	}
-	if isInitialRun || hasChanged {
-		newGroups, newLegend, newBuildings, newTimetable, newSnapshot, err := buildNewCache(queries)
-		if err != nil {
-			return false, err
-		}
-		cache.SetBuildings(newBuildings)
-		cache.SetAvailableGroups(&newGroups)
-		cache.SetLegend(newLegend)
-		cache.SetSnapshot(newSnapshot)
-		cache.SetTimetable(&newTimetable)
+	// JSON can change independently of Excel. Rebuild before publishing either.
+	newGroups, newLegend, newBuildings, newTimetable, newSnapshot, err := buildNewCache(queries)
+	if err != nil {
+		return false, err
 	}
+	previous := cache.Snapshot()
+	// Trust the publisher's fingerprint; a missing hash conservatively triggers sync.
+	hasChanged = hasChanged || previous == nil || newSnapshot.Snapshot.SHA256 == "" ||
+		previous.Snapshot.SHA256 != newSnapshot.Snapshot.SHA256
+	cache.SetBuildings(newBuildings)
+	cache.SetAvailableGroups(&newGroups)
+	cache.SetLegend(newLegend)
+	cache.SetSnapshot(newSnapshot)
+	cache.SetTimetable(&newTimetable)
 
 	return hasChanged, nil
 }
@@ -168,7 +171,7 @@ func main() {
 
 	var cache cache.Cache
 
-	_, err := updateTimetableAndCache(queries, &cache, true)
+	_, err := updateTimetableAndCache(queries, &cache)
 	if err != nil {
 		utils.NotifyError("Failed to build initial cache", slog.Any("error", err))
 		panic(err)
@@ -183,24 +186,32 @@ func main() {
 
 	slog.Info("Starting timetable update ticker",
 		slog.Int("interval_minutes", int(config.Config.TimetableUpdatePeriod/time.Minute)))
+	pendingSync := true // Check existing users once after startup as well.
 	for t := range ticker.C {
 		slog.Info("Timetable update triggered", slog.Time("tick_time", t))
-		updateAllTimetables(queries, &cache)
+		pendingSync = updateAllTimetables(queries, &cache, pendingSync)
 	}
 }
 
-func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
+// Return whether the global sync batch still needs retrying next poll.
+func updateAllTimetables(queries db.Querier, cache *cache.Cache, pendingSync bool) bool {
+	changed, err := updateTimetableAndCache(queries, cache)
+	if err != nil {
+		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
+		return pendingSync
+	}
+	if !changed && !pendingSync {
+		slog.Info("Timetable cache unchanged; skipping scheduled calendar sync")
+		return false
+	}
 	users, err := queries.GetAllUsers(context.Background())
 	if err != nil {
 		slog.Error("Failed to fetch users", slog.Any("error", err))
-		return
-	}
-	hasChanged, err := updateTimetableAndCache(queries, cache, false)
-	if err != nil {
-		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
+		return true
 	}
 	allTimetables := cache.Timetable()
 	state := cache.Snapshot()
+	failed := false
 
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
@@ -210,19 +221,13 @@ func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
 
 			continue
 		}
-		timeSinceSync := time.Since(user.LastSynced)
-		if !hasChanged && timeSinceSync < config.Config.TimetableSyncPeriod {
-			slog.Info("Skipping timetable update for user (no changes detected and last sync within 3 days)",
-				slog.String("email", *user.Email),
-				slog.Int64("column", *user.ChosenColumn))
-			continue
-		}
-
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
 		if err := calendar.ImportTimetable(allTimetables, utils.GetToken(&user), queries, state, cache.Buildings()); err != nil {
 			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
+			failed = true
 		}
 	}
+	return failed
 }

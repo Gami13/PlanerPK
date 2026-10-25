@@ -47,6 +47,14 @@ The earlier full-JSON replacement plan is superseded.
   unrelated series can sync. Do not silently discard manual meeting changes.
 - Writes fail fast and last_synced advances only after all writes succeed.
   There is no rollback; retries list current state and calculate a fresh diff.
+- Rebuild the combined cache each poll, downloading Excel only when needed.
+  Combine Excel's existing change flag with the publisher's snapshot.sha256
+  compared to the in-memory cached snapshot; no deep content comparisons.
+  Skip scheduled Google sync when unchanged; missing hashes trigger sync.
+  Failed batches remain pending for retry; startup checks existing users once.
+  Group/override changes trigger that user's sync directly, without proposal caches.
+  Write logs include actual created/updated/deleted/skipped counts and
+  batch success; exception guards identify the blocked parent series.
 - The process timezone is supplied via Docker Compose by the user; recurring
   Google event start/end also specify Europe/Warsaw. No timezone rewrite requested.
 

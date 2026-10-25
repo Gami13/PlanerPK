@@ -61,6 +61,7 @@ func (h *PKPlanerHandler) SetOverride(
 		}); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to delete override: %w", err))
 		}
+		h.syncUserTimetable(user)
 		return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
 	}
 
@@ -80,5 +81,6 @@ func (h *PKPlanerHandler) SetOverride(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to upsert override: %w", err))
 	}
 
+	h.syncUserTimetable(user)
 	return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
 }

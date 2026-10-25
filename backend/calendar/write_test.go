@@ -1,8 +1,10 @@
 package calendar
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -52,6 +54,10 @@ func TestApplyEventDiff(t *testing.T) {
 				w.Write([]byte(`{}`))
 			}))
 			defer server.Close()
+			var logs bytes.Buffer
+			previousLogger := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+			defer slog.SetDefault(previousLogger)
 			ctx := context.Background()
 			srv, err := calendar.NewService(ctx, option.WithEndpoint(server.URL+"/"), option.WithoutAuthentication())
 			if err != nil {
@@ -69,9 +75,14 @@ func TestApplyEventDiff(t *testing.T) {
 			if err := applyEventChanges(ctx, srv, "dedicated", diff); err == nil || len(methods) != 0 {
 				t.Fatal("exception guard must fail before any writes")
 			}
+			if !bytes.Contains(logs.Bytes(), []byte(`"series_id":"existing"`)) {
+				t.Fatal("blocked series was not identified in logs")
+			}
+			logs.Reset()
 			diff.Exceptions = nil
 			// Exceptions on an unrelated series must not block this diff.
 			diff.Exceptions = []*calendar.Event{{RecurringEventId: "unrelated"}}
+			diff.Unchanged = []*calendar.Event{{Id: "unchanged"}}
 			err = applyEventChanges(ctx, srv, "dedicated", diff)
 			want := []string{"POST", "PATCH", "DELETE"}
 			if failAt != 0 {
@@ -79,6 +90,26 @@ func TestApplyEventDiff(t *testing.T) {
 			}
 			if (err != nil) != (failAt != 0) || !reflect.DeepEqual(methods, want) {
 				t.Fatalf("requests = %v, error = %v; want %v", methods, err, want)
+			}
+			var summary struct {
+				Created, Updated, Deleted, Skipped int
+				Success                            bool
+			}
+			if err := json.Unmarshal(logs.Bytes(), &summary); err != nil {
+				t.Fatal(err)
+			}
+			created, updated, deleted := 1, 1, 1
+			if failAt != 0 {
+				deleted = 0
+			}
+			if failAt == 1 {
+				created = 0
+			}
+			if failAt == 1 || failAt == 2 {
+				updated = 0
+			}
+			if summary.Created != created || summary.Updated != updated || summary.Deleted != deleted || summary.Skipped != 1 || summary.Success != (failAt == 0) {
+				t.Fatalf("incorrect write counts: %s", logs.String())
 			}
 		})
 	}

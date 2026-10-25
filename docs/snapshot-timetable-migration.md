@@ -41,9 +41,18 @@ Sync neither refetches JSON nor rematches classes. Startup requires usable onlin
 inputs; there is no persisted JSON fallback. An upstream HTTP failure can prevent
 startup before Google Calendar is contacted.
 
-Refresh currently rebuilds on startup or when the Excel update check reports a
-change. A missing Last-Modified header causes a refresh on each poll. Independent
-JSON refresh when Excel is reported unchanged is not implemented.
+Each poll rebuilds from freshly fetched JSON and the current workbook. Excel is
+downloaded only when its update check reports a change (a missing Last-Modified
+header also triggers a download). Combine Excel's existing change flag with a
+single comparison of the publisher-provided snapshot.sha256 against the cached
+snapshot's hash. No per-block/deep comparisons or extra stats-file persistence are
+needed. This trusts the publisher to update its fingerprint; a missing hash
+conservatively triggers sync. If neither source reports a change, skip scheduled
+Google requests entirely. Excel's missing Last-Modified can still cause each poll
+to report a change; the event diff prevents redundant writes. Failed batches
+remain pending for retry, and startup checks existing users once. Group/override
+changes trigger that user's sync directly. There is no per-user proposal cache or
+sync-hours throttle. Failed rebuilds retain the cache and skip that poll's sync.
 
 ## Scheduling currently supported
 
@@ -94,6 +103,10 @@ Both scheduled refresh and group selection use this flow:
    importer-owned fields; preserve unrelated fields such as user reminders.
 8. Stop at the first write failure. Do not advance last_synced until all writes
    succeed. There is no rollback; retries re-list and compare current state.
+
+Write summaries log successful created/updated/deleted counts, unchanged/skipped
+counts, and whether the write batch succeeded. Failures report partial counts,
+not planned totals. Exception guards log the blocked parent series ID.
 
 Only events carrying the importer marker, or exceptions belonging to managed
 series, are included. Deleted standalone events/series are not live diff targets.

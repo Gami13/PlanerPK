@@ -95,7 +95,6 @@ services:
       API_BASE_URL: "http://localhost:8080/api"
       LOG_LEVEL: "INFO"
       MINUTES_BETWEEN: "5"
-      TIME_BETWEEN_SYNC_HOURS: "72"
       TZ: "Europe/Warsaw"
       GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY}"
     volumes:
@@ -118,8 +117,7 @@ The backend supports these environment variables:
 
 - `DATA_DIR` — mutable data root; defaults to `/data`.
 - `LOG_LEVEL` — `DEBUG`, `INFO`, `WARN`, or `ERROR`.
-- `MINUTES_BETWEEN` — timetable update interval.
-- `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
+- `MINUTES_BETWEEN` — combined timetable refresh interval. Unchanged cache contents skip scheduled Google sync; group/override changes sync directly.
 - `TZ` — container process timezone; use `Europe/Warsaw` for local class dates and DST.
 - `TIMETABLE_URL` — direct timetable download URL.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
