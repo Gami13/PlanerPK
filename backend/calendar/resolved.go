@@ -66,5 +66,8 @@ func buildResolvedClassEvents(class types.Class, schedule *types.ClassSchedule, 
 		events = append(events, ghost)
 	}
 
+	for i := range events {
+		events[i].ExtendedProperties.Private["contentHash"] = eventContentHash(events[i])
+	}
 	return events, nil
 }
