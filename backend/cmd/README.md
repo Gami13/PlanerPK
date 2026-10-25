@@ -1,6 +1,8 @@
-# ClassText Scripts
+# Timetable diagnostics and ClassText scripts
 
-Scripts for extracting and processing classText samples from the timetable Excel file. Run all commands from the `backend/` directory.
+Developer tools for inspecting matching, dates, event diffs, and classText samples.
+Run commands from the `backend/` directory. These are not supported alternatives
+to the application's Docker/Nix deployment.
 
 ## Snapshot subject index
 
@@ -32,6 +34,11 @@ Get-Content -Raw preview-input.json | go run ./cmd/previewevents
 ```
 
 ### Matching and class text
+
+`go run ./cmd/comparedates` displays each raw Excel weekday/time slot alongside
+snapshot-derived meeting dates. It reads the current workbook and published JSON,
+but does not apply user overrides or write calendars. There is no next-weekday
+fallback or old-event generation.
 
 `go run ./cmd/matchsnapshot` compares the current Excel workbook with the online snapshot.
 Unique rows show only the group, subject/activity, and block ID; ambiguous and unmatched rows keep full details. Totals go to stderr.

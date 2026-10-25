@@ -35,6 +35,26 @@ The data directory has this layout:
 
 The OAuth `credentials.json` file should be mounted read-only. It is never included in the image.
 
+### Timetable calendar behavior
+
+Excel provides class details and group membership; the university JSON snapshot
+provides dated schedules. Events sync to a dedicated **PlanerPK** calendar whose
+ID is saved per user, not to the primary calendar. Weekly classes use recurring
+series; concrete-date classes remain single events. Existing hide, time-shift,
+and transparent ghost overrides are preserved.
+
+Startup needs usable upstream Excel and JSON inputs. There is no offline JSON
+fallback. Failed syncs are not marked successful; changes to series with manual
+recurring exceptions stop for review rather than silently discarding exceptions.
+
+When upgrading from a schema without `users.calendar_id`, provision a fresh
+database explicitly. No migration or automatic reset is included; keep OAuth
+credentials and other deployment files intact. Normal logins preserve users and
+their saved calendar IDs. No existing calendars are deleted as upgrade cleanup.
+
+See [Importer behavior and deferred features](docs/snapshot-timetable-migration.md)
+and [diagnostic commands](backend/cmd/README.md), including the offline diff preview.
+
 ### Building-place cache upgrade
 
 Building-place resolution is controlled by `BUILDING_LOCATIONS_ENABLED` and is
@@ -76,6 +96,7 @@ services:
       LOG_LEVEL: "INFO"
       MINUTES_BETWEEN: "5"
       TIME_BETWEEN_SYNC_HOURS: "72"
+      TZ: "Europe/Warsaw"
       GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY}"
     volumes:
       - ./data:/data
@@ -99,6 +120,7 @@ The backend supports these environment variables:
 - `LOG_LEVEL` — `DEBUG`, `INFO`, `WARN`, or `ERROR`.
 - `MINUTES_BETWEEN` — timetable update interval.
 - `TIME_BETWEEN_SYNC_HOURS` — minimum calendar sync interval when the timetable has not changed.
+- `TZ` — container process timezone; use `Europe/Warsaw` for local class dates and DST.
 - `TIMETABLE_URL` — direct timetable download URL.
 - `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
 - `BUILDING_LOCATIONS_ENABLED` — feature flag for classroom-to-building matching, place-cache updates, Google Places lookups, and map links; defaults to `false`.
