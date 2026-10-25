@@ -18,7 +18,7 @@ func TestBuildResolvedClassEvents(t *testing.T) {
 	original := class.ToEvent(nil, &schedule)
 	ghost := class.ToEvent(nil, &schedule)
 	ghost.Transparency, ghost.ColorId = "transparent", "8"
-	ghost.ExtendedProperties.Private["hash"] = class.Hash() + "_ghost"
+	ghost.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
 
 	delta := 150 * time.Minute
 	shiftedSchedule := types.ClassSchedule{Start: schedule.Start.Add(delta), End: schedule.End.Add(delta),

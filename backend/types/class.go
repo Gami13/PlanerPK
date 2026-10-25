@@ -134,7 +134,7 @@ func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) 
 			description = append(description, link)
 		}
 	}
-	private := map[string]string{"added_by": ADDED_BY, "hash": c.Hash()}
+	private := map[string]string{"added_by": ADDED_BY, "overrideId": c.Hash()}
 	if c.Audience != "" {
 		private["audience"] = c.Audience
 	}

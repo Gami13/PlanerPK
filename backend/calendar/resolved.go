@@ -62,7 +62,7 @@ func buildResolvedClassEvents(class types.Class, schedule *types.ClassSchedule, 
 		ghost := class.ToEvent(buildings, schedule)
 		ghost.Transparency = "transparent"
 		ghost.ColorId = "8"
-		ghost.ExtendedProperties.Private["hash"] = class.Hash() + "_ghost"
+		ghost.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
 		events = append(events, ghost)
 	}
 

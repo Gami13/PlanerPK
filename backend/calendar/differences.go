@@ -11,21 +11,21 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func getEventHash(event *calendar.Event) (string, bool) {
+func getEventOverrideID(event *calendar.Event) (string, bool) {
 	if event == nil || event.ExtendedProperties == nil || event.ExtendedProperties.Private == nil {
 		return "", false
 	}
-	hash, ok := event.ExtendedProperties.Private["hash"]
-	return hash, ok
+	overrideID, ok := event.ExtendedProperties.Private["overrideId"]
+	return overrideID, ok
 }
 
 func buildCurrentEventsMap(currentEvents []*calendar.Event) map[string]*calendar.Event {
 	currentMap := make(map[string]*calendar.Event, len(currentEvents))
 	for _, event := range currentEvents {
-		if hash, ok := getEventHash(event); ok {
-			currentMap[hash] = event
+		if overrideID, ok := getEventOverrideID(event); ok {
+			currentMap[overrideID] = event
 		} else {
-			slog.Warn("Event missing hash extended property", slog.String("summary", event.Summary))
+			slog.Warn("Event missing overrideId extended property", slog.String("summary", event.Summary))
 		}
 	}
 	return currentMap
@@ -36,11 +36,11 @@ func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*
 
 	eventsToDelete := make([]*calendar.Event, 0)
 	for _, event := range currentEvents {
-		hash, ok := getEventHash(event)
+		overrideID, ok := getEventOverrideID(event)
 		if !ok {
 			continue
 		}
-		if _, ok := newEvents[hash]; !ok {
+		if _, ok := newEvents[overrideID]; !ok {
 			eventsToDelete = append(eventsToDelete, event)
 		}
 	}
@@ -48,8 +48,8 @@ func calculateEventDiffs(currentEvents []*calendar.Event, newEvents map[string]*
 	eventsToAdd := make([]*calendar.Event, 0)
 	unchangedEvents := make([]*calendar.Event, 0)
 
-	for hash, newEvent := range newEvents {
-		if existingEvent, ok := currentMap[hash]; ok {
+	for overrideID, newEvent := range newEvents {
+		if existingEvent, ok := currentMap[overrideID]; ok {
 			slog.Debug("Event is identical", slog.String("summary", existingEvent.Summary))
 			unchangedEvents = append(unchangedEvents, existingEvent)
 		} else {
@@ -71,33 +71,33 @@ func buildNewEventsMap(timetable types.GroupTimetable, overrides map[string]db.O
 			// No override — emit normally.
 			if !hasOverride {
 				event := class.ToEvent(buildings, nil)
-				newEvents[event.ExtendedProperties.Private["hash"]] = &event
+				newEvents[event.ExtendedProperties.Private["overrideId"]] = &event
 				continue
 			}
 
 			// Hidden + not transparent → drop entirely.
 			if ovr.IsHidden && !ovr.IsTransparent {
-				slog.Debug("Dropping hidden class", slog.String("hash", class.Hash()))
+				slog.Debug("Dropping hidden class", slog.String("overrideId", class.Hash()))
 				continue
 			}
 
 			// Hidden + transparent → emit only a ghost at the original position.
 			if ovr.IsHidden && ovr.IsTransparent {
-				slog.Debug("Adding ghost for hidden class", slog.String("hash", class.Hash()))
+				slog.Debug("Adding ghost for hidden class", slog.String("overrideId", class.Hash()))
 				ghost := buildGhostEvent(class, buildings)
-				newEvents[ghost.ExtendedProperties.Private["hash"]] = &ghost
+				newEvents[ghost.ExtendedProperties.Private["overrideId"]] = &ghost
 				continue
 			}
 
 			// Not hidden — emit real event, possibly time-shifted.
 			realEvent := buildRealEvent(class, ovr.StartHour, buildings)
-			newEvents[realEvent.ExtendedProperties.Private["hash"]] = &realEvent
+			newEvents[realEvent.ExtendedProperties.Private["overrideId"]] = &realEvent
 
 			// If transparent, also emit a ghost at the original position.
 			if ovr.IsTransparent && ovr.StartHour != "" {
-				slog.Debug("Adding ghost for shifted class", slog.String("hash", class.Hash()))
+				slog.Debug("Adding ghost for shifted class", slog.String("overrideId", class.Hash()))
 				ghost := buildGhostEvent(class, buildings)
-				newEvents[ghost.ExtendedProperties.Private["hash"]] = &ghost
+				newEvents[ghost.ExtendedProperties.Private["overrideId"]] = &ghost
 			}
 		}
 	}
@@ -112,8 +112,8 @@ func buildGhostEvent(class types.Class, buildings *buildings.Buildings) calendar
 	event := class.ToEvent(buildings, nil)
 	event.Transparency = "transparent"
 	event.ColorId = "8" // Graphite — muted gray, signals a placeholder
-	// Use a distinct hash so GCal treats this as a separate event.
-	event.ExtendedProperties.Private["hash"] = class.Hash() + "_ghost"
+	// Distinguish the ghost from the real event for the same override.
+	event.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
 	return event
 }
 
