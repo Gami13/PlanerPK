@@ -8,10 +8,10 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// buildTimetableDiff prepares the complete offline event proposal with overrides
+// BuildTimetableDiff prepares the complete offline event proposal with overrides
 // and schedule exclusions, then compares it with the supplied existing events.
 // It fetches nothing, writes nothing, and returns no partial diff on failure.
-func buildTimetableDiff(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings, current []*calendar.Event) (eventDiff, error) {
+func BuildTimetableDiff(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings, current []*calendar.Event) (eventDiff, error) {
 	events, err := buildResolvedTimetableEvents(timetable, state, overrides, buildings)
 	if err != nil {
 		return eventDiff{}, err
