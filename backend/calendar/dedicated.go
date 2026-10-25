@@ -9,7 +9,7 @@ import (
 )
 
 // EnsureUserCalendar prepares and persists the target before any event sync.
-// It is not connected to live sync yet; callers must stop on an error.
+// Callers must stop on an error.
 func EnsureUserCalendar(ctx context.Context, srv *calendar.Service, queries db.Querier, user db.User) (string, error) {
 	if user.CalendarID != "" {
 		return user.CalendarID, nil
@@ -25,7 +25,7 @@ func EnsureUserCalendar(ctx context.Context, srv *calendar.Service, queries db.Q
 }
 
 // ensureDedicatedCalendar returns an ID for the caller to persist before syncing.
-// It is not connected to live sync yet. A saved ID remains authoritative.
+// A saved ID remains authoritative.
 func ensureDedicatedCalendar(ctx context.Context, srv *calendar.Service, savedID string) (string, error) {
 	if savedID != "" {
 		return savedID, nil

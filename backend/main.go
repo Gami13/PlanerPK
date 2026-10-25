@@ -200,6 +200,7 @@ func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
 		slog.Error("Failed to update timetable and cache", slog.Any("error", err))
 	}
 	allTimetables := cache.Timetable()
+	state := cache.Snapshot()
 
 	for _, user := range users {
 		if *user.ChosenColumn < 0 || !*user.IsActive {
@@ -220,13 +221,8 @@ func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
-		overrides, err := queries.GetOverridesForUser(context.Background(), user.ID)
-		if err != nil {
-			slog.Warn("Failed to fetch overrides for user, syncing without overrides",
-				slog.String("email", *user.Email),
-				slog.Any("error", err))
-			overrides = nil
+		if err := calendar.ImportTimetable(allTimetables, utils.GetToken(&user), queries, state, cache.Buildings()); err != nil {
+			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
 		}
-		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, cache.Buildings())
 	}
 }

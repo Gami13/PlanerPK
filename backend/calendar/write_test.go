@@ -32,10 +32,13 @@ func TestApplyEventDiff(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						return
 					}
-					for _, key := range []string{"description", "location", "transparency", "colorId"} {
+					for _, key := range []string{"description", "location"} {
 						if value, ok := body[key]; !ok || value != "" {
 							t.Errorf("patch must clear %s: %+v", key, body)
 						}
+					}
+					if color, ok := body["colorId"]; !ok || color != nil || body["transparency"] != "opaque" {
+						t.Errorf("incorrect default styling: %+v", body)
 					}
 					if value, ok := body["recurrence"]; !ok || value != nil || body["reminders"] != nil || body["id"] != nil {
 						t.Errorf("incorrect patch: %+v", body)
@@ -67,6 +70,8 @@ func TestApplyEventDiff(t *testing.T) {
 				t.Fatal("exception guard must fail before any writes")
 			}
 			diff.Exceptions = nil
+			// Exceptions on an unrelated series must not block this diff.
+			diff.Exceptions = []*calendar.Event{{RecurringEventId: "unrelated"}}
 			err = applyEventDiff(ctx, srv, "dedicated", diff)
 			want := []string{"POST", "PATCH", "DELETE"}
 			if failAt != 0 {

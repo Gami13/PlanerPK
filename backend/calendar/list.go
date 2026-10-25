@@ -31,6 +31,9 @@ func listManagedEvents(ctx context.Context, srv *calendar.Service, calendarID st
 	var events []*calendar.Event
 	for _, event := range all {
 		// Cancelled exceptions can lack private properties; use the parent series.
+		if event.Status == "cancelled" && event.RecurringEventId == "" {
+			continue // Deleted series/single events are not live sync targets.
+		}
 		if managed[event.Id] || (event.RecurringEventId != "" && managed[event.RecurringEventId]) {
 			events = append(events, event)
 		}

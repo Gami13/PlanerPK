@@ -9,13 +9,22 @@ import (
 
 // applyEventDiff writes an already reviewed diff to a dedicated calendar.
 // It stops at the first failure, with no rollback; callers must not mark that
-// sync successful. This helper is not connected to the live importer yet.
+// sync successful.
 func applyEventDiff(ctx context.Context, srv *calendar.Service, calendarID string, diff eventDiff) error {
 	if calendarID == "" || calendarID == "primary" {
 		return fmt.Errorf("dedicated calendar ID is required")
 	}
-	if len(diff.Exceptions) != 0 && (len(diff.Changed) != 0 || len(diff.ToDelete) != 0) {
-		return fmt.Errorf("refusing updates or deletions while recurring exceptions need review")
+	affected := make(map[string]bool)
+	for _, change := range diff.Changed {
+		affected[change.Current.Id] = true
+	}
+	for _, event := range diff.ToDelete {
+		affected[event.Id] = true
+	}
+	for _, exception := range diff.Exceptions {
+		if affected[exception.RecurringEventId] {
+			return fmt.Errorf("series %q has recurring exceptions; manual review required", exception.RecurringEventId)
+		}
 	}
 	for _, event := range diff.ToAdd {
 		if _, err := srv.Events.Insert(calendarID, event).Context(ctx).Do(); err != nil {
@@ -44,10 +53,16 @@ func eventContentsPatch(event *calendar.Event) *calendar.Event {
 		Start: event.Start, End: event.End, Recurrence: event.Recurrence,
 		Transparency: event.Transparency, ColorId: event.ColorId,
 		ExtendedProperties: event.ExtendedProperties,
-		ForceSendFields:    []string{"Summary", "Description", "Location", "Transparency", "ColorId"},
+		ForceSendFields:    []string{"Summary", "Description", "Location", "Transparency"},
+	}
+	if patch.Transparency == "" {
+		patch.Transparency = "opaque"
+	}
+	if patch.ColorId == "" {
+		patch.NullFields = append(patch.NullFields, "ColorId")
 	}
 	if len(event.Recurrence) == 0 {
-		patch.NullFields = []string{"Recurrence"}
+		patch.NullFields = append(patch.NullFields, "Recurrence")
 	}
 	return patch
 }

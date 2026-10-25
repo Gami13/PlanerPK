@@ -43,8 +43,9 @@ func TestEventContentHash(t *testing.T) {
 func TestEventContentHashTimestampOffsets(t *testing.T) {
 	makeEvent := func(start, end, zone string) calendar.Event {
 		return calendar.Event{
-			Start: &calendar.EventDateTime{DateTime: start, TimeZone: zone},
-			End:   &calendar.EventDateTime{DateTime: end, TimeZone: zone},
+			Start:      &calendar.EventDateTime{DateTime: start, TimeZone: zone},
+			End:        &calendar.EventDateTime{DateTime: end, TimeZone: zone},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY"},
 		}
 	}
 	local := makeEvent("2026-10-21T08:00:00+02:00", "2026-10-21T09:30:00+02:00", "Europe/Warsaw")
@@ -64,5 +65,13 @@ func TestEventContentHashTimestampOffsets(t *testing.T) {
 				t.Fatalf("same content = %v; want %v", same, tt.same)
 			}
 		})
+	}
+}
+
+func TestEventContentHashGoogleDefaults(t *testing.T) {
+	proposed := calendar.Event{Start: &calendar.EventDateTime{DateTime: "2026-10-21T06:00:00Z"}}
+	current := calendar.Event{Transparency: "opaque", Start: &calendar.EventDateTime{DateTime: "2026-10-21T08:00:00+02:00", TimeZone: "Europe/Warsaw"}}
+	if eventContentHash(proposed) != eventContentHash(current) {
+		t.Fatal("Google defaults should not trigger another update")
 	}
 }

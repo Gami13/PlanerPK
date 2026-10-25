@@ -12,7 +12,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func ImportTimetable(allTimetables *types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *buildings.Buildings) {
+func importLegacyTimetable(allTimetables *types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *buildings.Buildings) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))

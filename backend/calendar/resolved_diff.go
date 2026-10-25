@@ -43,7 +43,7 @@ func buildEventsMap(events []*calendar.Event) (map[string]*calendar.Event, []*ca
 // compareEventsByOverrideIDAndContent compares existing and proposed events,
 // returning add, delete, unchanged, and changed lists. Existing exceptions are
 // returned separately for later handling; proposed exceptions are not supported.
-// This only prepares an offline diff and does not write to Google Calendar.
+// This only prepares a diff and does not write to Google Calendar.
 func compareEventsByOverrideIDAndContent(current, proposed []*calendar.Event) (eventDiff, error) {
 	old, exceptions, err := buildEventsMap(current)
 	if err != nil {

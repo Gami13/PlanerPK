@@ -70,22 +70,23 @@ func (h *PKPlanerHandler) SetChosenColumn(
 
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
 	allTimetables := h.cache.Timetable()
-	overrides, err := h.Query.GetOverridesForUser(ctx, user.ID)
-	if err != nil {
-		slog.Warn("Failed to fetch overrides for initial import, proceeding without", slog.Any("error", err))
-		overrides = nil
-	}
+	state := h.cache.Snapshot()
 	var b *buildings.Buildings
 	if loaded := h.cache.Buildings(); loaded != nil {
 		b = loaded
 	}
-	go calendar.ImportTimetable(allTimetables, chosenColumn, &oauth2.Token{
+	token := &oauth2.Token{
 		AccessToken:  user.AccessToken,
 		TokenType:    user.TokenType,
 		RefreshToken: user.RefreshToken,
 		Expiry:       user.Expiry,
 		ExpiresIn:    user.ExpiresIn,
-	}, h.Query, overrides, b)
+	}
+	go func() {
+		if err := calendar.ImportTimetable(allTimetables, token, h.Query, state, b); err != nil {
+			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
+		}
+	}()
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }

@@ -23,15 +23,23 @@ func eventContentHash(event calendar.Event) string {
 		if parsed, err := time.Parse(time.RFC3339Nano, dateTime); err == nil {
 			dateTime = parsed.UTC().Format(time.RFC3339Nano)
 		}
-		return eventTime{value.Date, dateTime, value.TimeZone}
+		zone := value.TimeZone
+		if len(event.Recurrence) == 0 {
+			zone = "" // A single meeting is identified by its instant, not a recurrence zone.
+		}
+		return eventTime{value.Date, dateTime, zone}
 	}
 	rules := append([]string{}, event.Recurrence...)
 	slices.Sort(rules)
+	transparency := event.Transparency
+	if transparency == "" {
+		transparency = "opaque"
+	}
 	content := struct {
 		Summary, Description, Location, Transparency, ColorID string
 		Start, End                                            eventTime
 		Recurrence                                            []string
-	}{event.Summary, event.Description, event.Location, event.Transparency, event.ColorId,
+	}{event.Summary, event.Description, event.Location, transparency, event.ColorId,
 		timeFields(event.Start), timeFields(event.End), rules}
 	// This value contains only strings and slices of strings; marshaling cannot fail.
 	encoded, _ := json.Marshal(content)
