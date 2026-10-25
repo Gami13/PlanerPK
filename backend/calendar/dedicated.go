@@ -14,7 +14,7 @@ func EnsureUserCalendar(ctx context.Context, srv *calendar.Service, queries db.Q
 	if user.CalendarID != "" {
 		return user.CalendarID, nil
 	}
-	id, err := ensureDedicatedCalendar(ctx, srv, "")
+	id, err := createDedicatedCalendar(ctx, srv)
 	if err != nil {
 		return "", err
 	}
@@ -24,12 +24,8 @@ func EnsureUserCalendar(ctx context.Context, srv *calendar.Service, queries db.Q
 	return id, nil
 }
 
-// ensureDedicatedCalendar returns an ID for the caller to persist before syncing.
-// A saved ID remains authoritative.
-func ensureDedicatedCalendar(ctx context.Context, srv *calendar.Service, savedID string) (string, error) {
-	if savedID != "" {
-		return savedID, nil
-	}
+// createDedicatedCalendar returns a new ID for the caller to persist before syncing.
+func createDedicatedCalendar(ctx context.Context, srv *calendar.Service) (string, error) {
 	created, err := srv.Calendars.Insert(&calendar.Calendar{Summary: "PlanerPK", TimeZone: "Europe/Warsaw"}).Context(ctx).Do()
 	if err != nil {
 		return "", fmt.Errorf("create dedicated calendar: %w", err)

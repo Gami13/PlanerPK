@@ -6,12 +6,11 @@ import (
 	"log/slog"
 
 	"connectrpc.com/connect"
-	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	pkplanerv1 "github.com/woodpkrs/PlanerPK/gen/pkplaner/v1"
 	"github.com/woodpkrs/PlanerPK/types"
-	"golang.org/x/oauth2"
+	"github.com/woodpkrs/PlanerPK/utils"
 )
 
 // GetColumns returns available column groups parsed from the Excel header rows.
@@ -71,17 +70,8 @@ func (h *PKPlanerHandler) SetChosenColumn(
 	slog.Info("Triggering timetable import", slog.Int64("column", chosenColumn))
 	allTimetables := h.cache.Timetable()
 	state := h.cache.Snapshot()
-	var b *buildings.Buildings
-	if loaded := h.cache.Buildings(); loaded != nil {
-		b = loaded
-	}
-	token := &oauth2.Token{
-		AccessToken:  user.AccessToken,
-		TokenType:    user.TokenType,
-		RefreshToken: user.RefreshToken,
-		Expiry:       user.Expiry,
-		ExpiresIn:    user.ExpiresIn,
-	}
+	b := h.cache.Buildings()
+	token := utils.GetToken(&user)
 	go func() {
 		if err := calendar.ImportTimetable(allTimetables, token, h.Query, state, b); err != nil {
 			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))

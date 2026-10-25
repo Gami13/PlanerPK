@@ -12,8 +12,8 @@ import (
 	"google.golang.org/api/option"
 )
 
-func TestEnsureDedicatedCalendar(t *testing.T) {
-	for _, mode := range []string{"saved", "create", "create failure", "missing ID"} {
+func TestCreateDedicatedCalendar(t *testing.T) {
+	for _, mode := range []string{"create", "create failure", "missing ID"} {
 		t.Run(mode, func(t *testing.T) {
 			creates := 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -44,23 +44,16 @@ func TestEnsureDedicatedCalendar(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			saved, want := "", ""
-			switch mode {
-			case "saved":
-				saved, want = "saved-id", "saved-id"
-			case "create":
+			want := ""
+			if mode == "create" {
 				want = "created"
 			}
-			got, err := ensureDedicatedCalendar(ctx, srv, saved)
+			got, err := createDedicatedCalendar(ctx, srv)
 			if got != want || (err != nil) != (want == "") {
 				t.Fatalf("ID = %q, error = %v; want %q", got, err, want)
 			}
-			wantCreates := 1
-			if mode == "saved" {
-				wantCreates = 0
-			}
-			if creates != wantCreates {
-				t.Fatalf("creation requests = %d; want %d", creates, wantCreates)
+			if creates != 1 {
+				t.Fatalf("creation requests = %d; want 1", creates)
 			}
 		})
 	}
