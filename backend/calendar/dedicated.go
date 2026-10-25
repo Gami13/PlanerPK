@@ -4,8 +4,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/woodpkrs/PlanerPK/gen/db"
 	"google.golang.org/api/calendar/v3"
 )
+
+// EnsureUserCalendar prepares and persists the target before any event sync.
+// It is not connected to live sync yet; callers must stop on an error.
+func EnsureUserCalendar(ctx context.Context, srv *calendar.Service, queries db.Querier, user db.User) (string, error) {
+	if user.CalendarID != "" {
+		return user.CalendarID, nil
+	}
+	id, err := ensureDedicatedCalendar(ctx, srv, "")
+	if err != nil {
+		return "", err
+	}
+	if err := queries.UpdateUserCalendarID(ctx, db.UpdateUserCalendarIDParams{ID: user.ID, CalendarID: id}); err != nil {
+		return "", fmt.Errorf("save dedicated calendar ID for user %d: %w", user.ID, err)
+	}
+	return id, nil
+}
 
 // ensureDedicatedCalendar returns an ID for the caller to persist before syncing.
 // It is not connected to live sync yet. A saved ID remains authoritative.
