@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -18,6 +19,42 @@ func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	event := class.ToEvent(nil, nil)
 	if !strings.Contains(event.Summary, "GL2") || !strings.Contains(event.Description, "GL2") || event.ExtendedProperties.Private["audience"] != "GL2" {
 		t.Errorf("ToEvent() omitted audience: %+v", event)
+	}
+}
+
+func TestRecurringEventTimezoneAcrossDST(t *testing.T) {
+	zone, err := time.LoadLocation("Europe/Warsaw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, day := range []int{21, 28} {
+		start := time.Date(2026, 10, day, 8, 0, 0, 0, zone)
+		schedule := ClassSchedule{Start: start, End: start.Add(90 * time.Minute),
+			Recurrence: &WeeklyRecurrence{Interval: 1, Until: start.AddDate(0, 0, 7)}}
+		event := (Class{}).ToEvent(nil, &schedule)
+		payload, err := json.Marshal(event)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var sent struct {
+			Start, End struct{ DateTime, TimeZone string }
+		}
+		if err := json.Unmarshal(payload, &sent); err != nil {
+			t.Fatal(err)
+		}
+		if sent.Start.TimeZone != "Europe/Warsaw" || sent.End.TimeZone != "Europe/Warsaw" ||
+			sent.Start.DateTime != start.Format(time.RFC3339) || sent.End.DateTime != schedule.End.Format(time.RFC3339) {
+			t.Fatalf("incorrect Google event payload: %s", payload)
+		}
+		schedule.Recurrence = nil
+		single := (Class{}).ToEvent(nil, &schedule)
+		if single.Start.TimeZone != "" || single.End.TimeZone != "" {
+			t.Fatal("single event timezone behavior changed")
+		}
+	}
+	legacy := (Class{}).ToEvent(nil, nil)
+	if legacy.Start.TimeZone != "" || legacy.End.TimeZone != "" {
+		t.Fatal("legacy event timezone behavior changed")
 	}
 }
 

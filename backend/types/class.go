@@ -114,11 +114,14 @@ type ClassSchedule struct {
 func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) calendar.Event {
 	var start, end string
 	var recurrence []string
+	var timezone string
 	if schedule == nil {
 		start, end = c.StartTimeRFC3339(), c.EndTimeRFC3339()
 	} else {
 		start, end = schedule.Start.Format(time.RFC3339), schedule.End.Format(time.RFC3339)
 		if schedule.Recurrence != nil {
+			// Google expands recurring meetings in this zone, not a fixed UTC offset.
+			timezone = "Europe/Warsaw"
 			recurrence = append([]string{schedule.Recurrence.ToRRULE()}, schedule.Recurrence.ToEXDATE()...)
 		}
 	}
@@ -140,9 +143,11 @@ func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) 
 		Summary: c.Summary(),
 		Start: &calendar.EventDateTime{
 			DateTime: start,
+			TimeZone: timezone,
 		},
 		End: &calendar.EventDateTime{
 			DateTime: end,
+			TimeZone: timezone,
 		},
 		Recurrence:  recurrence,
 		Location:    c.Location,
