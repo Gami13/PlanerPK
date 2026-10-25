@@ -41,7 +41,6 @@ func TestBuildTimetableEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	oneEvent := one.ToEvent(nil, *oneSchedule)
-	oneEvent.ExtendedProperties.Private["contentHash"] = eventContentHash(oneEvent)
 	want = append(want, &oneEvent)
 	got, err := buildTimetableEvents(timetable, &state, map[string]db.Override{class.Hash(): override}, nil)
 	if err != nil || len(got) != 3 || !reflect.DeepEqual(got, want) {

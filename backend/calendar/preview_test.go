@@ -36,7 +36,7 @@ func TestBuildTimetableDiff(t *testing.T) {
 	if diff.Changed[0].Current != existing[0] || real.Start.DateTime == existing[0].Start.DateTime ||
 		ghost.Start.DateTime != existing[0].Start.DateTime || ghost.Transparency != "transparent" ||
 		!strings.Contains(strings.Join(real.Recurrence, "\n"), "EXDATE:") ||
-		real.ExtendedProperties.Private["contentHash"] == ghost.ExtendedProperties.Private["contentHash"] {
+		eventContentHash(*real) == eventContentHash(*ghost) {
 		t.Fatalf("incorrect real/ghost proposal: real=%+v ghost=%+v", real, ghost)
 	}
 	overrides[class.Hash()] = db.Override{IsHidden: true}

@@ -25,9 +25,6 @@ func TestBuildClassEvents(t *testing.T) {
 	shiftedSchedule := types.ClassSchedule{Start: schedule.Start.Add(delta), End: schedule.End.Add(delta),
 		Recurrence: &types.WeeklyRecurrence{Interval: 2, Until: schedule.Recurrence.Until.Add(delta), Exclusions: []time.Time{start.Add(delta)}}}
 	shifted := class.ToEvent(nil, shiftedSchedule)
-	for _, event := range []*calendar.Event{&original, &ghost, &shifted} {
-		event.ExtendedProperties.Private["contentHash"] = eventContentHash(*event)
-	}
 
 	for _, tt := range []struct {
 		name      string
@@ -47,6 +44,11 @@ func TestBuildClassEvents(t *testing.T) {
 			got, err := buildClassEvents(class, &schedule, tt.override, nil)
 			if (err != nil) != tt.wantError || !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("events = %+v, error = %v; want %+v, wantError = %v", got, err, tt.want, tt.wantError)
+			}
+			for _, event := range got {
+				if _, ok := event.ExtendedProperties.Private["contentHash"]; ok {
+					t.Error("event should not store an unused content hash")
+				}
 			}
 			if after := class.ToEvent(nil, schedule); !reflect.DeepEqual(after, unchanged) {
 				t.Fatal("original schedule changed")

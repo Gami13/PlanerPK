@@ -67,8 +67,5 @@ func buildClassEvents(class types.Class, schedule *types.ClassSchedule, override
 		events = append(events, &ghost)
 	}
 
-	for _, event := range events {
-		event.ExtendedProperties.Private["contentHash"] = eventContentHash(*event)
-	}
 	return events, nil
 }
