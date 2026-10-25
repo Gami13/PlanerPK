@@ -12,6 +12,7 @@ import (
 type Cache struct {
 	availableGroups atomic.Pointer[[]types.ColumnGroup]
 	timetable       atomic.Pointer[types.Timetable]
+	timetableHash   atomic.Pointer[string]
 	legend          atomic.Pointer[legend.Legend]
 	buildings       atomic.Pointer[buildings.Buildings]
 	snapshot        atomic.Pointer[snapshot.State]
@@ -31,6 +32,17 @@ func (c *Cache) Timetable() *types.Timetable {
 
 func (c *Cache) SetTimetable(timetable *types.Timetable) {
 	c.timetable.Store(timetable)
+}
+
+func (c *Cache) TimetableHash() string {
+	if hash := c.timetableHash.Load(); hash != nil {
+		return *hash
+	}
+	return ""
+}
+
+func (c *Cache) SetTimetableHash(hash string) {
+	c.timetableHash.Store(&hash)
 }
 
 func (c *Cache) Snapshot() *snapshot.State {

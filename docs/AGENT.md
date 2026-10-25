@@ -48,8 +48,8 @@ The earlier full-JSON replacement plan is superseded.
 - Writes fail fast and last_synced advances only after all writes succeed.
   There is no rollback; retries list current state and calculate a fresh diff.
 - Rebuild the combined cache each poll, downloading Excel only when needed.
-  Combine Excel's existing change flag with the publisher's snapshot.sha256
-  compared to the in-memory cached snapshot; no deep content comparisons.
+  Compare the XLSX byte hash and publisher's snapshot.sha256 to the in-memory
+  cached hashes; no deep object comparisons or stats-file hash persistence.
   Skip scheduled Google sync when unchanged; missing hashes trigger sync.
   Failed batches remain pending for retry; startup checks existing users once.
   Group/override changes trigger that user's sync directly, without proposal caches.

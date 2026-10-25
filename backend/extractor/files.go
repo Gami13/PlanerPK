@@ -1,10 +1,26 @@
 package extractor
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/xuri/excelize/v2"
 )
+
+// CurrentTimetableHash identifies XLSX bytes independently of download headers.
+func CurrentTimetableHash() (string, error) {
+	path, err := getCurrentXlsxPath()
+	if err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
+}
 
 func logCloseWarn(resource string, err error) {
 	if err != nil {

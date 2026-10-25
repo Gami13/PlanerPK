@@ -129,11 +129,11 @@ func buildNewCache(queries db.Querier) ([]types.ColumnGroup, *legend.Legend, *bu
 }
 
 func updateTimetableAndCache(queries db.Querier, cache *cache.Cache) (bool, error) {
-	hasChanged, fileURL, err := extractor.DoesTimetableNeedUpdating()
+	needsDownload, fileURL, err := extractor.DoesTimetableNeedUpdating()
 	if err != nil {
 		return false, err
 	}
-	if hasChanged {
+	if needsDownload {
 		// Download new timetable
 		slog.Info("Getting new timetable")
 		stats, err := extractor.DownloadTimetable(fileURL)
@@ -153,15 +153,20 @@ func updateTimetableAndCache(queries db.Querier, cache *cache.Cache) (bool, erro
 	if err != nil {
 		return false, err
 	}
+	workbookHash, err := extractor.CurrentTimetableHash()
+	if err != nil {
+		return false, err
+	}
 	previous := cache.Snapshot()
 	// Trust the publisher's fingerprint; a missing hash conservatively triggers sync.
-	hasChanged = hasChanged || previous == nil || newSnapshot.Snapshot.SHA256 == "" ||
+	hasChanged := cache.TimetableHash() != workbookHash || previous == nil || newSnapshot.Snapshot.SHA256 == "" ||
 		previous.Snapshot.SHA256 != newSnapshot.Snapshot.SHA256
 	cache.SetBuildings(newBuildings)
 	cache.SetAvailableGroups(&newGroups)
 	cache.SetLegend(newLegend)
 	cache.SetSnapshot(newSnapshot)
 	cache.SetTimetable(&newTimetable)
+	cache.SetTimetableHash(workbookHash)
 
 	return hasChanged, nil
 }

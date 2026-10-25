@@ -44,10 +44,11 @@ func TestUnchangedExcelStillFetchesSnapshotAndRetainsCacheOnFailure(t *testing.T
 	timetable := &types.Timetable{}
 	cached.SetSnapshot(state)
 	cached.SetTimetable(timetable)
+	cached.SetTimetableHash("previous-workbook")
 	if _, err := updateTimetableAndCache(nil, &cached); err == nil {
 		t.Fatal("expected snapshot refresh failure")
 	}
-	if requests != 1 || cached.Snapshot() != state || cached.Timetable() != timetable {
+	if requests != 1 || cached.Snapshot() != state || cached.Timetable() != timetable || cached.TimetableHash() != "previous-workbook" {
 		t.Fatal("snapshot was not fetched or failed refresh replaced the cache")
 	}
 	for _, pending := range []bool{false, true} {

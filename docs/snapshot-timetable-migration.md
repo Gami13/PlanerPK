@@ -43,13 +43,14 @@ startup before Google Calendar is contacted.
 
 Each poll rebuilds from freshly fetched JSON and the current workbook. Excel is
 downloaded only when its update check reports a change (a missing Last-Modified
-header also triggers a download). Combine Excel's existing change flag with a
-single comparison of the publisher-provided snapshot.sha256 against the cached
-snapshot's hash. No per-block/deep comparisons or extra stats-file persistence are
-needed. This trusts the publisher to update its fingerprint; a missing hash
-conservatively triggers sync. If neither source reports a change, skip scheduled
-Google requests entirely. Excel's missing Last-Modified can still cause each poll
-to report a change; the event diff prevents redundant writes. Failed batches
+header also triggers a download). Compare the current XLSX byte hash and the
+publisher-provided snapshot.sha256 against the hashes in the successfully built
+cache. Identical XLSX re-downloads do not trigger Google checks, even when headers
+are absent or changed. No per-block/deep comparisons or stats-file hash persistence
+are needed. This trusts the publisher to update its snapshot fingerprint; a missing
+snapshot hash conservatively triggers sync. If neither hash changes, skip scheduled
+Google requests entirely. Workbook hashes advance only after a successful rebuild,
+so failed builds do not acknowledge new content. Failed batches
 remain pending for retry, and startup checks existing users once. Group/override
 changes trigger that user's sync directly. There is no per-user proposal cache or
 sync-hours throttle. Failed rebuilds retain the cache and skip that poll's sync.
