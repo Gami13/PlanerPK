@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/woodpkrs/PlanerPK/legacy"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
@@ -61,7 +60,7 @@ func traverseLegacyDay(file *excelize.File, sheet string, day types.Day, column 
 		}
 		start := day.StartingTime.Add(time.Duration(row-day.StartingRow) * slotDuration)
 		end := start.Add(slotDuration)
-		class := legacy.ParseClassText(text, start, end, day, legend)
+		class := ParseClassText(text, start, end, day, legend)
 		if len(classes) == 0 || !sameLegacyClass(classes[len(classes)-1], class) {
 			classes = append(classes, class)
 		} else {
@@ -71,7 +70,7 @@ func traverseLegacyDay(file *excelize.File, sheet string, day types.Day, column 
 
 	var split []types.Class
 	for _, class := range classes {
-		split = append(split, legacy.SplitSlashClasses(class)...)
+		split = append(split, SplitSlashClasses(class)...)
 	}
 	return split
 }

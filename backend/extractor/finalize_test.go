@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/woodpkrs/PlanerPK/buildings"
-	"github.com/woodpkrs/PlanerPK/legacy"
 	"github.com/woodpkrs/PlanerPK/legend"
 	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
@@ -46,7 +45,7 @@ func TestResolveLocationsAfterLegacySlashSplit(t *testing.T) {
 		Location: "s. SJO/s. N",
 	}
 
-	classes := finalizeClasses(legacy.SplitSlashClasses(parsed), buildings, nil)
+	classes := finalizeClasses(SplitSlashClasses(parsed), buildings, nil)
 	if len(classes) != 2 {
 		t.Fatalf("got %d classes, want 2", len(classes))
 	}

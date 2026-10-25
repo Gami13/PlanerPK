@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/woodpkrs/PlanerPK/legacy"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/xuri/excelize/v2"
 )
@@ -128,7 +127,7 @@ func lastDataColumn(row []string, firstColumn int) int {
 
 // Worksheet scanning and candidate construction.
 func discoverColumnLayout(rows [][]string, column int) (TimetableLayout, bool) {
-	days, slotDuration, ok := legacy.DiscoverTimetableDays(rows, column)
+	days, slotDuration, ok := DiscoverTimetableDays(rows, column)
 	if !ok {
 		return TimetableLayout{}, false
 	}

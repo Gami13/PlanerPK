@@ -1,4 +1,4 @@
-package legacy
+package extractor
 
 import (
 	"reflect"
@@ -21,13 +21,13 @@ func mockLegend() *legend.Legend {
 }
 
 var (
-	testDay       = types.Day{StartingRow: 0, EndingRow: 10, WeekDay: time.Monday}
-	testStartTime = time.Date(2026, 1, 5, 8, 0, 0, 0, time.UTC)
-	testEndTime   = time.Date(2026, 1, 5, 9, 30, 0, 0, time.UTC)
+	testDay            = types.Day{StartingRow: 0, EndingRow: 10, WeekDay: time.Monday}
+	heuristicStartTime = time.Date(2026, 1, 5, 8, 0, 0, 0, time.UTC)
+	heuristicEndTime   = time.Date(2026, 1, 5, 9, 30, 0, 0, time.UTC)
 )
 
 func parseTestClass(text string, lg *legend.Legend) types.Class {
-	return ParseClassText(text, testStartTime, testEndTime, testDay, lg)
+	return ParseClassText(text, heuristicStartTime, heuristicEndTime, testDay, lg)
 }
 
 func TestParseClassText(t *testing.T) {
