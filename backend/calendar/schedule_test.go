@@ -39,7 +39,7 @@ func TestShiftClassSchedule(t *testing.T) {
 		if err != nil || got.Start.Format(time.RFC3339) != "2026-10-19T10:30:00+02:00" || got.End.Format(time.RFC3339) != "2026-10-19T12:00:00+02:00" {
 			t.Fatalf("shifted schedule = %+v, error = %v", got, err)
 		}
-		event := (types.Class{}).ToEvent(nil, &got)
+		event := (types.Class{}).ToEvent(nil, got)
 		if recurrence != nil && !reflect.DeepEqual(event.Recurrence, wantRules) {
 			t.Fatalf("rules = %v, want %v", event.Recurrence, wantRules)
 		}

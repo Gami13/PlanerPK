@@ -15,16 +15,16 @@ func TestBuildResolvedClassEvents(t *testing.T) {
 	start := time.Date(2026, 10, 19, 8, 0, 0, 0, time.UTC)
 	schedule := types.ClassSchedule{Start: start, End: start.Add(90 * time.Minute),
 		Recurrence: &types.WeeklyRecurrence{Interval: 2, Until: start.AddDate(0, 0, 28), Exclusions: []time.Time{start}}}
-	original := class.ToEvent(nil, &schedule)
-	unchanged := class.ToEvent(nil, &schedule)
-	ghost := class.ToEvent(nil, &schedule)
+	original := class.ToEvent(nil, schedule)
+	unchanged := class.ToEvent(nil, schedule)
+	ghost := class.ToEvent(nil, schedule)
 	ghost.Transparency, ghost.ColorId = "transparent", "8"
 	ghost.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
 
 	delta := 150 * time.Minute
 	shiftedSchedule := types.ClassSchedule{Start: schedule.Start.Add(delta), End: schedule.End.Add(delta),
 		Recurrence: &types.WeeklyRecurrence{Interval: 2, Until: schedule.Recurrence.Until.Add(delta), Exclusions: []time.Time{start.Add(delta)}}}
-	shifted := class.ToEvent(nil, &shiftedSchedule)
+	shifted := class.ToEvent(nil, shiftedSchedule)
 	for _, event := range []*calendar.Event{&original, &ghost, &shifted} {
 		event.ExtendedProperties.Private["contentHash"] = eventContentHash(*event)
 	}
@@ -48,7 +48,7 @@ func TestBuildResolvedClassEvents(t *testing.T) {
 			if (err != nil) != tt.wantError || !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("events = %+v, error = %v; want %+v, wantError = %v", got, err, tt.want, tt.wantError)
 			}
-			if after := class.ToEvent(nil, &schedule); !reflect.DeepEqual(after, unchanged) {
+			if after := class.ToEvent(nil, schedule); !reflect.DeepEqual(after, unchanged) {
 				t.Fatal("original schedule changed")
 			}
 		})

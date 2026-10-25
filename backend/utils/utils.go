@@ -16,13 +16,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func GetDateOfNextWeekday(weekday time.Weekday) time.Time {
-	today := time.Now()
-	daysUntil := (int(weekday) - int(today.Weekday()) + 7) % 7
-	next := today.AddDate(0, 0, daysUntil)
-	return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, time.UTC)
-}
-
 func GetToken(u *db.User) *oauth2.Token {
 	return &oauth2.Token{
 		AccessToken:  u.AccessToken,

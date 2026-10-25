@@ -40,12 +40,7 @@ func TestWriteComparison(t *testing.T) {
 			if err := writeComparison(&out, "GL2", class, tt.block, calendar); err != nil {
 				t.Fatal(err)
 			}
-			old := class.ToEvent(nil, nil)
-			oldStart, err := time.Parse(time.RFC3339, old.Start.DateTime)
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := fmt.Sprintf("GL2 | Subject (Lecture)\n  Block: dated | Audience: GL2\n  Old: %s 08:00 – 09:30\n  New:\n    %s\n\n", oldStart.Format("Mon 2006-01-02"), tt.want)
+			want := fmt.Sprintf("GL2 | Subject (Lecture)\n  Block: dated | Audience: GL2\n  Excel: Wednesday 08:00 – 09:30\n  Snapshot:\n    %s\n\n", tt.want)
 			if out.String() != want {
 				t.Fatalf("output = %q, want %q", out.String(), want)
 			}

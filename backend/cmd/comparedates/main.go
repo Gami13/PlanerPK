@@ -55,7 +55,7 @@ func run() error {
 	}
 	legend := extractor.ExtractLegend(file, sheet)
 	timetable := extractor.BuildTimetable(groups, file, sheet, legend, nil, layout, snapshot.NewSubjectIndex(state.Blocks))
-	fmt.Fprintln(os.Stderr, "Old: next weekday at run time. New: all snapshot class dates, with closures. Process timezone; no user overrides, deferred date exceptions, or calendar writes.")
+	fmt.Fprintln(os.Stderr, "Excel: raw weekday/time slot. Snapshot: actual class dates, with closures. Process timezone; no user overrides, deferred date exceptions, or calendar writes.")
 	for _, group := range groups {
 		for _, day := range layout.Days {
 			for _, class := range timetable[int64(group.Column)][day.WeekDay] {
@@ -84,17 +84,9 @@ func writeComparison(out io.Writer, group string, class types.Class, block *snap
 			newClasses = strings.Join(dates, "\n")
 		}
 	}
-	old := class.ToEvent(nil, nil)
-	oldStart, err := time.Parse(time.RFC3339, old.Start.DateTime)
-	if err != nil {
-		return err
-	}
-	oldEnd, err := time.Parse(time.RFC3339, old.End.DateTime)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(out, "%s | %s (%s)\n  Block: %s | Audience: %s\n  Old: %s\n  New:\n%s\n\n",
-		group, class.Name, class.Type, class.SnapshotBlockID, class.Audience, formatClassTimes(oldStart, oldEnd), newClasses)
+	_, err := fmt.Fprintf(out, "%s | %s (%s)\n  Block: %s | Audience: %s\n  Excel: %s %s – %s\n  Snapshot:\n%s\n\n",
+		group, class.Name, class.Type, class.SnapshotBlockID, class.Audience,
+		class.Day, class.StartTime.Format("15:04"), class.EndTime.Format("15:04"), newClasses)
 	return err
 }
 

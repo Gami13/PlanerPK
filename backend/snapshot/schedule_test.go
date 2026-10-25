@@ -53,7 +53,7 @@ func TestClassSchedule(t *testing.T) {
 			if got == nil || got.Start.Format(time.RFC3339) != tt.first+"T08:00:00Z" || got.End.Format(time.RFC3339) != tt.first+"T09:30:00Z" {
 				t.Fatalf("schedule = %+v, want %s 08:00–09:30 and rules %v", got, tt.first, tt.rules)
 			}
-			event := (types.Class{}).ToEvent(nil, got)
+			event := (types.Class{}).ToEvent(nil, *got)
 			if !slices.Equal(event.Recurrence, tt.rules) {
 				t.Fatalf("event recurrence = %v, want %v", event.Recurrence, tt.rules)
 			}

@@ -16,7 +16,7 @@ func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	if !strings.Contains(class.String(), "GL2") {
 		t.Errorf("String() = %q, want audience", class.String())
 	}
-	event := class.ToEvent(nil, nil)
+	event := class.ToEvent(nil, ClassSchedule{})
 	if event.ExtendedProperties.Private["overrideId"] != class.Hash() {
 		t.Error("ToEvent() omitted overrideId")
 	}
@@ -37,7 +37,7 @@ func TestRecurringEventTimezoneAcrossDST(t *testing.T) {
 		start := time.Date(2026, 10, day, 8, 0, 0, 0, zone)
 		schedule := ClassSchedule{Start: start, End: start.Add(90 * time.Minute),
 			Recurrence: &WeeklyRecurrence{Interval: 1, Until: start.AddDate(0, 0, 7)}}
-		event := (Class{}).ToEvent(nil, &schedule)
+		event := (Class{}).ToEvent(nil, schedule)
 		payload, err := json.Marshal(event)
 		if err != nil {
 			t.Fatal(err)
@@ -53,14 +53,10 @@ func TestRecurringEventTimezoneAcrossDST(t *testing.T) {
 			t.Fatalf("incorrect Google event payload: %s", payload)
 		}
 		schedule.Recurrence = nil
-		single := (Class{}).ToEvent(nil, &schedule)
+		single := (Class{}).ToEvent(nil, schedule)
 		if single.Start.TimeZone != "" || single.End.TimeZone != "" {
 			t.Fatal("single event timezone behavior changed")
 		}
-	}
-	legacy := (Class{}).ToEvent(nil, nil)
-	if legacy.Start.TimeZone != "" || legacy.End.TimeZone != "" {
-		t.Fatal("legacy event timezone behavior changed")
 	}
 }
 
@@ -71,7 +67,7 @@ func TestToEventResolvedSchedule(t *testing.T) {
 		StartTime: time.Date(2000, 1, 1, 8, 0, 0, 0, time.Local),
 		EndTime:   time.Date(2000, 1, 1, 9, 0, 0, 0, time.Local),
 	}
-	legacy := class.ToEvent(nil, nil)
+	baseline := class.ToEvent(nil, ClassSchedule{})
 	recurrence := &WeeklyRecurrence{
 		Interval:   1,
 		Until:      time.Date(2026, 10, 28, 8, 0, 0, 0, time.UTC),
@@ -89,7 +85,7 @@ func TestToEventResolvedSchedule(t *testing.T) {
 			End:        time.Date(2026, 10, 7, 11, 30, 0, 0, time.Local),
 			Recurrence: tt.recurrence,
 		}
-		event := class.ToEvent(nil, &schedule)
+		event := class.ToEvent(nil, schedule)
 		if event.Start.DateTime != schedule.Start.Format(time.RFC3339) || event.End.DateTime != schedule.End.Format(time.RFC3339) {
 			t.Errorf("resolved dates not preserved: %v – %v", event.Start, event.End)
 		}
@@ -102,8 +98,8 @@ func TestToEventResolvedSchedule(t *testing.T) {
 				t.Error("event mutation changed schedule recurrence")
 			}
 		}
-		event.Start, event.End, event.Recurrence = legacy.Start, legacy.End, legacy.Recurrence
-		if !reflect.DeepEqual(event, legacy) {
+		event.Start, event.End, event.Recurrence = baseline.Start, baseline.End, baseline.Recurrence
+		if !reflect.DeepEqual(event, baseline) {
 			t.Error("resolved schedule changed Excel metadata")
 		}
 	}

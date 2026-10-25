@@ -62,7 +62,7 @@ func TestToEventKeepsRawLocationAndDoesNotUseLegacyPlaceData(t *testing.T) {
 		},
 	}
 	class := types.Class{Location: "s. 131", ResolvedClassroomKeys: []string{"131"}}
-	event := class.ToEvent(buildingCache, nil)
+	event := class.ToEvent(buildingCache, types.ClassSchedule{})
 	if event.Location != "s. 131" {
 		t.Errorf("event location = %q, want original location", event.Location)
 	}
@@ -80,7 +80,7 @@ func TestToEventAddsUniqueConfirmedBuildingLinks(t *testing.T) {
 		},
 	}
 	class := types.Class{Location: "s. 135/136, s. 114", ResolvedClassroomKeys: []string{"135", "136", "114"}}
-	event := class.ToEvent(buildingCache, nil)
+	event := class.ToEvent(buildingCache, types.ClassSchedule{})
 	if event.Location != class.Location {
 		t.Fatalf("location = %q, want original %q", event.Location, class.Location)
 	}

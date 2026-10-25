@@ -55,11 +55,11 @@ func buildResolvedClassEvents(class types.Class, schedule *types.ClassSchedule, 
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, class.ToEvent(buildings, &shifted))
+		events = append(events, class.ToEvent(buildings, shifted))
 	}
 
 	if override.IsTransparent && (override.IsHidden || override.StartHour != "") {
-		ghost := class.ToEvent(buildings, schedule)
+		ghost := class.ToEvent(buildings, *schedule)
 		ghost.Transparency = "transparent"
 		ghost.ColorId = "8"
 		ghost.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
