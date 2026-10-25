@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func TestBuildResolvedTimetableEvents(t *testing.T) {
+func TestBuildTimetableEvents(t *testing.T) {
 	day, start, date := "WED", 480, "2026-10-14"
 	block := snapshot.Block{ID: "weekly", Day: &day, Start: &start, Duration: 90, Frequency: "co_tydzien"}
 	state := snapshot.State{Blocks: []snapshot.Block{block}, AcademicCalendar: snapshot.AcademicCalendar{
@@ -32,7 +32,7 @@ func TestBuildResolvedTimetableEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, err := buildResolvedClassEvents(class, schedule, override, nil)
+	want, err := buildClassEvents(class, schedule, override, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,25 +40,26 @@ func TestBuildResolvedTimetableEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = append(want, one.ToEvent(nil, *oneSchedule))
-	want[len(want)-1].ExtendedProperties.Private["contentHash"] = eventContentHash(want[len(want)-1])
-	got, err := buildResolvedTimetableEvents(timetable, &state, map[string]db.Override{class.Hash(): override}, nil)
+	oneEvent := one.ToEvent(nil, *oneSchedule)
+	oneEvent.ExtendedProperties.Private["contentHash"] = eventContentHash(oneEvent)
+	want = append(want, &oneEvent)
+	got, err := buildTimetableEvents(timetable, &state, map[string]db.Override{class.Hash(): override}, nil)
 	if err != nil || len(got) != 3 || !reflect.DeepEqual(got, want) {
 		t.Fatalf("events = %+v, error = %v; want %+v", got, err, want)
 	}
-	assertError := func(events []calendar.Event, err error) {
+	assertError := func(events []*calendar.Event, err error) {
 		t.Helper()
 		if err == nil || events != nil {
 			t.Fatalf("events = %+v, error = %v; want no partial events and an error", events, err)
 		}
 	}
-	assertError(buildResolvedTimetableEvents(timetable, nil, nil, nil))
+	assertError(buildTimetableEvents(timetable, nil, nil, nil))
 	for _, id := range []string{"", "missing"} {
 		bad := class
 		bad.SnapshotBlockID = id
-		assertError(buildResolvedTimetableEvents(types.GroupTimetable{time.Wednesday: {one, bad}}, &state, nil, nil))
+		assertError(buildTimetableEvents(types.GroupTimetable{time.Wednesday: {one, bad}}, &state, nil, nil))
 	}
-	assertError(buildResolvedTimetableEvents(timetable, &state, map[string]db.Override{class.Hash(): {StartHour: "bad"}}, nil))
+	assertError(buildTimetableEvents(timetable, &state, map[string]db.Override{class.Hash(): {StartHour: "bad"}}, nil))
 	state.Blocks[1].Date = new(string)
-	assertError(buildResolvedTimetableEvents(timetable, &state, nil, nil))
+	assertError(buildTimetableEvents(timetable, &state, nil, nil))
 }

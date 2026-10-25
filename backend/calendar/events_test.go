@@ -10,7 +10,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func TestBuildResolvedClassEvents(t *testing.T) {
+func TestBuildClassEvents(t *testing.T) {
 	class := types.Class{Name: "Subject", Teacher: "Teacher", Location: "Room", Audience: "GL2"}
 	start := time.Date(2026, 10, 19, 8, 0, 0, 0, time.UTC)
 	schedule := types.ClassSchedule{Start: start, End: start.Add(90 * time.Minute),
@@ -32,19 +32,19 @@ func TestBuildResolvedClassEvents(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
 		override  db.Override
-		want      []calendar.Event
+		want      []*calendar.Event
 		wantError bool
 	}{
-		{"normal", db.Override{}, []calendar.Event{original}, false},
+		{"normal", db.Override{}, []*calendar.Event{&original}, false},
 		{"hidden", db.Override{IsHidden: true}, nil, false},
-		{"hidden ghost ignores shift", db.Override{IsHidden: true, IsTransparent: true, StartHour: "10:30"}, []calendar.Event{ghost}, false},
-		{"shifted", db.Override{StartHour: "10:30"}, []calendar.Event{shifted}, false},
-		{"shifted with ghost", db.Override{StartHour: "10:30", IsTransparent: true}, []calendar.Event{shifted, ghost}, false},
-		{"transparent without shift", db.Override{IsTransparent: true}, []calendar.Event{original}, false},
+		{"hidden ghost ignores shift", db.Override{IsHidden: true, IsTransparent: true, StartHour: "10:30"}, []*calendar.Event{&ghost}, false},
+		{"shifted", db.Override{StartHour: "10:30"}, []*calendar.Event{&shifted}, false},
+		{"shifted with ghost", db.Override{StartHour: "10:30", IsTransparent: true}, []*calendar.Event{&shifted, &ghost}, false},
+		{"transparent without shift", db.Override{IsTransparent: true}, []*calendar.Event{&original}, false},
 		{"invalid shift", db.Override{StartHour: "bad"}, nil, true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := buildResolvedClassEvents(class, &schedule, tt.override, nil)
+			got, err := buildClassEvents(class, &schedule, tt.override, nil)
 			if (err != nil) != tt.wantError || !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("events = %+v, error = %v; want %+v, wantError = %v", got, err, tt.want, tt.wantError)
 			}
@@ -53,7 +53,7 @@ func TestBuildResolvedClassEvents(t *testing.T) {
 			}
 		})
 	}
-	if got, err := buildResolvedClassEvents(class, nil, db.Override{}, nil); err != nil || len(got) != 0 {
+	if got, err := buildClassEvents(class, nil, db.Override{}, nil); err != nil || len(got) != 0 {
 		t.Fatalf("nil schedule: events = %+v, error = %v", got, err)
 	}
 }

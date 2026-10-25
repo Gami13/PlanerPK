@@ -12,13 +12,9 @@ import (
 // and schedule exclusions, then compares it with the supplied existing events.
 // It fetches nothing, writes nothing, and returns no partial diff on failure.
 func BuildTimetableDiff(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings, current []*calendar.Event) (eventDiff, error) {
-	events, err := buildResolvedTimetableEvents(timetable, state, overrides, buildings)
+	events, err := buildTimetableEvents(timetable, state, overrides, buildings)
 	if err != nil {
 		return eventDiff{}, err
 	}
-	proposed := make([]*calendar.Event, len(events))
-	for i := range events {
-		proposed[i] = &events[i]
-	}
-	return calculateEventDiffs(current, proposed)
+	return calculateEventDiffs(current, events)
 }

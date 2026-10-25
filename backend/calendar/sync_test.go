@@ -56,12 +56,12 @@ func TestSyncTimetable(t *testing.T) {
 			}
 			var stored []*calendar.Event
 			if mode == "exceptions" {
-				events, err := buildResolvedTimetableEvents(all[1], state, nil, nil)
+				events, err := buildTimetableEvents(all[1], state, nil, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				events[0].Id, events[0].Summary = "series", "Old details"
-				stored = []*calendar.Event{&events[0], {Id: "exception", RecurringEventId: "series", Status: "cancelled"}}
+				stored = []*calendar.Event{events[0], {Id: "exception", RecurringEventId: "series", Status: "cancelled"}}
 			}
 			if mode == "bad schedule" {
 				state.Blocks[0].Frequency = "unknown"

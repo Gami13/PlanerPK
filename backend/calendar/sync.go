@@ -61,7 +61,7 @@ func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timeta
 	for _, override := range overrides {
 		byClass[override.ClassHash] = override
 	}
-	events, err := buildResolvedTimetableEvents(timetable, state, byClass, buildings)
+	events, err := buildTimetableEvents(timetable, state, byClass, buildings)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timeta
 }
 
 // syncCalendarEvents resolves the target, lists current events, and applies the diff.
-func syncCalendarEvents(ctx context.Context, srv *calendar.Service, queries db.Querier, user db.User, events []calendar.Event) error {
+func syncCalendarEvents(ctx context.Context, srv *calendar.Service, queries db.Querier, user db.User, events []*calendar.Event) error {
 	id, err := EnsureUserCalendar(ctx, srv, queries, user)
 	if err != nil {
 		return err
@@ -85,11 +85,7 @@ func syncCalendarEvents(ctx context.Context, srv *calendar.Service, queries db.Q
 	if err != nil {
 		return err
 	}
-	proposed := make([]*calendar.Event, len(events))
-	for i := range events {
-		proposed[i] = &events[i]
-	}
-	diff, err := calculateEventDiffs(current, proposed)
+	diff, err := calculateEventDiffs(current, events)
 	if err != nil {
 		return err
 	}

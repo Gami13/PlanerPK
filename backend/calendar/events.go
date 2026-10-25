@@ -11,9 +11,9 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-// buildResolvedTimetableEvents prepares events offline from one loaded snapshot.
+// buildTimetableEvents prepares events offline from one loaded snapshot.
 // Any failure returns no events, never a partial preview or guessed dates.
-func buildResolvedTimetableEvents(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings) ([]calendar.Event, error) {
+func buildTimetableEvents(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings) ([]*calendar.Event, error) {
 	if state == nil {
 		return nil, fmt.Errorf("snapshot state is missing")
 	}
@@ -21,7 +21,7 @@ func buildResolvedTimetableEvents(timetable types.GroupTimetable, state *snapsho
 	for _, block := range state.Blocks {
 		blocks[block.ID] = block
 	}
-	var events []calendar.Event
+	var events []*calendar.Event
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		for _, class := range timetable[day] {
 			block, ok := blocks[class.SnapshotBlockID]
@@ -32,7 +32,7 @@ func buildResolvedTimetableEvents(timetable types.GroupTimetable, state *snapsho
 			if err != nil {
 				return nil, fmt.Errorf("class %q, block %q: %w", class.Name, block.ID, err)
 			}
-			classEvents, err := buildResolvedClassEvents(class, schedule, overrides[class.Hash()], buildings)
+			classEvents, err := buildClassEvents(class, schedule, overrides[class.Hash()], buildings)
 			if err != nil {
 				return nil, fmt.Errorf("class %q, block %q: %w", class.Name, block.ID, err)
 			}
@@ -42,20 +42,21 @@ func buildResolvedTimetableEvents(timetable types.GroupTimetable, state *snapsho
 	return events, nil
 }
 
-// buildResolvedClassEvents builds one class's events without fetching or writing.
+// buildClassEvents builds one class's events without fetching or writing.
 // A nil schedule means no classes, never a fallback to the next weekday.
-func buildResolvedClassEvents(class types.Class, schedule *types.ClassSchedule, override db.Override, buildings *buildings.Buildings) ([]calendar.Event, error) {
+func buildClassEvents(class types.Class, schedule *types.ClassSchedule, override db.Override, buildings *buildings.Buildings) ([]*calendar.Event, error) {
 	if schedule == nil || (override.IsHidden && !override.IsTransparent) {
 		return nil, nil
 	}
 
-	var events []calendar.Event
+	var events []*calendar.Event
 	if !override.IsHidden {
 		shifted, err := shiftClassSchedule(*schedule, override.StartHour)
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, class.ToEvent(buildings, shifted))
+		event := class.ToEvent(buildings, shifted)
+		events = append(events, &event)
 	}
 
 	if override.IsTransparent && (override.IsHidden || override.StartHour != "") {
@@ -63,11 +64,11 @@ func buildResolvedClassEvents(class types.Class, schedule *types.ClassSchedule, 
 		ghost.Transparency = "transparent"
 		ghost.ColorId = "8"
 		ghost.ExtendedProperties.Private["overrideId"] = class.Hash() + "_ghost"
-		events = append(events, ghost)
+		events = append(events, &ghost)
 	}
 
-	for i := range events {
-		events[i].ExtendedProperties.Private["contentHash"] = eventContentHash(events[i])
+	for _, event := range events {
+		event.ExtendedProperties.Private["contentHash"] = eventContentHash(*event)
 	}
 	return events, nil
 }
