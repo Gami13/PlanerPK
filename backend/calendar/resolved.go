@@ -1,11 +1,46 @@
 package calendar
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/woodpkrs/PlanerPK/buildings"
 	"github.com/woodpkrs/PlanerPK/gen/db"
+	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
 	"google.golang.org/api/calendar/v3"
 )
+
+// buildResolvedTimetableEvents prepares events offline from one loaded snapshot.
+// Any failure returns no events, never a partial preview or guessed dates.
+func buildResolvedTimetableEvents(timetable types.GroupTimetable, state *snapshot.State, overrides map[string]db.Override, buildings *buildings.Buildings) ([]calendar.Event, error) {
+	if state == nil {
+		return nil, fmt.Errorf("snapshot state is missing")
+	}
+	blocks := make(map[string]snapshot.Block, len(state.Blocks))
+	for _, block := range state.Blocks {
+		blocks[block.ID] = block
+	}
+	var events []calendar.Event
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		for _, class := range timetable[day] {
+			block, ok := blocks[class.SnapshotBlockID]
+			if class.SnapshotBlockID == "" || !ok {
+				return nil, fmt.Errorf("class %q: snapshot block %q not found", class.Name, class.SnapshotBlockID)
+			}
+			schedule, err := block.ClassSchedule(state.AcademicCalendar)
+			if err != nil {
+				return nil, fmt.Errorf("class %q, block %q: %w", class.Name, block.ID, err)
+			}
+			classEvents, err := buildResolvedClassEvents(class, schedule, overrides[class.Hash()], buildings)
+			if err != nil {
+				return nil, fmt.Errorf("class %q, block %q: %w", class.Name, block.ID, err)
+			}
+			events = append(events, classEvents...)
+		}
+	}
+	return events, nil
+}
 
 // buildResolvedClassEvents builds one class's events without fetching or writing.
 // A nil schedule means no classes, never a fallback to the next weekday.
