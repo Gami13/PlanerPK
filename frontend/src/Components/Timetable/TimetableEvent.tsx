@@ -17,6 +17,14 @@ export function TimetableEvent(props: {
 	// instead of letting it clip mid-line.
 	const roomy = () => duration() >= 75;
 	const title = () => info().summary || formatClassTitle(defaultTitleTemplate, info());
+	const heading = () => {
+		const suffix = ` - ${info().teacher}`;
+		const withoutTeacher = info().teacher && title().endsWith(suffix) ? title().slice(0, -suffix.length) : title();
+		const typeSuffix = ` (${info().type})`;
+		return info().type && withoutTeacher.endsWith(typeSuffix)
+			? withoutTeacher.slice(0, -typeSuffix.length)
+			: withoutTeacher;
+	};
 	const showAudience = () => !props.entry.ghost && shouldShowAudience(info().type, info().audience, props.groupLabel);
 	const week = () => (props.entry.ghost ? undefined : weekMarker(info().recurrence));
 	const showRecurrence = () =>
@@ -45,8 +53,16 @@ export function TimetableEvent(props: {
 			}}
 			title={tooltip()}
 		>
+			<Show when={info().type}>
+				<span {...attrs(stylex.props(styles.eventType))} title={`Typ zajęć: ${info().type}`} aria-label={`Typ zajęć: ${info().type}`}>
+					{info().type}
+				</span>
+			</Show>
 			<div {...attrs(stylex.props(styles.eventContent))}>
-				<h4 {...attrs(stylex.props(styles.eventName))}>{title()}</h4>
+				<h4 {...attrs(stylex.props(styles.eventName, !!info().type && styles.eventNameWithType))}>{heading()}</h4>
+				<Show when={info().teacher}>
+					<span {...attrs(stylex.props(styles.eventTeacher))} title={info().teacher}>{info().teacher}</span>
+				</Show>
 				<Show when={props.entry.ghost}>
 					<span {...attrs(stylex.props(styles.eventMeta))}>Poprzednia pozycja</span>
 				</Show>
