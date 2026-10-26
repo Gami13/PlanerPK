@@ -7,6 +7,26 @@ import (
 	"time"
 )
 
+func TestClassHashPreservesLegacyFormat(t *testing.T) {
+	class := Class{
+		Name: "Subject", Level: "B2", Type: "L", Teacher: "Teacher", TotalHours: "30h",
+		AdditionalInfo: "A", Location: "Room 1", Day: time.Monday,
+		StartTime: time.Date(2000, 1, 1, 8, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2000, 1, 1, 9, 30, 0, 0, time.UTC),
+	}
+	want := "Subject B2 (L) - Teacher | 30h | A|1|08:00|09:30|Room 1"
+	if got := class.Hash(); got != want {
+		t.Fatalf("Hash() = %q, want %q", got, want)
+	}
+	class.Audience = "GL2"
+	if got := class.Hash(); got != want+"|GL2" {
+		t.Fatalf("Hash() = %q, want audience appended to legacy hash", got)
+	}
+	if got := (Class{Name: "Subject"}).Hash(); got != "Subject|0|00:00|00:00|" {
+		t.Fatalf("empty fields changed hash punctuation: %q", got)
+	}
+}
+
 func TestCalendarSummaryIncludesWeekAndClassDetails(t *testing.T) {
 	class := Class{
 		Name: "Matematyka dyskretna", Type: "L", Teacher: "Biskup Piotr",

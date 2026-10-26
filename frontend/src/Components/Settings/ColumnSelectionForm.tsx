@@ -1,15 +1,15 @@
 import * as stylex from "@stylexjs/stylex";
-import { For, Show } from "solid-js";
+import { Show } from "solid-js";
 import { Button } from "../../Components/Button";
+import { ColumnOptions } from "../ColumnOptions";
 import { UIText } from "../../constants";
-import { ColumnGroup } from "../../gen/pkplaner/v1/pkplaner_pb";
-import { attrs, groupByCategory } from "../../utils";
-import { settingsStyles } from "./settingsStyles";
+import type { ColumnGroup } from "../../gen/pkplaner/v1/pkplaner_pb";
+import { colors } from "../../styles/tokens.stylex";
+import { attrs } from "../../utils";
 
 type ColumnSelectionFormProps = {
 	chosenColumn: number;
 	compact?: boolean;
-	currentColumnLabel: string;
 	columns: ColumnGroup[] | undefined;
 	columnsLoading: boolean;
 	columnsError: unknown;
@@ -30,6 +30,19 @@ const columnFormStyles = stylex.create({
 		flexWrap: "wrap",
 	},
 	selectInput: {
+		borderColor: colors.defaultBorder,
+		borderStyle: "solid",
+		borderWidth: "1px",
+		borderRadius: "5px",
+		paddingBlock: "8px",
+		paddingInline: "10px",
+		color: colors.primaryText,
+		fontSize: "0.85rem",
+		backgroundColor: colors.white,
+		maxWidth: "20em",
+		width: "100%",
+		outline: { default: "none", ":focus": "2px solid #039be5" },
+		outlineOffset: { ":focus": "-1px" },
 		flex: 1,
 		minWidth: "min(100%, 12rem)",
 	},
@@ -65,13 +78,7 @@ export function ColumnSelectionForm(props: ColumnSelectionFormProps) {
 				</Show>
 				<div {...attrs(stylex.props(columnFormStyles.selectRow))}>
 					<select
-						{...attrs(
-							stylex.props(
-								settingsStyles.columnSelect,
-								columnFormStyles.selectInput,
-								props.compact && columnFormStyles.compactSelect
-							)
-						)}
+						{...attrs(stylex.props(columnFormStyles.selectInput, props.compact && columnFormStyles.compactSelect))}
 						aria-label={UIText.settings.column.title}
 						name="chosen_column"
 						id="chosen_column"
@@ -82,21 +89,7 @@ export function ColumnSelectionForm(props: ColumnSelectionFormProps) {
 						<Show when={props.columnsLoading}>
 							<option disabled>{UIText.settings.column.loadingColumns}</option>
 						</Show>
-						<Show when={props.columns}>
-							<For each={[...groupByCategory(props.columns!)]}>
-								{([category, options]) => (
-									<optgroup label={category || "Inne"}>
-										<For each={options}>
-											{(option) => (
-												<option value={option.column} selected={props.chosenColumn === option.column}>
-													{option.label}
-												</option>
-											)}
-										</For>
-									</optgroup>
-								)}
-							</For>
-						</Show>
+						<ColumnOptions columns={props.columns ?? []} selected={props.chosenColumn} />
 					</select>
 					<div {...attrs(stylex.props(columnFormStyles.submitButton))}>
 						<Button isPrimary={true}>{UIText.settings.column.change}</Button>

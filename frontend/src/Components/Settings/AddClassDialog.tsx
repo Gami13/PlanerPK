@@ -1,9 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { createMemo, createResource, createSignal, createUniqueId, For, onMount, Show } from "solid-js";
+import { createMemo, createResource, createSignal, createUniqueId, For, Show } from "solid-js";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { getImportGroups, getPublicTimetable, setClassOverride } from "../../services/pkplaner";
-import { primitiveStyles } from "../../styles/primitives";
-import { attrs, groupByCategory } from "../../utils";
+import { Button } from "../Button";
+import { ColumnOptions } from "../ColumnOptions";
+import { createModalDialog } from "../createModalDialog";
+import { attrs } from "../../utils";
 import { DayLabels } from "../../constants";
 import { overrideDialogStyles as shared } from "./ClassOverrideDialog";
 
@@ -42,13 +44,12 @@ export function AddClassDialog(props: {
 	onAdded: (override: ClassOverride) => void;
 	onClose: () => void;
 }) {
-	let dialog!: HTMLDialogElement;
 	const id = createUniqueId();
 	const [groups] = createResource(getImportGroups);
 	const [selected, setSelected] = createSignal<number>();
 	// Avoid suspending the page that owns the native dialog: detaching it drops
 	// it out of the browser's modal top layer. Loading is rendered locally below.
-	const availableGroups = () => groups.error || groups.loading ? [] : groups.latest ?? [];
+	const availableGroups = () => (groups.error || groups.loading ? [] : (groups.latest ?? []));
 	const source = () => selected() ?? availableGroups()[0]?.column;
 	const [classes] = createResource(source, getPublicTimetable);
 	const [search, setSearch] = createSignal("");
@@ -65,7 +66,7 @@ export function AddClassDialog(props: {
 				.includes(query)
 		);
 	});
-	onMount(() => dialog.showModal());
+	const dialog = createModalDialog(pending, () => props.onClose());
 	async function add(lesson: ClassInfo) {
 		const column = source();
 		if (column === undefined || pending() || existing().has(lesson.hash)) return;
@@ -90,26 +91,7 @@ export function AddClassDialog(props: {
 		}
 	}
 	return (
-		<dialog
-			ref={dialog}
-			{...attrs(stylex.props(shared.dialog, styles.dialog))}
-			aria-labelledby={`${id}-title`}
-			onClose={props.onClose}
-			onCancel={(event) => {
-				if (pending()) event.preventDefault();
-			}}
-			onClick={(event) => {
-				if (event.target !== dialog || pending()) return;
-				const bounds = dialog.getBoundingClientRect();
-				if (
-					event.clientX < bounds.left ||
-					event.clientX > bounds.right ||
-					event.clientY < bounds.top ||
-					event.clientY > bounds.bottom
-				)
-					dialog.close();
-			}}
-		>
+		<dialog {...dialog.props} {...attrs(stylex.props(shared.dialog, styles.dialog))} aria-labelledby={`${id}-title`}>
 			<header {...attrs(stylex.props(shared.header))}>
 				<h2 id={`${id}-title`} {...attrs(stylex.props(shared.title))}>
 					Dodaj zajęcia z innej grupy
@@ -131,19 +113,7 @@ export function AddClassDialog(props: {
 							setError("");
 						}}
 					>
-						<For each={[...groupByCategory(availableGroups())]}>
-							{([category, options]) => (
-								<optgroup label={category || "Inne"}>
-									<For each={options}>
-										{(group) => (
-											<option value={group.column} selected={source() === group.column}>
-												{group.label}
-											</option>
-										)}
-									</For>
-								</optgroup>
-							)}
-						</For>
+						<ColumnOptions columns={availableGroups()} selected={source()} />
 					</select>
 					<label for={`${id}-search`} {...attrs(stylex.props(shared.meta))}>
 						Szukaj zajęć
@@ -189,14 +159,9 @@ export function AddClassDialog(props: {
 											{lesson.recurrence ? ` · ${lesson.recurrence}` : ""}
 										</p>
 									</div>
-									<button
-										{...attrs(
-											stylex.props(
-												primitiveStyles.buttonBase,
-												primitiveStyles.buttonPrimary,
-												(!!pending() || existing().has(lesson.hash)) && styles.disabled
-											)
-										)}
+									<Button
+										isPrimary
+										styles={(!!pending() || existing().has(lesson.hash)) && styles.disabled}
 										aria-label={
 											existing().has(lesson.hash)
 												? `${lesson.name} — już w planie`
@@ -207,7 +172,7 @@ export function AddClassDialog(props: {
 										onClick={() => void add(lesson)}
 									>
 										{existing().has(lesson.hash) ? "W planie" : pending() === lesson.hash ? "Dodawanie…" : "Dodaj"}
-									</button>
+									</Button>
 								</li>
 							)}
 						</For>
@@ -223,14 +188,9 @@ export function AddClassDialog(props: {
 				</p>
 			</div>
 			<footer {...attrs(stylex.props(shared.actions))}>
-				<button
-					{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary))}
-					type="button"
-					disabled={!!pending()}
-					onClick={() => dialog.close()}
-				>
+				<Button type="button" disabled={!!pending()} onClick={() => dialog.close()}>
 					Gotowe
-				</button>
+				</Button>
 			</footer>
 		</dialog>
 	);

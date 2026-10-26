@@ -69,23 +69,12 @@ func (h *PKPlanerHandler) SetOverride(
 		if user.ChosenColumn == nil || !types.CanImportGroup(*h.cache.AvailableGroups(), *user.ChosenColumn, int64(ovr.SourceColumn)) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("source group must be in the same academic year"))
 		}
-		found := false
-		for _, classes := range (*h.cache.Timetable())[int64(ovr.SourceColumn)] {
-			for _, class := range classes {
-				if class.Hash() == ovr.ClassHash {
-					found = true
-				}
-			}
-		}
-		if !found {
+		timetables := *h.cache.Timetable()
+		if !hasClass(timetables[int64(ovr.SourceColumn)], ovr.ClassHash) {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("class not found in source group"))
 		}
-		for _, classes := range (*h.cache.Timetable())[*user.ChosenColumn] {
-			for _, class := range classes {
-				if class.Hash() == ovr.ClassHash {
-					return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("class already belongs to your group"))
-				}
-			}
+		if hasClass(timetables[*user.ChosenColumn], ovr.ClassHash) {
+			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("class already belongs to your group"))
 		}
 	}
 
@@ -107,4 +96,15 @@ func (h *PKPlanerHandler) SetOverride(
 	}
 
 	return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
+}
+
+func hasClass(timetable types.GroupTimetable, hash string) bool {
+	for _, classes := range timetable {
+		for _, class := range classes {
+			if class.Hash() == hash {
+				return true
+			}
+		}
+	}
+	return false
 }

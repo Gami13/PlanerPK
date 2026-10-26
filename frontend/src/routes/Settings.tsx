@@ -6,11 +6,11 @@ import { pageStyles } from "../styles/pageStyles";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 
 import { AppContext } from "../appContext";
+import { Button } from "../Components/Button";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
 import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
 import { ClassOverrideDialog } from "../Components/Settings/ClassOverrideDialog";
 import { AddClassDialog } from "../Components/Settings/AddClassDialog";
-import { primitiveStyles } from "../styles/primitives";
 import type { ClassInfo, ClassOverride } from "../gen/pkplaner/v1/pkplaner_pb";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
 import { UIText } from "../constants";
@@ -101,7 +101,6 @@ export function Settings() {
 						<ColumnSelectionForm
 							compact
 							chosenColumn={chosenColumn()}
-							currentColumnLabel={currentColumnLabel()}
 							columns={columns()}
 							columnsLoading={columns.loading}
 							columnsError={columns.error}
@@ -112,14 +111,13 @@ export function Settings() {
 
 				<TimetablePreview
 					headerAction={
-						<button
-							{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary))}
+						<Button
 							type="button"
 							disabled={!chosenColumn() || classes.loading || !!classes.error || overrides.loading || !!overrides.error}
 							onClick={() => setAddingClass(true)}
 						>
 							+ Dodaj zajęcia
-						</button>
+						</Button>
 					}
 					expand
 					onClassSelect={setEditingClass}

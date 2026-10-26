@@ -3,7 +3,6 @@ import { test } from "node:test";
 import {
 	formatTime,
 	isWeeklyRecurrence,
-	shouldShowAudience,
 	weekMarker,
 	parseTime,
 	positionEntries,
@@ -100,19 +99,6 @@ test("only A/B week markers move to the time footer", () => {
 	assert.equal(weekMarker(" A "), "A");
 	assert.equal(weekMarker("tydzień B"), "B");
 	assert.equal(weekMarker("A, bez 05.10"), undefined);
-});
-
-test("hide lecture, own group, aliases, and parent audiences", () => {
-	assert.equal(shouldShowAudience("W", "cały rocznik", "GL2"), false);
-	assert.equal(shouldShowAudience("wykład", "GL1", "GL2"), false);
-	assert.equal(shouldShowAudience("L", "GL2", "GL2"), false);
-	assert.equal(shouldShowAudience("L", "GK2", "GL2"), false);
-	assert.equal(shouldShowAudience("C", "GC1", "GK2"), false);
-	assert.equal(shouldShowAudience("C", "C1 (GL1+GL2)", "GL2"), false);
-	assert.equal(shouldShowAudience("C", "GC2", "GL2"), true);
-	assert.equal(shouldShowAudience("L", "GL1", "GL2"), true);
-	assert.equal(shouldShowAudience("C", "grupa obieralna 1", "GL2"), true);
-	assert.equal(shouldShowAudience("L", "GL2"), true);
 });
 
 test("default weekly recurrence is recognized as noise, alternating weeks are not", () => {

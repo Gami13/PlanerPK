@@ -20,29 +20,6 @@ export function weekMarker(value: string | undefined): string | undefined {
 	return match?.[1].toUpperCase();
 }
 
-function labGroups(value: string): string[] {
-	return [...value.toUpperCase().matchAll(/\bG[LK](\d+)\b/g)].map((match) => `GL${Number(match[1])}`);
-}
-
-export function shouldShowAudience(type: string, audience: string, selectedGroup?: string): boolean {
-	if (!audience.trim() || /^(w|wykład|wyklad|wyk\.?)$/i.test(type.trim())) return false;
-	if (!selectedGroup) return true;
-	const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toUpperCase();
-	if (normalize(audience) === normalize(selectedGroup)) return false;
-	const selectedLabs = labGroups(selectedGroup);
-	const audienceLabs = labGroups(audience);
-	// Explicit membership such as C1 (GL1+GL2) takes priority over numbering.
-	if (selectedLabs.length && audienceLabs.length) {
-		return !selectedLabs.every((group) => audienceLabs.includes(group));
-	}
-	// GC1 / C1 is the parent of GL1 and GL2 (also named GK1 and GK2).
-	const parent = /^(?:GC|C)(\d+)$/i.exec(audience.trim());
-	if (parent && selectedLabs.length) {
-		return !selectedLabs.every((group) => Math.ceil(Number(group.slice(2)) / 2) === Number(parent[1]));
-	}
-	return true;
-}
-
 export type TimetableEntry = {
 	id: string;
 	classInfo: ClassInfo;

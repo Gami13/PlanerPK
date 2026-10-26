@@ -1,9 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
-import { createSignal, createUniqueId, onMount, Show } from "solid-js";
+import { createSignal, createUniqueId, Show } from "solid-js";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { setClassOverride } from "../../services/pkplaner";
 import { colors } from "../../styles/tokens.stylex";
-import { primitiveStyles } from "../../styles/primitives";
+import { Button } from "../Button";
+import { createModalDialog } from "../createModalDialog";
 import { attrs } from "../../utils";
 import { DayLabels } from "../../constants";
 import { timetableStyles } from "../Timetable/timetableStyles";
@@ -89,14 +90,13 @@ export function ClassOverrideDialog(props: {
 	onSaved: (override: ClassOverride) => void;
 	onClose: () => void;
 }) {
-	let dialog!: HTMLDialogElement;
 	const id = createUniqueId();
 	const [hidden, setHidden] = createSignal(props.override?.isHidden ?? false);
 	const [transparent, setTransparent] = createSignal(props.override?.isTransparent ?? false);
 	const [start, setStart] = createSignal(props.override?.startHour ?? "");
 	const [pending, setPending] = createSignal(false);
 	const [error, setError] = createSignal(false);
-	onMount(() => dialog.showModal());
+	const dialog = createModalDialog(pending, () => props.onClose());
 
 	async function save(reset = false) {
 		if (pending()) return;
@@ -124,27 +124,7 @@ export function ClassOverrideDialog(props: {
 	}
 
 	return (
-		<dialog
-			ref={dialog}
-			{...attrs(stylex.props(styles.dialog))}
-			aria-labelledby={`${id}-title`}
-			onClick={(event) => {
-				if (event.target !== dialog || pending()) return;
-				const bounds = dialog.getBoundingClientRect();
-				if (
-					event.clientX < bounds.left ||
-					event.clientX > bounds.right ||
-					event.clientY < bounds.top ||
-					event.clientY > bounds.bottom
-				) {
-					dialog.close();
-				}
-			}}
-			onClose={props.onClose}
-			onCancel={(event) => {
-				if (pending()) event.preventDefault();
-			}}
-		>
+		<dialog {...dialog.props} {...attrs(stylex.props(styles.dialog))} aria-labelledby={`${id}-title`}>
 			<form
 				{...attrs(stylex.props(styles.form))}
 				onSubmit={(event) => {
@@ -216,29 +196,15 @@ export function ClassOverrideDialog(props: {
 					</Show>
 				</div>
 				<div {...attrs(stylex.props(styles.actions))}>
-					<button
-						{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary, styles.reset))}
-						type="button"
-						disabled={pending()}
-						onClick={() => void save(true)}
-					>
+					<Button styles={styles.reset} type="button" disabled={pending()} onClick={() => void save(true)}>
 						{props.override?.sourceColumn ? "Usuń z mojego planu" : "Przywróć domyślne"}
-					</button>
-					<button
-						{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary))}
-						type="button"
-						disabled={pending()}
-						onClick={() => dialog.close()}
-					>
+					</Button>
+					<Button type="button" disabled={pending()} onClick={() => dialog.close()}>
 						Anuluj
-					</button>
-					<button
-						{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonPrimary))}
-						type="submit"
-						disabled={pending()}
-					>
+					</Button>
+					<Button isPrimary type="submit" disabled={pending()}>
 						{pending() ? "Zapisywanie…" : "Zapisz"}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</dialog>

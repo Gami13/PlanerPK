@@ -52,7 +52,7 @@ func (c Class) String() string {
 }
 
 func (c Class) Hash() string {
-	hash := fmt.Sprintf("%s|%d|%s|%s|%s", c.summary(false), c.Day, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Location)
+	hash := fmt.Sprintf("%s|%d|%s|%s|%s", c.legacyHashSummary(), c.Day, c.StartTime.Format("15:04"), c.EndTime.Format("15:04"), c.Location)
 	if c.Audience != "" {
 		hash += "|" + c.Audience
 	}
@@ -63,11 +63,9 @@ func (c Class) Summary() string {
 	return c.FormatTitle(DefaultTitleTemplate)
 }
 
-func (c Class) summary(includeAudience bool) string {
-	summary := ""
-	if len(c.Name) > 0 {
-		summary += c.Name
-	}
+// Keep the original summary format for persisted hashes, independent of display titles.
+func (c Class) legacyHashSummary() string {
+	summary := c.Name
 	if len(c.Level) > 0 {
 		summary += fmt.Sprintf(" %s", c.Level)
 	}
@@ -76,9 +74,6 @@ func (c Class) summary(includeAudience bool) string {
 	}
 	if len(c.Teacher) > 0 {
 		summary += fmt.Sprintf(" - %s", c.Teacher)
-	}
-	if includeAudience && c.Audience != "" {
-		summary += fmt.Sprintf(" [%s]", c.Audience)
 	}
 	if len(c.TotalHours) > 0 {
 		summary += fmt.Sprintf(" | %s", c.TotalHours)

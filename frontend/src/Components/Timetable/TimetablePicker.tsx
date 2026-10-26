@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
-import { For, Show, createUniqueId } from "solid-js";
+import { Show, createUniqueId } from "solid-js";
 import type { ColumnGroup } from "../../gen/pkplaner/v1/pkplaner_pb";
-import { attrs, groupByCategory } from "../../utils";
+import { attrs } from "../../utils";
+import { ColumnOptions } from "../ColumnOptions";
 
 const styles = stylex.create({
 	row: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 12px", paddingInline: "16px" },
@@ -44,19 +45,7 @@ export function TimetablePicker(props: {
 				onChange={(event) => props.onChange(Number(event.currentTarget.value))}
 				disabled={!props.columns.length}
 			>
-				<For each={[...groupByCategory(props.columns)]}>
-					{([category, columns]) => (
-						<optgroup label={category || "Inne"}>
-							<For each={columns}>
-								{(column) => (
-									<option value={column.column} selected={column.column === props.selected}>
-										{column.label}
-									</option>
-								)}
-							</For>
-						</optgroup>
-					)}
-				</For>
+				<ColumnOptions columns={props.columns} selected={props.selected} />
 			</select>
 		</div>
 	);

@@ -2,14 +2,6 @@ import type { ClassInfo } from "../../gen/pkplaner/v1/pkplaner_pb";
 
 export const defaultTitleTemplate = "{ClassTitle} ({ClassType}) - {ClassTeacher}";
 
-export const titlePlaceholders = [
-	"ClassTitle",
-	"ClassType",
-	"ClassTeacher",
-	"ClassAudience",
-	"ClassRecurrence",
-] as const;
-
 type TemplateClass = Pick<ClassInfo, "name" | "type" | "teacher" | "audience" | "recurrence">;
 
 export function formatClassTitle(template: string, classInfo: TemplateClass): string {
