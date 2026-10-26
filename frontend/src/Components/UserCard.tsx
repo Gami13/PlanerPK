@@ -33,7 +33,7 @@ const styles = stylex.create({
 		height: "40px",
 		width: "40px",
 	},
-	compact: { borderWidth: 0, padding: 0, paddingTop: "4px", width: "auto", flex: "0 1 auto" },
+	compact: { borderWidth: 0, paddingInline: 0, paddingBlock: 0, paddingTop: "4px", width: "auto", flex: "0 1 auto", maxWidth: "100%" },
 	details: {
 		minWidth: 0,
 		gap: "2px",

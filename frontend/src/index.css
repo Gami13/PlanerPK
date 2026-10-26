@@ -17,6 +17,10 @@
 		"ROND" 0;
 }
 
+html {
+	scrollbar-gutter: stable;
+}
+
 html,
 body,
 #root {

@@ -1,7 +1,6 @@
 import { A } from "@solidjs/router";
 import * as stylex from "@stylexjs/stylex";
 import { PageTitle } from "../Components/PageTitle";
-import { AppHeader } from "../Components/AppHeader";
 import { attrs } from "../utils";
 
 const styles = stylex.create({
@@ -48,7 +47,6 @@ export function PrivacyPolicy() {
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
 			<PageTitle title="Polityka prywatności" />
-			<AppHeader />
 			<h1 {...attrs(stylex.props(styles.heading))}>Polityka prywatności</h1>
 			<p {...attrs(stylex.props(styles.muted))}>Ostatnia aktualizacja: 23 września 2026 r.</p>
 

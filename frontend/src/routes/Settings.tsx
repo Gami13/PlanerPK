@@ -2,7 +2,6 @@ import * as stylex from "@stylexjs/stylex";
 import { createMemo, createResource, createSignal, Show, useContext } from "solid-js";
 
 import { PageTitle } from "../Components/PageTitle";
-import { AppHeader } from "../Components/AppHeader";
 import { pageStyles } from "../styles/pageStyles";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 
@@ -86,7 +85,6 @@ export function Settings() {
 	return (
 		<main {...attrs(stylex.props(pageStyles.page))}>
 			<PageTitle title="Ustawienia" />
-			<AppHeader />
 
 			<section {...attrs(stylex.props(pageStyles.section))}>
 				<SettingsIntro>

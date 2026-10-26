@@ -7,27 +7,28 @@ import { UserCard } from "../Components/UserCard";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 import { TimetablePicker } from "../Components/Timetable/TimetablePicker";
 import { readGuestSelection, resolveGuestSelection, saveGuestSelection } from "../Components/Timetable/guestSelection";
-import { AppHeader } from "../Components/AppHeader";
 import { pageStyles } from "../styles/pageStyles";
 import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
 import { getAuthURL, getClasses, getColumns, getOverrides, getPublicTimetable } from "../services/pkplaner";
 import { attrs, setAccessToken } from "../utils";
 
-const MOBILE_MAX = "@media (max-width: 33.75em)" as const;
+const MOBILE_MAX = "@media (max-width: 640px)" as const;
 
 const styles = stylex.create({
 	topRow: {
-		display: "flex",
-		alignItems: "flex-start",
-		justifyContent: "space-between",
+		display: "grid",
+		gridTemplateColumns: {
+			default: "minmax(0, 1fr) auto",
+			"@media (max-width: 1100px)": "minmax(0, 1fr)",
+		},
+		alignItems: "start",
 		gap: "16px 24px",
-		flexWrap: "wrap",
 		paddingInline: "16px",
 	},
 	description: {
 		display: "flex",
 		flexDirection: "column",
-		flex: "1 1 22rem",
+		minWidth: 0,
 		gap: "8px",
 		color: "#576475",
 		fontSize: "0.9rem",
@@ -42,7 +43,7 @@ const styles = stylex.create({
 	interactionsContainer: {
 		gap: "1em",
 		alignItems: {
-			[MOBILE_MAX]: "stretch",
+			[MOBILE_MAX]: "flex-start",
 			default: "center",
 		},
 		display: "flex",
@@ -55,15 +56,12 @@ const styles = stylex.create({
 	},
 	authButtons: {
 		gap: "0.75em",
-		display: "flex",
-		justifyContent: {
-			[MOBILE_MAX]: "center",
-			default: null,
-		},
-		width: {
-			[MOBILE_MAX]: "100%",
-			default: null,
-		},
+		display: { default: "flex", [MOBILE_MAX]: "grid" },
+		gridTemplateColumns: { [MOBILE_MAX]: "repeat(2, minmax(0, 1fr))" },
+		width: { default: "auto", [MOBILE_MAX]: "100%" },
+		justifyContent: "flex-start",
+		flexWrap: "wrap",
+		flexShrink: 0,
 	},
 });
 
@@ -102,7 +100,6 @@ export function Home() {
 	return (
 		<main {...attrs(stylex.props(pageStyles.page))}>
 			<PageTitle />
-			<AppHeader />
 
 			<section {...attrs(stylex.props(pageStyles.section))}>
 				<div {...attrs(stylex.props(styles.topRow))}>
