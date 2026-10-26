@@ -15,6 +15,7 @@ type TimetablePreviewProps = {
 	groupLabel?: string;
 	noGroup?: boolean;
 	showHidden?: boolean;
+	onShowHiddenChange?: (show: boolean) => void;
 	onClassSelect?: (classInfo: ClassInfo) => void;
 };
 
@@ -56,7 +57,17 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 				<Show when={props.groupLabel}>
 					<p {...attrs(stylex.props(styles.subtitle))}>
 						<span {...attrs(stylex.props(styles.groupLabel))}>{props.groupLabel}</span>
-					</p>
+				</p>
+				<Show when={props.onShowHiddenChange}>
+					<button
+						{...attrs(stylex.props(styles.hiddenToggle))}
+						type="button"
+						aria-pressed={!!props.showHidden}
+						onClick={() => props.onShowHiddenChange?.(!props.showHidden)}
+					>
+						{props.showHidden ? "Ukryj ukryte zajęcia" : "Pokaż ukryte zajęcia"}
+					</button>
+				</Show>
 				</Show>
 			</header>
 			<Show when={props.onClassSelect}>

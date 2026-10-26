@@ -42,6 +42,7 @@ export function Settings() {
 	const loadedOverrides = () => (overrides.error ? undefined : overrides());
 
 	const [editingClass, setEditingClass] = createSignal<ClassInfo>();
+	const [showHidden, setShowHidden] = createSignal(false);
 	function handleOverrideSaved(updated: ClassOverride) {
 		mutateOverrides((previous) => {
 			const next = new Map(previous ?? []);
@@ -115,7 +116,8 @@ export function Settings() {
 
 				<TimetablePreview
 					onClassSelect={setEditingClass}
-					showHidden
+					showHidden={showHidden()}
+					onShowHiddenChange={setShowHidden}
 					classes={loadedClasses()}
 					overrides={loadedOverrides()}
 					loading={classes.loading || overrides.loading}
