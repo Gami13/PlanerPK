@@ -2,37 +2,25 @@ import * as stylex from "@stylexjs/stylex";
 import { createMemo, createResource, createSignal, Show, useContext } from "solid-js";
 
 import { PageTitle } from "../Components/PageTitle";
+import { AppHeader } from "../Components/AppHeader";
+import { pageStyles } from "../styles/pageStyles";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 
 import { AppContext } from "../appContext";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
 import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
-import { SettingCard } from "../Components/Settings/SettingCard";
 import { ClassOverrideDialog } from "../Components/Settings/ClassOverrideDialog";
 import type { ClassInfo, ClassOverride } from "../gen/pkplaner/v1/pkplaner_pb";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
 import { UIText } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
-import { spacing } from "../styles/tokens.stylex";
 import { attrs, getGroupByColumnIndex } from "../utils";
 
-const style = stylex.create({
-	main: {
-		padding: spacing.xl,
-		gap: spacing.xl,
-		alignItems: "center",
-		display: "flex",
-		flexDirection: "column",
-		width: "100%",
-	},
-	basicSection: {
-		gap: spacing.md,
-		alignItems: "center",
-		display: "flex",
-		flexDirection: "column",
-		width: "100%",
-	},
+const styles = stylex.create({
+	controls: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "12px 20px", minWidth: 0 },
+	sync: { display: "flex", alignItems: "center", gap: "8px", color: "#576475", fontSize: "0.82rem" },
 });
+
 export function Settings() {
 	const AppState = useContext(AppContext);
 	const [columns] = createResource(getColumns);
@@ -61,6 +49,10 @@ export function Settings() {
 		}
 
 		return getGroupByColumnIndex(columns(), selectedColumn)?.label ?? UIText.settings.column.loadingColumns;
+	});
+	const previewGroupLabel = createMemo(() => {
+		const group = getGroupByColumnIndex(columns(), chosenColumn());
+		return group ? `${group.category} · ${group.label}` : currentColumnLabel();
 	});
 
 	async function toggleAccountStatus() {
@@ -92,27 +84,28 @@ export function Settings() {
 	}
 
 	return (
-		<main {...attrs(stylex.props(style.main))}>
+		<main {...attrs(stylex.props(pageStyles.page))}>
 			<PageTitle title="Ustawienia" />
+			<AppHeader />
 
-			<section {...attrs(stylex.props(style.basicSection))}>
-				<SettingsIntro />
-
-				<SettingCard
-					title={UIText.settings.account.title}
-					headerAction={
-						<AccountStatusToggle isActive={AppState.store.userInfo?.isActive} onToggle={toggleAccountStatus} />
-					}
-				>
-					<ColumnSelectionForm
-						chosenColumn={chosenColumn()}
-						currentColumnLabel={currentColumnLabel()}
-						columns={columns()}
-						columnsLoading={columns.loading}
-						columnsError={columns.error}
-						onChangeChosenColumn={changeChosenColumn}
-					/>
-				</SettingCard>
+			<section {...attrs(stylex.props(pageStyles.section))}>
+				<SettingsIntro>
+					<div {...attrs(stylex.props(styles.controls))}>
+						<div {...attrs(stylex.props(styles.sync))}>
+							<span>{UIText.settings.account.title}</span>
+							<AccountStatusToggle isActive={AppState.store.userInfo?.isActive} onToggle={toggleAccountStatus} />
+						</div>
+						<ColumnSelectionForm
+							compact
+							chosenColumn={chosenColumn()}
+							currentColumnLabel={currentColumnLabel()}
+							columns={columns()}
+							columnsLoading={columns.loading}
+							columnsError={columns.error}
+							onChangeChosenColumn={changeChosenColumn}
+						/>
+					</div>
+				</SettingsIntro>
 
 				<TimetablePreview
 					onClassSelect={setEditingClass}
@@ -122,7 +115,7 @@ export function Settings() {
 					overrides={loadedOverrides()}
 					loading={classes.loading || overrides.loading}
 					error={classes.error || overrides.error}
-					groupLabel={currentColumnLabel()}
+					groupLabel={previewGroupLabel()}
 					noGroup={chosenColumn() === 0}
 				/>
 

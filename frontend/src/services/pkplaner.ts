@@ -70,6 +70,10 @@ export async function getClasses(): Promise<ClassInfo[]> {
 	return sortClassesBySchedule(classes);
 }
 
+export async function getPublicTimetable(column: number): Promise<ClassInfo[]> {
+	return sortClassesBySchedule((await rpc.getTimetable({ column })).classes);
+}
+
 export async function getOverrides(): Promise<Map<string, ClassOverride>> {
 	const overrides = (await rpc.getOverrides({})).overrides;
 	return new Map(overrides.map((override) => [override.classHash, override] as const));

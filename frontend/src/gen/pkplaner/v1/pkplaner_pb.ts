@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file pkplaner/v1/pkplaner.proto.
  */
 export const file_pkplaner_v1_pkplaner: GenFile = /*@__PURE__*/
-  fileDesc("Chpwa3BsYW5lci92MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiLwoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFIhkKF1NldENob3NlbkNvbHVtblJlc3BvbnNlIikKFFNldFVzZXJBY3RpdmVSZXF1ZXN0EhEKCWlzX2FjdGl2ZRgBIAEoCCIXChVTZXRVc2VyQWN0aXZlUmVzcG9uc2UiIAoQQXV0aG9yaXplUmVxdWVzdBIMCgRjb2RlGAEgASgJIm4KEUF1dGhvcml6ZVJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRINCgVlbWFpbBgCIAEoCRIVCg1jaG9zZW5fY29sdW1uGAMgASgDEgwKBG5hbWUYBCABKAkSDwoHcGljdHVyZRgFIAEoCSITChFHZXRBdXRoVVJMUmVxdWVzdCIhChJHZXRBdXRoVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJIhQKEkdldFVzZXJJbmZvUmVxdWVzdCKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAyLCAQoJQ2xhc3NJbmZvEgwKBGhhc2gYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEgsKA2RheRgEIAEoCRISCgpzdGFydF90aW1lGAUgASgJEhAKCGVuZF90aW1lGAYgASgJEhAKCGxvY2F0aW9uGAcgASgJEg8KB3RlYWNoZXIYCCABKAkSEAoIYXVkaWVuY2UYCSABKAkSDwoHc3VtbWFyeRgKIAEoCRISCgpyZWN1cnJlbmNlGAsgASgJImIKDUNsYXNzT3ZlcnJpZGUSEgoKY2xhc3NfaGFzaBgBIAEoCRISCgpzdGFydF9ob3VyGAIgASgJEhEKCWlzX2hpZGRlbhgDIAEoCBIWCg5pc190cmFuc3BhcmVudBgEIAEoCCITChFHZXRDbGFzc2VzUmVxdWVzdCI9ChJHZXRDbGFzc2VzUmVzcG9uc2USJwoHY2xhc3NlcxgBIAMoCzIWLnBrcGxhbmVyLnYxLkNsYXNzSW5mbyIVChNHZXRPdmVycmlkZXNSZXF1ZXN0IkUKFEdldE92ZXJyaWRlc1Jlc3BvbnNlEi0KCW92ZXJyaWRlcxgBIAMoCzIaLnBrcGxhbmVyLnYxLkNsYXNzT3ZlcnJpZGUiQgoSU2V0T3ZlcnJpZGVSZXF1ZXN0EiwKCG92ZXJyaWRlGAEgASgLMhoucGtwbGFuZXIudjEuQ2xhc3NPdmVycmlkZSIVChNTZXRPdmVycmlkZVJlc3BvbnNlMvkFCg9QS1BsYW5lclNlcnZpY2USTQoKR2V0Q29sdW1ucxIeLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXF1ZXN0Gh8ucGtwbGFuZXIudjEuR2V0Q29sdW1uc1Jlc3BvbnNlElwKD1NldENob3NlbkNvbHVtbhIjLnBrcGxhbmVyLnYxLlNldENob3NlbkNvbHVtblJlcXVlc3QaJC5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXNwb25zZRJWCg1TZXRVc2VyQWN0aXZlEiEucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlcXVlc3QaIi5wa3BsYW5lci52MS5TZXRVc2VyQWN0aXZlUmVzcG9uc2USSgoJQXV0aG9yaXplEh0ucGtwbGFuZXIudjEuQXV0aG9yaXplUmVxdWVzdBoeLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlc3BvbnNlEk0KCkdldEF1dGhVUkwSHi5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldEF1dGhVUkxSZXNwb25zZRJQCgtHZXRVc2VySW5mbxIfLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVxdWVzdBogLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVzcG9uc2USTQoKR2V0Q2xhc3NlcxIeLnBrcGxhbmVyLnYxLkdldENsYXNzZXNSZXF1ZXN0Gh8ucGtwbGFuZXIudjEuR2V0Q2xhc3Nlc1Jlc3BvbnNlElMKDEdldE92ZXJyaWRlcxIgLnBrcGxhbmVyLnYxLkdldE92ZXJyaWRlc1JlcXVlc3QaIS5wa3BsYW5lci52MS5HZXRPdmVycmlkZXNSZXNwb25zZRJQCgtTZXRPdmVycmlkZRIfLnBrcGxhbmVyLnYxLlNldE92ZXJyaWRlUmVxdWVzdBogLnBrcGxhbmVyLnYxLlNldE92ZXJyaWRlUmVzcG9uc2VCOVo3Z2l0aHViLmNvbS93b29kcGtycy9QbGFuZXJQSy9nZW4vcGtwbGFuZXIvdjE7cGtwbGFuZXJ2MWIGcHJvdG8z");
+  fileDesc("Chpwa3BsYW5lci92MS9wa3BsYW5lci5wcm90bxILcGtwbGFuZXIudjEiPgoLQ29sdW1uR3JvdXASDgoGY29sdW1uGAEgASgFEg0KBWxhYmVsGAIgASgJEhAKCGNhdGVnb3J5GAMgASgJIhMKEUdldENvbHVtbnNSZXF1ZXN0Ij8KEkdldENvbHVtbnNSZXNwb25zZRIpCgdjb2x1bW5zGAEgAygLMhgucGtwbGFuZXIudjEuQ29sdW1uR3JvdXAiLwoWU2V0Q2hvc2VuQ29sdW1uUmVxdWVzdBIVCg1jaG9zZW5fY29sdW1uGAEgASgFIhkKF1NldENob3NlbkNvbHVtblJlc3BvbnNlIikKFFNldFVzZXJBY3RpdmVSZXF1ZXN0EhEKCWlzX2FjdGl2ZRgBIAEoCCIXChVTZXRVc2VyQWN0aXZlUmVzcG9uc2UiIAoQQXV0aG9yaXplUmVxdWVzdBIMCgRjb2RlGAEgASgJIm4KEUF1dGhvcml6ZVJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRINCgVlbWFpbBgCIAEoCRIVCg1jaG9zZW5fY29sdW1uGAMgASgDEgwKBG5hbWUYBCABKAkSDwoHcGljdHVyZRgFIAEoCSITChFHZXRBdXRoVVJMUmVxdWVzdCIhChJHZXRBdXRoVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJIhQKEkdldFVzZXJJbmZvUmVxdWVzdCKBAQoTR2V0VXNlckluZm9SZXNwb25zZRINCgVlbWFpbBgBIAEoCRIMCgRuYW1lGAIgASgJEhIKCmdpdmVuX25hbWUYAyABKAkSDwoHcGljdHVyZRgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSFQoNY2hvc2VuX2NvbHVtbhgGIAEoAyLCAQoJQ2xhc3NJbmZvEgwKBGhhc2gYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEgsKA2RheRgEIAEoCRISCgpzdGFydF90aW1lGAUgASgJEhAKCGVuZF90aW1lGAYgASgJEhAKCGxvY2F0aW9uGAcgASgJEg8KB3RlYWNoZXIYCCABKAkSEAoIYXVkaWVuY2UYCSABKAkSDwoHc3VtbWFyeRgKIAEoCRISCgpyZWN1cnJlbmNlGAsgASgJImIKDUNsYXNzT3ZlcnJpZGUSEgoKY2xhc3NfaGFzaBgBIAEoCRISCgpzdGFydF9ob3VyGAIgASgJEhEKCWlzX2hpZGRlbhgDIAEoCBIWCg5pc190cmFuc3BhcmVudBgEIAEoCCITChFHZXRDbGFzc2VzUmVxdWVzdCIlChNHZXRUaW1ldGFibGVSZXF1ZXN0Eg4KBmNvbHVtbhgBIAEoBSI9ChJHZXRDbGFzc2VzUmVzcG9uc2USJwoHY2xhc3NlcxgBIAMoCzIWLnBrcGxhbmVyLnYxLkNsYXNzSW5mbyIVChNHZXRPdmVycmlkZXNSZXF1ZXN0IkUKFEdldE92ZXJyaWRlc1Jlc3BvbnNlEi0KCW92ZXJyaWRlcxgBIAMoCzIaLnBrcGxhbmVyLnYxLkNsYXNzT3ZlcnJpZGUiQgoSU2V0T3ZlcnJpZGVSZXF1ZXN0EiwKCG92ZXJyaWRlGAEgASgLMhoucGtwbGFuZXIudjEuQ2xhc3NPdmVycmlkZSIVChNTZXRPdmVycmlkZVJlc3BvbnNlMswGCg9QS1BsYW5lclNlcnZpY2USTQoKR2V0Q29sdW1ucxIeLnBrcGxhbmVyLnYxLkdldENvbHVtbnNSZXF1ZXN0Gh8ucGtwbGFuZXIudjEuR2V0Q29sdW1uc1Jlc3BvbnNlElwKD1NldENob3NlbkNvbHVtbhIjLnBrcGxhbmVyLnYxLlNldENob3NlbkNvbHVtblJlcXVlc3QaJC5wa3BsYW5lci52MS5TZXRDaG9zZW5Db2x1bW5SZXNwb25zZRJWCg1TZXRVc2VyQWN0aXZlEiEucGtwbGFuZXIudjEuU2V0VXNlckFjdGl2ZVJlcXVlc3QaIi5wa3BsYW5lci52MS5TZXRVc2VyQWN0aXZlUmVzcG9uc2USSgoJQXV0aG9yaXplEh0ucGtwbGFuZXIudjEuQXV0aG9yaXplUmVxdWVzdBoeLnBrcGxhbmVyLnYxLkF1dGhvcml6ZVJlc3BvbnNlEk0KCkdldEF1dGhVUkwSHi5wa3BsYW5lci52MS5HZXRBdXRoVVJMUmVxdWVzdBofLnBrcGxhbmVyLnYxLkdldEF1dGhVUkxSZXNwb25zZRJQCgtHZXRVc2VySW5mbxIfLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVxdWVzdBogLnBrcGxhbmVyLnYxLkdldFVzZXJJbmZvUmVzcG9uc2USTQoKR2V0Q2xhc3NlcxIeLnBrcGxhbmVyLnYxLkdldENsYXNzZXNSZXF1ZXN0Gh8ucGtwbGFuZXIudjEuR2V0Q2xhc3Nlc1Jlc3BvbnNlElEKDEdldFRpbWV0YWJsZRIgLnBrcGxhbmVyLnYxLkdldFRpbWV0YWJsZVJlcXVlc3QaHy5wa3BsYW5lci52MS5HZXRDbGFzc2VzUmVzcG9uc2USUwoMR2V0T3ZlcnJpZGVzEiAucGtwbGFuZXIudjEuR2V0T3ZlcnJpZGVzUmVxdWVzdBohLnBrcGxhbmVyLnYxLkdldE92ZXJyaWRlc1Jlc3BvbnNlElAKC1NldE92ZXJyaWRlEh8ucGtwbGFuZXIudjEuU2V0T3ZlcnJpZGVSZXF1ZXN0GiAucGtwbGFuZXIudjEuU2V0T3ZlcnJpZGVSZXNwb25zZUI5WjdnaXRodWIuY29tL3dvb2Rwa3JzL1BsYW5lclBLL2dlbi9wa3BsYW5lci92MTtwa3BsYW5lcnYxYgZwcm90bzM");
 
 /**
  * ColumnGroup represents an available column/group option parsed from the Excel header rows.
@@ -408,6 +408,23 @@ export const GetClassesRequestSchema: GenMessage<GetClassesRequest> = /*@__PURE_
   messageDesc(file_pkplaner_v1_pkplaner, 15);
 
 /**
+ * @generated from message pkplaner.v1.GetTimetableRequest
+ */
+export type GetTimetableRequest = Message<"pkplaner.v1.GetTimetableRequest"> & {
+  /**
+   * @generated from field: int32 column = 1;
+   */
+  column: number;
+};
+
+/**
+ * Describes the message pkplaner.v1.GetTimetableRequest.
+ * Use `create(GetTimetableRequestSchema)` to create a new message.
+ */
+export const GetTimetableRequestSchema: GenMessage<GetTimetableRequest> = /*@__PURE__*/
+  messageDesc(file_pkplaner_v1_pkplaner, 16);
+
+/**
  * @generated from message pkplaner.v1.GetClassesResponse
  */
 export type GetClassesResponse = Message<"pkplaner.v1.GetClassesResponse"> & {
@@ -422,7 +439,7 @@ export type GetClassesResponse = Message<"pkplaner.v1.GetClassesResponse"> & {
  * Use `create(GetClassesResponseSchema)` to create a new message.
  */
 export const GetClassesResponseSchema: GenMessage<GetClassesResponse> = /*@__PURE__*/
-  messageDesc(file_pkplaner_v1_pkplaner, 16);
+  messageDesc(file_pkplaner_v1_pkplaner, 17);
 
 /**
  * GetOverridesRequest is empty — authentication is handled via headers.
@@ -437,7 +454,7 @@ export type GetOverridesRequest = Message<"pkplaner.v1.GetOverridesRequest"> & {
  * Use `create(GetOverridesRequestSchema)` to create a new message.
  */
 export const GetOverridesRequestSchema: GenMessage<GetOverridesRequest> = /*@__PURE__*/
-  messageDesc(file_pkplaner_v1_pkplaner, 17);
+  messageDesc(file_pkplaner_v1_pkplaner, 18);
 
 /**
  * @generated from message pkplaner.v1.GetOverridesResponse
@@ -454,7 +471,7 @@ export type GetOverridesResponse = Message<"pkplaner.v1.GetOverridesResponse"> &
  * Use `create(GetOverridesResponseSchema)` to create a new message.
  */
 export const GetOverridesResponseSchema: GenMessage<GetOverridesResponse> = /*@__PURE__*/
-  messageDesc(file_pkplaner_v1_pkplaner, 18);
+  messageDesc(file_pkplaner_v1_pkplaner, 19);
 
 /**
  * @generated from message pkplaner.v1.SetOverrideRequest
@@ -471,7 +488,7 @@ export type SetOverrideRequest = Message<"pkplaner.v1.SetOverrideRequest"> & {
  * Use `create(SetOverrideRequestSchema)` to create a new message.
  */
 export const SetOverrideRequestSchema: GenMessage<SetOverrideRequest> = /*@__PURE__*/
-  messageDesc(file_pkplaner_v1_pkplaner, 19);
+  messageDesc(file_pkplaner_v1_pkplaner, 20);
 
 /**
  * @generated from message pkplaner.v1.SetOverrideResponse
@@ -484,7 +501,7 @@ export type SetOverrideResponse = Message<"pkplaner.v1.SetOverrideResponse"> & {
  * Use `create(SetOverrideResponseSchema)` to create a new message.
  */
 export const SetOverrideResponseSchema: GenMessage<SetOverrideResponse> = /*@__PURE__*/
-  messageDesc(file_pkplaner_v1_pkplaner, 20);
+  messageDesc(file_pkplaner_v1_pkplaner, 21);
 
 /**
  * PKPlanerService provides RPCs for managing timetable calendar integration.
@@ -560,6 +577,16 @@ export const PKPlanerService: GenService<{
   getClasses: {
     methodKind: "unary";
     input: typeof GetClassesRequestSchema;
+    output: typeof GetClassesResponseSchema;
+  },
+  /**
+   * Public, read-only timetable without user-specific overrides.
+   *
+   * @generated from rpc pkplaner.v1.PKPlanerService.GetTimetable
+   */
+  getTimetable: {
+    methodKind: "unary";
+    input: typeof GetTimetableRequestSchema;
     output: typeof GetClassesResponseSchema;
   },
   /**

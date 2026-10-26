@@ -25,8 +25,24 @@ func (h *PKPlanerHandler) GetClasses(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("no column chosen"))
 	}
 
+	return h.classesForColumn(*user.ChosenColumn)
+}
+
+// GetTimetable exposes only the published schedule, never user overrides.
+func (h *PKPlanerHandler) GetTimetable(
+	ctx context.Context,
+	req *connect.Request[pkplanerv1.GetTimetableRequest],
+) (*connect.Response[pkplanerv1.GetClassesResponse], error) {
+	column := int64(req.Msg.Column)
+	if !isValidColumn(column, *h.cache.AvailableGroups()) {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("timetable not found"))
+	}
+	return h.classesForColumn(column)
+}
+
+func (h *PKPlanerHandler) classesForColumn(column int64) (*connect.Response[pkplanerv1.GetClassesResponse], error) {
 	allTimetables := h.cache.Timetable()
-	timetable, ok := (*allTimetables)[*user.ChosenColumn]
+	timetable, ok := (*allTimetables)[column]
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("timetable for chosen column not found"))
 	}

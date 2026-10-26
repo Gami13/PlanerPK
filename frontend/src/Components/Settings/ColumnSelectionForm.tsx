@@ -8,6 +8,7 @@ import { settingsStyles } from "./settingsStyles";
 
 type ColumnSelectionFormProps = {
 	chosenColumn: number;
+	compact?: boolean;
 	currentColumnLabel: string;
 	columns: ColumnGroup[] | undefined;
 	columnsLoading: boolean;
@@ -26,15 +27,20 @@ const columnFormStyles = stylex.create({
 		gap: "0.75em",
 		alignItems: "center",
 		width: "100%",
+		flexWrap: "wrap",
 	},
 	selectInput: {
 		flex: 1,
+		minWidth: "min(100%, 12rem)",
 	},
+	compactSelect: { width: "9rem", minWidth: "8rem", maxWidth: "14rem" },
 	label: {
-		fontWeight: 600,
+		fontWeight: 500,
+		fontSize: "0.82rem",
+		color: "#576475",
 	},
 	submitButton: {
-		marginLeft: "auto",
+		flexShrink: 0,
 	},
 });
 
@@ -52,12 +58,21 @@ export function ColumnSelectionForm(props: ColumnSelectionFormProps) {
 			}}
 		>
 			<div {...attrs(stylex.props(columnFormStyles.formContent))}>
-				<label for="chosen_column" {...attrs(stylex.props(columnFormStyles.label))}>
-					{UIText.settings.column.title}
-				</label>
+				<Show when={!props.compact}>
+					<label for="chosen_column" {...attrs(stylex.props(columnFormStyles.label))}>
+						{UIText.settings.column.title}
+					</label>
+				</Show>
 				<div {...attrs(stylex.props(columnFormStyles.selectRow))}>
 					<select
-						{...attrs(stylex.props(settingsStyles.columnSelect, columnFormStyles.selectInput))}
+						{...attrs(
+							stylex.props(
+								settingsStyles.columnSelect,
+								columnFormStyles.selectInput,
+								props.compact && columnFormStyles.compactSelect
+							)
+						)}
+						aria-label={UIText.settings.column.title}
 						name="chosen_column"
 						id="chosen_column"
 					>

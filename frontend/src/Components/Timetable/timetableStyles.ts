@@ -20,11 +20,13 @@ export const timetableStyles = stylex.create({
 	},
 	header: {
 		display: "flex",
-		alignItems: "baseline",
+		alignItems: "center",
 		justifyContent: "space-between",
 		flexWrap: "wrap",
 		gap: `${spacing.xs} ${spacing.md}`,
 	},
+	headingGroup: { display: "flex", flexDirection: "column", gap: "3px" },
+	titleRow: { display: "flex", alignItems: "baseline", gap: "8px" },
 	title: { margin: 0, fontSize: "1.3em", fontWeight: 600, letterSpacing: "-0.015em", color: colors.primaryText },
 	subtitle: {
 		margin: 0,
@@ -71,6 +73,7 @@ export const timetableStyles = stylex.create({
 		outline: { default: "none", ":focus-visible": "2px solid #7cc4ee" },
 		outlineOffset: "2px",
 	},
+	expanded: { maxHeight: "none", overflow: "visible", scrollbarGutter: "auto" },
 	grid: { display: "flex", minWidth: 0, alignItems: "stretch" },
 	day: {
 		flex: "1 1 0",

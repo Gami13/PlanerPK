@@ -2,12 +2,15 @@ import * as stylex from "@stylexjs/stylex";
 import { createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { attrs } from "../../utils";
+import type { JSX } from "solid-js";
 import { formatTime, prepareEntries, weekdays } from "./timetable";
 import { TimetableDay } from "./TimetableDay";
 import { TimetableDayNavigation } from "./TimetableDayNavigation";
 import { timetableStyles as styles } from "./timetableStyles";
 
 type TimetablePreviewProps = {
+	expand?: boolean;
+	headerAction?: JSX.Element;
 	classes?: ClassInfo[];
 	overrides?: Map<string, ClassOverride>;
 	loading?: boolean;
@@ -53,11 +56,18 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 	return (
 		<section {...attrs(stylex.props(styles.card))} aria-label="Plan tygodnia" aria-busy={!!props.loading}>
 			<header {...attrs(stylex.props(styles.header))}>
-				<h2 {...attrs(stylex.props(styles.title))}>Plan tygodnia</h2>
-				<Show when={props.groupLabel}>
-					<p {...attrs(stylex.props(styles.subtitle))}>
-						<span {...attrs(stylex.props(styles.groupLabel))}>{props.groupLabel}</span>
-				</p>
+				<div {...attrs(stylex.props(styles.headingGroup))}>
+					<div {...attrs(stylex.props(styles.titleRow))}>
+						<h2 {...attrs(stylex.props(styles.title))}>Plan tygodnia</h2>
+						<Show when={props.groupLabel}>
+							<span {...attrs(stylex.props(styles.groupLabel))}>· {props.groupLabel}</span>
+						</Show>
+					</div>
+					<Show when={props.onClassSelect}>
+						<p {...attrs(stylex.props(styles.subtitle))}>Kliknij zajęcia, aby zmienić ich ustawienia.</p>
+					</Show>
+				</div>
+				{props.headerAction}
 				<Show when={props.onShowHiddenChange}>
 					<button
 						{...attrs(stylex.props(styles.hiddenToggle))}
@@ -68,17 +78,13 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 						{props.showHidden ? "Ukryj ukryte zajęcia" : "Pokaż ukryte zajęcia"}
 					</button>
 				</Show>
-				</Show>
 			</header>
-			<Show when={props.onClassSelect}>
-				<p {...attrs(stylex.props(styles.subtitle))}>Kliknij zajęcia, aby zmienić ich ustawienia.</p>
-			</Show>
 			<Switch
 				fallback={
 					<>
 						<TimetableDayNavigation selected={selected()} onChange={setSelected} />
 						<div
-							{...attrs(stylex.props(styles.scroll))}
+							{...attrs(stylex.props(styles.scroll, props.expand && styles.expanded))}
 							tabindex="0"
 							role="region"
 							aria-label="Tygodniowa siatka zajęć"

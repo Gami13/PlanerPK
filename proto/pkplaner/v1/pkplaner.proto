@@ -26,6 +26,8 @@ service PKPlanerService {
 
   // GetClasses returns all classes for the authenticated user's chosen column.
   rpc GetClasses(GetClassesRequest) returns (GetClassesResponse);
+  // Public, read-only timetable without user-specific overrides.
+  rpc GetTimetable(GetTimetableRequest) returns (GetClassesResponse);
 
   // GetOverrides returns all class overrides for the authenticated user.
   rpc GetOverrides(GetOverridesRequest) returns (GetOverridesResponse);
@@ -122,6 +124,10 @@ message ClassOverride {
 
 // GetClassesRequest is empty — the user's chosen_column is read from auth context.
 message GetClassesRequest {}
+
+message GetTimetableRequest {
+  int32 column = 1;
+}
 
 message GetClassesResponse {
   repeated ClassInfo classes = 1;

@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { JSX } from "solid-js";
 import { Show } from "solid-js";
-import { borderRadius, colors, spacing } from "../../styles/tokens.stylex";
+import { colors, spacing } from "../../styles/tokens.stylex";
 import { attrs } from "../../utils";
 
 type SettingCardProps = {
@@ -12,16 +12,16 @@ type SettingCardProps = {
 };
 const style = stylex.create({
 	setting: {
-		padding: spacing.lg,
+		padding: spacing.md,
 		borderColor: colors.defaultBorder,
-		borderRadius: borderRadius.xl,
+		borderRadius: "6px",
 		borderStyle: "solid",
 		borderWidth: "1px",
 		gap: "0.75em",
 		backgroundColor: colors.white,
 		display: "flex",
 		flexDirection: "column",
-		width: "min(100%, 48em)",
+		width: "100%",
 	},
 	headerRow: {
 		display: "flex",
@@ -31,10 +31,11 @@ const style = stylex.create({
 	},
 	settingHeader: {
 		margin: 0,
-		fontSize: "1.4em",
+		fontSize: "1rem",
 		fontWeight: 600,
 	},
 	settingDescription: {
+		fontSize: "0.85rem",
 		margin: 0,
 		color: colors.secondaryText,
 	},

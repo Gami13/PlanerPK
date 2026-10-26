@@ -46,7 +46,7 @@ const styles = stylex.create({
 		fontSize: "0.9em",
 		cursor: "pointer",
 	},
-	primary: { backgroundColor: colors.primary, borderColor: colors.primary, color: colors.white },
+	primary: { backgroundColor: "#e4eefb", borderColor: "#c9dcf5", color: "#245a85" },
 	error: { margin: 0, color: colors.inactiveText, fontSize: "0.85em" },
 });
 

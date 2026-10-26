@@ -25,9 +25,11 @@ export const flexColumn = {
 export const settingsStyles = stylex.create({
 	columnSelect: {
 		...inputBase,
-		borderRadius: borderRadius.md,
-		paddingBlock: "10px",
-		paddingInline: "14px",
+		borderRadius: "5px",
+		paddingBlock: "8px",
+		paddingInline: "10px",
+		fontSize: "0.85rem",
+		backgroundColor: colors.white,
 		maxWidth: "20em",
 		width: "100%",
 		outline: {

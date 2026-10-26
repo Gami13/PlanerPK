@@ -3,24 +3,24 @@
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 * {
-    font-family: "Google Sans Flex", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
-    font-variation-settings:
-        "slnt" 0,
-        "wdth" 100,
-        "GRAD" 0,
-        "ROND" 0;
+	font-family: "Google Sans Flex", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-optical-sizing: auto;
+	font-style: normal;
+	font-variation-settings:
+		"slnt" 0,
+		"wdth" 100,
+		"GRAD" 0,
+		"ROND" 0;
 }
 
 html,
 body,
 #root {
-    min-height: 100%;
+	min-height: 100%;
 }
 
 body,
@@ -39,23 +39,38 @@ figcaption,
 blockquote,
 dl,
 dd {
-    margin: 0;
-    padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 body {
-    min-height: 100vh;
-    line-height: 1.5;
+	min-height: 100vh;
+	line-height: 1.5;
+	color: #0f172a;
+	background: #fff;
+}
+
+a {
+	color: #245a85;
+	text-underline-offset: 3px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+	outline: 2px solid #4b99d2;
+	outline-offset: 3px;
 }
 
 img {
-    display: block;
-    max-width: 100%;
+	display: block;
+	max-width: 100%;
 }
 
 input[type="checkbox"] {
-    accent-color: #039be5;
-    width: 1.1em;
-    height: 1.1em;
-    cursor: pointer;
+	accent-color: #039be5;
+	width: 1.1em;
+	height: 1.1em;
+	cursor: pointer;
 }
