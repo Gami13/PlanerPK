@@ -7,7 +7,8 @@ import { attrs } from "../../utils";
 type SettingCardProps = {
 	title: string;
 	description?: string;
-	children: JSX.Element;
+	children?: JSX.Element;
+	headerAction?: JSX.Element;
 };
 const style = stylex.create({
 	setting: {
@@ -21,6 +22,12 @@ const style = stylex.create({
 		display: "flex",
 		flexDirection: "column",
 		width: "min(100%, 48em)",
+	},
+	headerRow: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: spacing.md,
 	},
 	settingHeader: {
 		margin: 0,
@@ -36,7 +43,10 @@ const style = stylex.create({
 export function SettingCard(props: SettingCardProps) {
 	return (
 		<article {...attrs(stylex.props(style.setting))}>
-			<h2 {...attrs(stylex.props(style.settingHeader))}>{props.title}</h2>
+			<div {...attrs(stylex.props(style.headerRow))}>
+				<h2 {...attrs(stylex.props(style.settingHeader))}>{props.title}</h2>
+				{props.headerAction}
+			</div>
 			<Show when={props.description}>
 				<p {...attrs(stylex.props(style.settingDescription))}>{props.description}</p>
 			</Show>

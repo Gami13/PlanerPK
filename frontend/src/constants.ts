@@ -21,7 +21,7 @@ export const UIText = {
 
 	settings: {
 		account: {
-			title: "Status aktywności",
+			title: "Synchronizacja",
 			statusError: "Wystąpił błąd podczas zmiany statusu konta. Spróbuj ponownie.",
 			active: "Aktywny",
 			inactive: "Nieaktywny",
@@ -30,7 +30,6 @@ export const UIText = {
 		},
 		column: {
 			title: "Wybrana kolumna",
-			description: "Zmianę kolumny wykonuj wyłącznie w uzasadnionych przypadkach, aby uniknąć ograniczeń konta.",
 			loadingColumns: "Ładowanie kolumn",
 			errorLoadingColumns: "Błąd ładowania kolumn",
 			errorSetting: "Wystąpił błąd podczas zmiany kolumny. Spróbuj ponownie.",

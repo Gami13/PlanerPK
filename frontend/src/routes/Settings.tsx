@@ -4,8 +4,9 @@ import { createMemo, createResource, useContext } from "solid-js";
 import { PageTitle } from "../Components/PageTitle";
 
 import { AppContext } from "../appContext";
-import { AccountStatusCard } from "../Components/Settings/AccountStatusCard";
-import { ColumnSelectionCard } from "../Components/Settings/ColumnSelectionCard";
+import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
+import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
+import { SettingCard } from "../Components/Settings/SettingCard";
 import { OverridesProvider } from "../Components/Settings/OverridesContext";
 import { OverridesSection } from "../Components/Settings/OverridesSection";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
@@ -87,16 +88,21 @@ export function Settings() {
 			<section {...attrs(stylex.props(style.basicSection))}>
 				<SettingsIntro />
 
-				<AccountStatusCard isActive={AppState.store.userInfo?.isActive} onToggle={toggleAccountStatus} />
-
-				<ColumnSelectionCard
-					chosenColumn={chosenColumn()}
-					currentColumnLabel={currentColumnLabel()}
-					columns={columns()}
-					columnsLoading={columns.loading}
-					columnsError={columns.error}
-					onChangeChosenColumn={changeChosenColumn}
-				/>
+				<SettingCard
+					title={UIText.settings.account.title}
+					headerAction={
+						<AccountStatusToggle isActive={AppState.store.userInfo?.isActive} onToggle={toggleAccountStatus} />
+					}
+				>
+					<ColumnSelectionForm
+						chosenColumn={chosenColumn()}
+						currentColumnLabel={currentColumnLabel()}
+						columns={columns()}
+						columnsLoading={columns.loading}
+						columnsError={columns.error}
+						onChangeChosenColumn={changeChosenColumn}
+					/>
+				</SettingCard>
 
 				<OverridesProvider
 					value={{
