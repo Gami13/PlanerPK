@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { createMemo, createSignal, For, Match, Switch } from "solid-js";
+import { createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import type { ClassInfo, ClassOverride } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { attrs } from "../../utils";
 import { formatTime, prepareEntries, weekdays } from "./timetable";
@@ -14,25 +14,72 @@ type TimetablePreviewProps = {
 	error?: unknown;
 	groupLabel?: string;
 	noGroup?: boolean;
+	titleTemplate?: string;
 };
 
+function currentMinute(): number {
+	const now = new Date();
+	return now.getHours() * 60 + now.getMinutes();
+}
+
 export function TimetablePreview(props: TimetablePreviewProps) {
-	const today = new Date().getDay();
-	const [selected, setSelected] = createSignal(today >= 1 && today <= 5 ? today - 1 : 0);
+	const weekday = new Date().getDay();
+	const todayIndex = weekday >= 1 && weekday <= 5 ? weekday - 1 : undefined;
+	const [selected, setSelected] = createSignal(todayIndex ?? 0);
+	const [now, setNow] = createSignal(currentMinute());
 	const entries = createMemo(() => prepareEntries(props.classes ?? [], props.overrides));
+	// On views without an explicit group (the home page), the audience shared by
+	// most classes is almost certainly the user's own group — hide it as noise.
+	const dominantAudience = createMemo(() => {
+		const counts = new Map<string, number>();
+		for (const entry of entries()) {
+			const audience = entry.classInfo.audience;
+			if (audience) counts.set(audience, (counts.get(audience) ?? 0) + 1);
+		}
+		let best: string | undefined;
+		let bestCount = 0;
+		for (const [audience, count] of counts) {
+			if (count > bestCount) {
+				best = audience;
+				bestCount = count;
+			}
+		}
+		return bestCount > 1 ? best : undefined;
+	});
+	const eventGroupLabel = () => props.groupLabel ?? dominantAudience();
 	// Begin half an hour before the first labeled hour, leaving room above its centered label.
 	const firstHour = createMemo(() => Math.floor(Math.min(8 * 60, ...entries().map((entry) => entry.start)) / 60) * 60);
 	const start = createMemo(() => firstHour() - 30);
-	const end = createMemo(() => Math.ceil(Math.max(18 * 60, ...entries().map((entry) => entry.end)) / 60) * 60);
-	const hours = () => Array.from({ length: (end() - firstHour()) / 60 }, (_, i) => firstHour() + i * 60);
+	const end = createMemo(() => {
+		const last = Math.max(...entries().map((entry) => entry.end), 8 * 60);
+		// Half an hour of breathing room under the last block, snapped to the grid.
+		return Math.ceil((last + 30) / 30) * 30;
+	});
+	const hours = () => {
+		const labels: number[] = [];
+		for (let hour = firstHour(); hour < end(); hour += 60) labels.push(hour);
+		return labels;
+	};
 	const pixelsPerMinute = 1;
+
+	onMount(() => {
+		const timer = setInterval(() => setNow(currentMinute()), 60_000);
+		onCleanup(() => clearInterval(timer));
+	});
 
 	return (
 		<section {...attrs(stylex.props(styles.card))} aria-label="Plan tygodnia" aria-busy={!!props.loading}>
 			<header {...attrs(stylex.props(styles.header))}>
 				<h2 {...attrs(stylex.props(styles.title))}>Plan tygodnia</h2>
 				<p {...attrs(stylex.props(styles.subtitle))}>
-					{props.groupLabel ? `${props.groupLabel} · ` : ""}Podgląd z zapisanymi zmianami
+					<Show when={props.groupLabel}>
+						<span {...attrs(stylex.props(styles.groupChip))}>{props.groupLabel}</span>
+					</Show>
+					<span>
+						{props.titleTemplate === undefined
+							? "Podgląd z zapisanymi zmianami"
+							: "Podgląd z roboczym szablonem tytułów"}
+					</span>
 				</p>
 			</header>
 			<Switch
@@ -73,6 +120,10 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 											end={end()}
 											pixelsPerMinute={pixelsPerMinute}
 											selected={index() === selected()}
+											today={index() === todayIndex}
+											now={index() === todayIndex ? now() : undefined}
+											titleTemplate={props.titleTemplate}
+											groupLabel={eventGroupLabel()}
 										/>
 									)}
 								</For>

@@ -661,7 +661,9 @@ type ClassInfo struct {
 	Teacher   string                 `protobuf:"bytes,8,opt,name=teacher,proto3" json:"teacher,omitempty"`
 	Audience  string                 `protobuf:"bytes,9,opt,name=audience,proto3" json:"audience,omitempty"`
 	// Exact event title used by Google Calendar, including week A/B and other notes.
-	Summary       string `protobuf:"bytes,10,opt,name=summary,proto3" json:"summary,omitempty"`
+	Summary string `protobuf:"bytes,10,opt,name=summary,proto3" json:"summary,omitempty"`
+	// Original recurrence / scheduling notes (for example A or B).
+	Recurrence    string `protobuf:"bytes,11,opt,name=recurrence,proto3" json:"recurrence,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -762,6 +764,13 @@ func (x *ClassInfo) GetAudience() string {
 func (x *ClassInfo) GetSummary() string {
 	if x != nil {
 		return x.Summary
+	}
+	return ""
+}
+
+func (x *ClassInfo) GetRecurrence() string {
+	if x != nil {
+		return x.Recurrence
 	}
 	return ""
 }
@@ -1115,7 +1124,7 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"given_name\x18\x03 \x01(\tR\tgivenName\x12\x18\n" +
 	"\apicture\x18\x04 \x01(\tR\apicture\x12\x1b\n" +
 	"\tis_active\x18\x05 \x01(\bR\bisActive\x12#\n" +
-	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn\"\xff\x01\n" +
+	"\rchosen_column\x18\x06 \x01(\x03R\fchosenColumn\"\x9f\x02\n" +
 	"\tClassInfo\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\tR\x04hash\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1128,7 +1137,10 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\ateacher\x18\b \x01(\tR\ateacher\x12\x1a\n" +
 	"\baudience\x18\t \x01(\tR\baudience\x12\x18\n" +
 	"\asummary\x18\n" +
-	" \x01(\tR\asummary\"\x91\x01\n" +
+	" \x01(\tR\asummary\x12\x1e\n" +
+	"\n" +
+	"recurrence\x18\v \x01(\tR\n" +
+	"recurrence\"\x91\x01\n" +
 	"\rClassOverride\x12\x1d\n" +
 	"\n" +
 	"class_hash\x18\x01 \x01(\tR\tclassHash\x12\x1d\n" +

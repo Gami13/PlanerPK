@@ -35,16 +35,17 @@ func (h *PKPlanerHandler) GetClasses(
 	for day, dayClasses := range timetable {
 		for _, class := range dayClasses {
 			classes = append(classes, &pkplanerv1.ClassInfo{
-				Hash:      class.Hash(),
-				Name:      class.Name,
-				Type:      class.Type,
-				Day:       day.String(),
-				StartTime: class.StartTime.Format("15:04"),
-				EndTime:   class.EndTime.Format("15:04"),
-				Location:  class.Location,
-				Teacher:   class.Teacher,
-				Audience:  class.Audience,
-				Summary:   class.Summary(),
+				Hash:       class.Hash(),
+				Name:       class.Name,
+				Type:       class.Type,
+				Day:        day.String(),
+				StartTime:  class.StartTime.Format("15:04"),
+				EndTime:    class.EndTime.Format("15:04"),
+				Location:   class.Location,
+				Teacher:    class.Teacher,
+				Audience:   class.Audience,
+				Summary:    class.Summary(),
+				Recurrence: class.AdditionalInfo,
 			})
 		}
 	}

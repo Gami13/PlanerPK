@@ -1,34 +1,87 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
-import { MiddleEllipsis } from "../MiddleEllipsis";
 import { attrs } from "../../utils";
-import { formatTime, type PositionedEntry } from "./timetable";
-import { timetableStyles as styles } from "./timetableStyles";
+import { formatTime, isWeeklyRecurrence, paletteFor, type PositionedEntry } from "./timetable";
+import { eventPaletteStyle, timetableStyles as styles } from "./timetableStyles";
+import { formatClassTitle } from "./titleTemplate";
 
-export function TimetableEvent(props: { entry: PositionedEntry; start: number; pixelsPerMinute: number }) {
+export function TimetableEvent(props: {
+	entry: PositionedEntry;
+	start: number;
+	pixelsPerMinute: number;
+	titleTemplate?: string;
+	groupLabel?: string;
+}) {
 	const info = () => props.entry.classInfo;
-	const title = () => info().summary || `${info().name}${info().type ? ` (${info().type})` : ""}`;
+	const duration = () => props.entry.end - props.entry.start;
+	// Short blocks only have room for a title and the time; drop the rest
+	// instead of letting it clip mid-line.
+	const roomy = () => duration() >= 75;
+	const title = () =>
+		props.titleTemplate === undefined
+			? info().summary || `${info().name}${info().type ? ` (${info().type})` : ""}`
+			: formatClassTitle(props.titleTemplate, info());
+	const showTeacher = () =>
+		!props.entry.ghost && props.titleTemplate === undefined && !info().summary && !!info().teacher;
+	const showAudience = () => !props.entry.ghost && !!info().audience && info().audience !== props.groupLabel;
+	const showRecurrence = () => !props.entry.ghost && !!info().recurrence && !isWeeklyRecurrence(info().recurrence);
+	const time = () => `${formatTime(props.entry.start)}–${formatTime(props.entry.end)}`;
+	const tooltip = () =>
+		[
+			title(),
+			info().teacher,
+			info().audience && `Grupa: ${info().audience}`,
+			info().recurrence,
+			info().location,
+			time(),
+		]
+			.filter(Boolean)
+			.join("\n");
+
 	return (
 		<article
-			{...attrs(stylex.props(styles.event, props.entry.ghost && styles.ghost))}
+			{...attrs(
+				stylex.props(
+					styles.event,
+					eventPaletteStyle(paletteFor(info().name || info().hash)),
+					props.entry.ghost && styles.ghost
+				)
+			)}
 			style={{
 				top: `${(props.entry.start - props.start) * props.pixelsPerMinute}px`,
-				height: `${(props.entry.end - props.entry.start) * props.pixelsPerMinute - 2}px`,
+				height: `${duration() * props.pixelsPerMinute - 2}px`,
 				left: `calc(${(props.entry.lane / props.entry.lanes) * 100}% + 2px)`,
 				width: `calc(${100 / props.entry.lanes}% - 4px)`,
 			}}
+			title={tooltip()}
 		>
 			<div {...attrs(stylex.props(styles.eventContent))}>
-				<h4 {...attrs(stylex.props(styles.eventName))}>
-					<MiddleEllipsis text={title()} />
-				</h4>
-				<Show when={!info().summary && info().teacher}>
+				<h4 {...attrs(stylex.props(styles.eventName))}>{title()}</h4>
+				<Show when={props.entry.ghost}>
+					<span {...attrs(stylex.props(styles.eventMeta))}>Poprzednia pozycja</span>
+				</Show>
+				<Show when={showTeacher()}>
 					<span {...attrs(stylex.props(styles.eventMeta))} title={info().teacher}>
 						{info().teacher}
 					</span>
 				</Show>
-				<Show when={props.entry.ghost}>
-					<span>Poprzednia pozycja · transparentna</span>
+				<Show when={showAudience() && roomy()}>
+					<span
+						{...attrs(stylex.props(styles.eventBadge))}
+						title={`Grupa: ${info().audience}`}
+						aria-label={`Grupa: ${info().audience}`}
+					>
+						{info().audience}
+					</span>
+				</Show>
+				<Show when={showRecurrence() && roomy()}>
+					<span
+						{...attrs(stylex.props(styles.eventMeta))}
+						title={info().recurrence}
+						aria-label={`Info: ${info().recurrence}`}
+					>
+						{info().recurrence}
+					</span>
 				</Show>
 			</div>
 			<div {...attrs(stylex.props(styles.eventFooter))}>
@@ -37,9 +90,7 @@ export function TimetableEvent(props: { entry: PositionedEntry; start: number; p
 						{info().location}
 					</span>
 				</Show>
-				<span {...attrs(stylex.props(styles.eventTime))}>
-					{formatTime(props.entry.start)}–{formatTime(props.entry.end)}
-				</span>
+				<span {...attrs(stylex.props(styles.eventTime))}>{time()}</span>
 			</div>
 		</article>
 	);

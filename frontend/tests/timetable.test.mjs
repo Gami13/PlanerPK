@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseTime, formatTime, prepareEntries, positionEntries } from "../src/Components/Timetable/timetable.ts";
+import {
+	eventPaletteNames,
+	formatTime,
+	isWeeklyRecurrence,
+	paletteFor,
+	parseTime,
+	positionEntries,
+	prepareEntries,
+} from "../src/Components/Timetable/timetable.ts";
 
 const lesson = (patch = {}) => ({
 	hash: "lesson",
@@ -71,4 +79,22 @@ test("overlaps share lanes, touching and unrelated lessons use full width", () =
 			[0, 1],
 		]
 	);
+});
+
+test("course colors are stable and always resolve to a known palette", () => {
+	assert.equal(paletteFor("Matematyka dyskretna"), paletteFor("Matematyka dyskretna"));
+	assert.ok(eventPaletteNames.includes(paletteFor("Bazy danych")));
+	assert.ok(eventPaletteNames.includes(paletteFor("")));
+	const colors = new Set(["Matematyka", "Bazy danych", "Systemy operacyjne", "Język obcy"].map(paletteFor));
+	assert.ok(colors.size > 1);
+});
+
+test("default weekly recurrence is recognized as noise, alternating weeks are not", () => {
+	assert.equal(isWeeklyRecurrence(undefined), true);
+	assert.equal(isWeeklyRecurrence(""), true);
+	assert.equal(isWeeklyRecurrence("co tydz."), true);
+	assert.equal(isWeeklyRecurrence("co tydzień"), true);
+	assert.equal(isWeeklyRecurrence("Co Tydz."), true);
+	assert.equal(isWeeklyRecurrence("co 2 tydzień - 15h"), false);
+	assert.equal(isWeeklyRecurrence("co 2 tydzień (15h)"), false);
 });

@@ -12,25 +12,31 @@ func TestCalendarSummaryIncludesWeekAndClassDetails(t *testing.T) {
 		Name: "Matematyka dyskretna", Type: "L", Teacher: "Biskup Piotr",
 		Audience: "GL2", AdditionalInfo: "A",
 	}
-	want := "Matematyka dyskretna (L) - Biskup Piotr [GL2] | A"
+	want := "Matematyka dyskretna (L) - Biskup Piotr"
 	if got := class.Summary(); got != want {
 		t.Fatalf("Summary() = %q, want %q", got, want)
 	}
 	if got := class.ToEvent(nil, nil).Summary; got != want {
 		t.Fatalf("calendar summary = %q, want %q", got, want)
 	}
+	if got := class.ToEvent(nil, nil).Description; got != "Grupa: GL2<br>Info: A" {
+		t.Fatalf("calendar description = %q, want group and info rows", got)
+	}
 }
 
 func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	class := Class{Name: "Subject", Audience: "GL2"}
-	if !strings.Contains(class.Summary(), "GL2") {
-		t.Errorf("Summary() = %q, want audience", class.Summary())
+	if strings.Contains(class.Summary(), "GL2") {
+		t.Errorf("Summary() = %q, audience should only appear in the description", class.Summary())
 	}
 	if !strings.Contains(class.String(), "GL2") {
 		t.Errorf("String() = %q, want audience", class.String())
 	}
 	event := class.ToEvent(nil, nil)
-	if !strings.Contains(event.Summary, "GL2") || !strings.Contains(event.Description, "GL2") || event.ExtendedProperties.Private["audience"] != "GL2" {
+	if !strings.Contains(event.Description, "Grupa: GL2") || strings.Contains(event.Description, "Audience:") {
+		t.Errorf("calendar description = %q, want Polish group label", event.Description)
+	}
+	if strings.Contains(event.Summary, "GL2") || !strings.Contains(event.Description, "GL2") || event.ExtendedProperties.Private["audience"] != "GL2" {
 		t.Errorf("ToEvent() omitted audience: %+v", event)
 	}
 }

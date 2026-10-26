@@ -8,6 +8,38 @@ export const weekdays = [
 	{ key: "Friday", label: "Piątek" },
 ] as const;
 
+export const eventPaletteNames = [
+	"blue",
+	"green",
+	"amber",
+	"violet",
+	"teal",
+	"rose",
+	"indigo",
+	"cyan",
+	"olive",
+	"sand",
+] as const;
+
+export type EventPalette = (typeof eventPaletteNames)[number];
+
+// Stable per-course color: the same subject keeps its color across days/weeks,
+// which makes the grid scannable without a legend.
+export function paletteFor(seed: string): EventPalette {
+	let hash = 0;
+	for (let index = 0; index < seed.length; index++) {
+		hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+	}
+	return eventPaletteNames[hash % eventPaletteNames.length];
+}
+
+// "co tydz." / "co tydzień" is the norm, so it only adds noise. Anything else
+// (e.g. "co 2 tydzień - 15h") is real information worth showing.
+export function isWeeklyRecurrence(value: string | undefined): boolean {
+	const normalized = value?.trim().toLocaleLowerCase("pl") ?? "";
+	return normalized === "" || /^co\s+(?:1\s+)?tydz/.test(normalized);
+}
+
 export type TimetableEntry = {
 	id: string;
 	classInfo: ClassInfo;

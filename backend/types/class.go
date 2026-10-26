@@ -60,7 +60,7 @@ func (c Class) Hash() string {
 }
 
 func (c Class) Summary() string {
-	return c.summary(true)
+	return c.FormatTitle(DefaultTitleTemplate)
 }
 
 func (c Class) summary(includeAudience bool) string {
@@ -124,7 +124,10 @@ func (c Class) ToEvent(buildings *buildings.Buildings, schedule *ClassSchedule) 
 	}
 	var description []string
 	if c.Audience != "" {
-		description = append(description, "Audience: "+c.Audience)
+		description = append(description, "Grupa: "+c.Audience)
+	}
+	if c.AdditionalInfo != "" {
+		description = append(description, "Info: "+c.AdditionalInfo)
 	}
 	for _, building := range buildings.GetBuildingsByClassroomKeys(c.ResolvedClassroomKeys) {
 		if link := building.MapHTMLAnchor(); link != "" {
