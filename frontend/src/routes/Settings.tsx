@@ -1,10 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
-import { createMemo, createResource, createSignal, useContext } from "solid-js";
+import { createMemo, createResource, useContext } from "solid-js";
 
 import { PageTitle } from "../Components/PageTitle";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
-import { TitleTemplateEditor } from "../Components/Timetable/TitleTemplateEditor";
-import { defaultTitleTemplate } from "../Components/Timetable/titleTemplate";
 
 import { AppContext } from "../appContext";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
@@ -38,7 +36,6 @@ const style = stylex.create({
 });
 export function Settings() {
 	const AppState = useContext(AppContext);
-	const [titleTemplate, setTitleTemplate] = createSignal(defaultTitleTemplate);
 	const [columns] = createResource(getColumns);
 	const [classes, { refetch: refetchClasses }] = createResource(getClasses);
 	const [overrides, { mutate: mutateOverrides }] = createResource(getOverrides);
@@ -110,12 +107,7 @@ export function Settings() {
 					/>
 				</SettingCard>
 
-				<SettingCard title="Format tytułów zajęć">
-					<TitleTemplateEditor value={titleTemplate()} onChange={setTitleTemplate} sampleClass={loadedClasses()?.[0]} />
-				</SettingCard>
-
 				<TimetablePreview
-					titleTemplate={titleTemplate()}
 					classes={loadedClasses()}
 					overrides={loadedOverrides()}
 					loading={classes.loading || overrides.loading}

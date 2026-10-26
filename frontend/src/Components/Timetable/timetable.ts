@@ -8,36 +8,39 @@ export const weekdays = [
 	{ key: "Friday", label: "Piątek" },
 ] as const;
 
-export const eventPaletteNames = [
-	"blue",
-	"green",
-	"amber",
-	"violet",
-	"teal",
-	"rose",
-	"indigo",
-	"cyan",
-	"olive",
-	"sand",
-] as const;
-
-export type EventPalette = (typeof eventPaletteNames)[number];
-
-// Stable per-course color: the same subject keeps its color across days/weeks,
-// which makes the grid scannable without a legend.
-export function paletteFor(seed: string): EventPalette {
-	let hash = 0;
-	for (let index = 0; index < seed.length; index++) {
-		hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
-	}
-	return eventPaletteNames[hash % eventPaletteNames.length];
-}
-
 // "co tydz." / "co tydzień" is the norm, so it only adds noise. Anything else
 // (e.g. "co 2 tydzień - 15h") is real information worth showing.
 export function isWeeklyRecurrence(value: string | undefined): boolean {
 	const normalized = value?.trim().toLocaleLowerCase("pl") ?? "";
 	return normalized === "" || /^co\s+(?:1\s+)?tydz/.test(normalized);
+}
+
+export function weekMarker(value: string | undefined): string | undefined {
+	const match = /^\s*(?:tydzień\s+)?([AB])\s*$/i.exec(value ?? "");
+	return match?.[1].toUpperCase();
+}
+
+function labGroups(value: string): string[] {
+	return [...value.toUpperCase().matchAll(/\bG[LK](\d+)\b/g)].map((match) => `GL${Number(match[1])}`);
+}
+
+export function shouldShowAudience(type: string, audience: string, selectedGroup?: string): boolean {
+	if (!audience.trim() || /^(w|wykład|wyklad|wyk\.?)$/i.test(type.trim())) return false;
+	if (!selectedGroup) return true;
+	const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toUpperCase();
+	if (normalize(audience) === normalize(selectedGroup)) return false;
+	const selectedLabs = labGroups(selectedGroup);
+	const audienceLabs = labGroups(audience);
+	// Explicit membership such as C1 (GL1+GL2) takes priority over numbering.
+	if (selectedLabs.length && audienceLabs.length) {
+		return !selectedLabs.every((group) => audienceLabs.includes(group));
+	}
+	// GC1 / C1 is the parent of GL1 and GL2 (also named GK1 and GK2).
+	const parent = /^(?:GC|C)(\d+)$/i.exec(audience.trim());
+	if (parent && selectedLabs.length) {
+		return !selectedLabs.every((group) => Math.ceil(Number(group.slice(2)) / 2) === Number(parent[1]));
+	}
+	return true;
 }
 
 export type TimetableEntry = {

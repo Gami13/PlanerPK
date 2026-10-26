@@ -1,15 +1,14 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
 import { attrs } from "../../utils";
-import { formatTime, isWeeklyRecurrence, paletteFor, type PositionedEntry } from "./timetable";
-import { eventPaletteStyle, timetableStyles as styles } from "./timetableStyles";
-import { formatClassTitle } from "./titleTemplate";
+import { formatTime, isWeeklyRecurrence, shouldShowAudience, weekMarker, type PositionedEntry } from "./timetable";
+import { timetableStyles as styles } from "./timetableStyles";
+import { defaultTitleTemplate, formatClassTitle } from "./titleTemplate";
 
 export function TimetableEvent(props: {
 	entry: PositionedEntry;
 	start: number;
 	pixelsPerMinute: number;
-	titleTemplate?: string;
 	groupLabel?: string;
 }) {
 	const info = () => props.entry.classInfo;
@@ -17,14 +16,11 @@ export function TimetableEvent(props: {
 	// Short blocks only have room for a title and the time; drop the rest
 	// instead of letting it clip mid-line.
 	const roomy = () => duration() >= 75;
-	const title = () =>
-		props.titleTemplate === undefined
-			? info().summary || `${info().name}${info().type ? ` (${info().type})` : ""}`
-			: formatClassTitle(props.titleTemplate, info());
-	const showTeacher = () =>
-		!props.entry.ghost && props.titleTemplate === undefined && !info().summary && !!info().teacher;
-	const showAudience = () => !props.entry.ghost && !!info().audience && info().audience !== props.groupLabel;
-	const showRecurrence = () => !props.entry.ghost && !!info().recurrence && !isWeeklyRecurrence(info().recurrence);
+	const title = () => info().summary || formatClassTitle(defaultTitleTemplate, info());
+	const showAudience = () => !props.entry.ghost && shouldShowAudience(info().type, info().audience, props.groupLabel);
+	const week = () => (props.entry.ghost ? undefined : weekMarker(info().recurrence));
+	const showRecurrence = () =>
+		!props.entry.ghost && !week() && !!info().recurrence && !isWeeklyRecurrence(info().recurrence);
 	const time = () => `${formatTime(props.entry.start)}–${formatTime(props.entry.end)}`;
 	const tooltip = () =>
 		[
@@ -40,18 +36,12 @@ export function TimetableEvent(props: {
 
 	return (
 		<article
-			{...attrs(
-				stylex.props(
-					styles.event,
-					eventPaletteStyle(paletteFor(info().name || info().hash)),
-					props.entry.ghost && styles.ghost
-				)
-			)}
+			{...attrs(stylex.props(styles.event, props.entry.ghost && styles.ghost))}
 			style={{
 				top: `${(props.entry.start - props.start) * props.pixelsPerMinute}px`,
-				height: `${duration() * props.pixelsPerMinute - 2}px`,
-				left: `calc(${(props.entry.lane / props.entry.lanes) * 100}% + 2px)`,
-				width: `calc(${100 / props.entry.lanes}% - 4px)`,
+				height: `${duration() * props.pixelsPerMinute - 1}px`,
+				left: `calc(${(props.entry.lane / props.entry.lanes) * 100}% + ${1 / props.entry.lanes}%)`,
+				width: `calc(${98 / props.entry.lanes}%)`,
 			}}
 			title={tooltip()}
 		>
@@ -60,14 +50,9 @@ export function TimetableEvent(props: {
 				<Show when={props.entry.ghost}>
 					<span {...attrs(stylex.props(styles.eventMeta))}>Poprzednia pozycja</span>
 				</Show>
-				<Show when={showTeacher()}>
-					<span {...attrs(stylex.props(styles.eventMeta))} title={info().teacher}>
-						{info().teacher}
-					</span>
-				</Show>
 				<Show when={showAudience() && roomy()}>
 					<span
-						{...attrs(stylex.props(styles.eventBadge))}
+						{...attrs(stylex.props(styles.eventMeta))}
 						title={`Grupa: ${info().audience}`}
 						aria-label={`Grupa: ${info().audience}`}
 					>
@@ -90,7 +75,16 @@ export function TimetableEvent(props: {
 						{info().location}
 					</span>
 				</Show>
-				<span {...attrs(stylex.props(styles.eventTime))}>{time()}</span>
+				<span {...attrs(stylex.props(styles.eventTime))}>
+					<Show when={week()}>
+						{(marker) => (
+							<span aria-label={`Tydzień ${marker()}`} {...attrs(stylex.props(styles.eventWeek))}>
+								{marker()}
+							</span>
+						)}
+					</Show>
+					{time()}
+				</span>
 			</div>
 		</article>
 	);

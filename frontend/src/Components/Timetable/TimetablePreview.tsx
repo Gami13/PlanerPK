@@ -14,7 +14,6 @@ type TimetablePreviewProps = {
 	error?: unknown;
 	groupLabel?: string;
 	noGroup?: boolean;
-	titleTemplate?: string;
 };
 
 function currentMinute(): number {
@@ -28,25 +27,6 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 	const [selected, setSelected] = createSignal(todayIndex ?? 0);
 	const [now, setNow] = createSignal(currentMinute());
 	const entries = createMemo(() => prepareEntries(props.classes ?? [], props.overrides));
-	// On views without an explicit group (the home page), the audience shared by
-	// most classes is almost certainly the user's own group — hide it as noise.
-	const dominantAudience = createMemo(() => {
-		const counts = new Map<string, number>();
-		for (const entry of entries()) {
-			const audience = entry.classInfo.audience;
-			if (audience) counts.set(audience, (counts.get(audience) ?? 0) + 1);
-		}
-		let best: string | undefined;
-		let bestCount = 0;
-		for (const [audience, count] of counts) {
-			if (count > bestCount) {
-				best = audience;
-				bestCount = count;
-			}
-		}
-		return bestCount > 1 ? best : undefined;
-	});
-	const eventGroupLabel = () => props.groupLabel ?? dominantAudience();
 	// Begin half an hour before the first labeled hour, leaving room above its centered label.
 	const firstHour = createMemo(() => Math.floor(Math.min(8 * 60, ...entries().map((entry) => entry.start)) / 60) * 60);
 	const start = createMemo(() => firstHour() - 30);
@@ -71,16 +51,11 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 		<section {...attrs(stylex.props(styles.card))} aria-label="Plan tygodnia" aria-busy={!!props.loading}>
 			<header {...attrs(stylex.props(styles.header))}>
 				<h2 {...attrs(stylex.props(styles.title))}>Plan tygodnia</h2>
-				<p {...attrs(stylex.props(styles.subtitle))}>
-					<Show when={props.groupLabel}>
-						<span {...attrs(stylex.props(styles.groupChip))}>{props.groupLabel}</span>
-					</Show>
-					<span>
-						{props.titleTemplate === undefined
-							? "Podgląd z zapisanymi zmianami"
-							: "Podgląd z roboczym szablonem tytułów"}
-					</span>
-				</p>
+				<Show when={props.groupLabel}>
+					<p {...attrs(stylex.props(styles.subtitle))}>
+						<span {...attrs(stylex.props(styles.groupLabel))}>{props.groupLabel}</span>
+					</p>
+				</Show>
 			</header>
 			<Switch
 				fallback={
@@ -122,8 +97,7 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 											selected={index() === selected()}
 											today={index() === todayIndex}
 											now={index() === todayIndex ? now() : undefined}
-											titleTemplate={props.titleTemplate}
-											groupLabel={eventGroupLabel()}
+											groupLabel={props.groupLabel}
 										/>
 									)}
 								</For>

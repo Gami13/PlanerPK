@@ -14,7 +14,6 @@ export function TimetableDay(props: {
 	selected: boolean;
 	today: boolean;
 	now?: number;
-	titleTemplate?: string;
 	groupLabel?: string;
 }) {
 	const entries = createMemo(() => positionEntries(props.entries));
@@ -65,7 +64,6 @@ export function TimetableDay(props: {
 							entry={entry}
 							start={props.start}
 							pixelsPerMinute={props.pixelsPerMinute}
-							titleTemplate={props.titleTemplate}
 							groupLabel={props.groupLabel}
 						/>
 					)}

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-	eventPaletteNames,
 	formatTime,
 	isWeeklyRecurrence,
-	paletteFor,
+	shouldShowAudience,
+	weekMarker,
 	parseTime,
 	positionEntries,
 	prepareEntries,
@@ -81,12 +81,23 @@ test("overlaps share lanes, touching and unrelated lessons use full width", () =
 	);
 });
 
-test("course colors are stable and always resolve to a known palette", () => {
-	assert.equal(paletteFor("Matematyka dyskretna"), paletteFor("Matematyka dyskretna"));
-	assert.ok(eventPaletteNames.includes(paletteFor("Bazy danych")));
-	assert.ok(eventPaletteNames.includes(paletteFor("")));
-	const colors = new Set(["Matematyka", "Bazy danych", "Systemy operacyjne", "Język obcy"].map(paletteFor));
-	assert.ok(colors.size > 1);
+test("only A/B week markers move to the time footer", () => {
+	assert.equal(weekMarker(" A "), "A");
+	assert.equal(weekMarker("tydzień B"), "B");
+	assert.equal(weekMarker("A, bez 05.10"), undefined);
+});
+
+test("hide lecture, own group, aliases, and parent audiences", () => {
+	assert.equal(shouldShowAudience("W", "cały rocznik", "GL2"), false);
+	assert.equal(shouldShowAudience("wykład", "GL1", "GL2"), false);
+	assert.equal(shouldShowAudience("L", "GL2", "GL2"), false);
+	assert.equal(shouldShowAudience("L", "GK2", "GL2"), false);
+	assert.equal(shouldShowAudience("C", "GC1", "GK2"), false);
+	assert.equal(shouldShowAudience("C", "C1 (GL1+GL2)", "GL2"), false);
+	assert.equal(shouldShowAudience("C", "GC2", "GL2"), true);
+	assert.equal(shouldShowAudience("L", "GL1", "GL2"), true);
+	assert.equal(shouldShowAudience("C", "grupa obieralna 1", "GL2"), true);
+	assert.equal(shouldShowAudience("L", "GL2"), true);
 });
 
 test("default weekly recurrence is recognized as noise, alternating weeks are not", () => {

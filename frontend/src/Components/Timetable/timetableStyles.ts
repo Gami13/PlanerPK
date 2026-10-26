@@ -1,119 +1,18 @@
 import * as stylex from "@stylexjs/stylex";
 import { borderRadius, colors, spacing } from "../../styles/tokens.stylex";
 
-// Timetable chrome is intentionally quiet: only the hour lines carry weight,
-// so the colored class blocks are what the eye lands on.
-const hourLine = "#e9edf3";
-const halfHourLine = "#f4f6fa";
-const eventText = "#1b2735";
+// Keep the grid quiet behind a single blue event color.
+const hourLine = "#dfe5ed";
+const halfHourLine = "#eef2f7";
 const eventMeta = "#576475";
 const todayAccent = "#e8453c";
 const singleDay = "@media (max-width: 820px)";
 
-// Each course gets a stable pastel palette from its name. Tints instead of
-// saturated fills keep 12px text readable and stop the grid from shouting.
-import type { EventPalette } from "./timetable";
-
-export const eventPalettes = stylex.create({
-	blue: {
-		backgroundColor: { default: "#ebf3fd", ":hover": "#e0edfc" },
-		borderTopColor: "#c9dcf5",
-		borderRightColor: "#c9dcf5",
-		borderBottomColor: "#c9dcf5",
-		borderLeftColor: "#1a73e8",
-	},
-	green: {
-		backgroundColor: { default: "#e9f5ed", ":hover": "#ddefe4" },
-		borderTopColor: "#c4e2d0",
-		borderRightColor: "#c4e2d0",
-		borderBottomColor: "#c4e2d0",
-		borderLeftColor: "#1e8e3e",
-	},
-	amber: {
-		backgroundColor: { default: "#fdf4e1", ":hover": "#fbefd2" },
-		borderTopColor: "#f0dcb0",
-		borderRightColor: "#f0dcb0",
-		borderBottomColor: "#f0dcb0",
-		borderLeftColor: "#b06000",
-	},
-	violet: {
-		backgroundColor: { default: "#f3edfe", ":hover": "#ede3fd" },
-		borderTopColor: "#ddcef8",
-		borderRightColor: "#ddcef8",
-		borderBottomColor: "#ddcef8",
-		borderLeftColor: "#7b3fe4",
-	},
-	teal: {
-		backgroundColor: { default: "#e7f5f4", ":hover": "#dcf1f0" },
-		borderTopColor: "#c1e4e2",
-		borderRightColor: "#c1e4e2",
-		borderBottomColor: "#c1e4e2",
-		borderLeftColor: "#0b7c7c",
-	},
-	rose: {
-		backgroundColor: { default: "#fdeded", ":hover": "#fbdfdf" },
-		borderTopColor: "#f4cece",
-		borderRightColor: "#f4cece",
-		borderBottomColor: "#f4cece",
-		borderLeftColor: "#c5221f",
-	},
-	indigo: {
-		backgroundColor: { default: "#eaedfd", ":hover": "#dfe4fc" },
-		borderTopColor: "#cbd4f8",
-		borderRightColor: "#cbd4f8",
-		borderBottomColor: "#cbd4f8",
-		borderLeftColor: "#2d4bd0",
-	},
-	cyan: {
-		backgroundColor: { default: "#e3f4fa", ":hover": "#d6eef7" },
-		borderTopColor: "#bfe5f1",
-		borderRightColor: "#bfe5f1",
-		borderBottomColor: "#bfe5f1",
-		borderLeftColor: "#007b9e",
-	},
-	olive: {
-		backgroundColor: { default: "#eef6e3", ":hover": "#e4f0d3" },
-		borderTopColor: "#d7e8c1",
-		borderRightColor: "#d7e8c1",
-		borderBottomColor: "#d7e8c1",
-		borderLeftColor: "#557d24",
-	},
-	sand: {
-		backgroundColor: { default: "#f7efe4", ":hover": "#f2e7d6" },
-		borderTopColor: "#ead7bd",
-		borderRightColor: "#ead7bd",
-		borderBottomColor: "#ead7bd",
-		borderLeftColor: "#8a5a2b",
-	},
-});
-
-const paletteStyles = {
-	blue: eventPalettes.blue,
-	green: eventPalettes.green,
-	amber: eventPalettes.amber,
-	violet: eventPalettes.violet,
-	teal: eventPalettes.teal,
-	rose: eventPalettes.rose,
-	indigo: eventPalettes.indigo,
-	cyan: eventPalettes.cyan,
-	olive: eventPalettes.olive,
-	sand: eventPalettes.sand,
-} satisfies Record<EventPalette, unknown>;
-
-export function eventPaletteStyle(palette: EventPalette) {
-	return paletteStyles[palette];
-}
-
 export const timetableStyles = stylex.create({
 	card: {
 		width: "min(100%, 80rem)",
-		padding: { default: spacing.lg, [singleDay]: spacing.md },
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: colors.defaultBorder,
-		borderRadius: borderRadius.xl,
+		padding: { default: spacing.md, [singleDay]: spacing.sm },
 		backgroundColor: colors.white,
-		boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
 		display: "flex",
 		flexDirection: "column",
 		gap: spacing.md,
@@ -136,16 +35,12 @@ export const timetableStyles = stylex.create({
 		flexWrap: "wrap",
 		gap: "6px",
 	},
-	groupChip: {
-		padding: "1px 8px",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: "#bae6fd",
-		borderRadius: borderRadius.full,
-		backgroundColor: colors.primaryLightBg,
-		color: "#0369a1",
+	groupLabel: {
+		color: colors.secondaryText,
 		fontSize: "0.95em",
-		fontWeight: 600,
+		fontWeight: 500,
+		fontVariantNumeric: "tabular-nums",
+		letterSpacing: "0.01em",
 	},
 	message: { margin: 0, paddingBlock: spacing.lg, color: colors.secondaryText, textAlign: "center" },
 	navigation: {
@@ -256,37 +151,24 @@ export const timetableStyles = stylex.create({
 		whiteSpace: "nowrap",
 	},
 	event: {
+		backgroundColor: { default: "#e4eefb", ":hover": "#d6e7fb" },
 		containerType: "inline-size",
 		position: "absolute",
 		overflow: "hidden",
-		padding: "5px 7px 4px 10px",
-		borderTopWidth: "1px",
-		borderRightWidth: "1px",
-		borderBottomWidth: "1px",
-		borderLeftWidth: "3px",
-		borderStyle: "solid",
-		borderRadius: "6px",
-		color: eventText,
+		padding: "5px 7px 4px",
+		borderRadius: "3px",
+		color: "#0b2a45",
 		fontSize: "0.8em",
 		lineHeight: 1.2,
 		display: "flex",
 		flexDirection: "column",
 		gap: "1px",
-		boxShadow: { default: "0 1px 1px rgba(16, 24, 40, 0.03)", ":hover": "0 2px 6px rgba(16, 24, 40, 0.16)" },
-		transitionProperty: "box-shadow",
-		transitionDuration: "120ms",
 		zIndex: { default: 1, ":hover": 3 },
 	},
 	ghost: {
-		backgroundColor: { default: colors.lightCardBg, ":hover": colors.lightBg },
-		borderTopColor: "#cbd5e1",
-		borderRightColor: "#cbd5e1",
-		borderBottomColor: "#cbd5e1",
-		borderLeftColor: "#cbd5e1",
-		borderLeftWidth: "1px",
-		borderStyle: "dashed",
+		backgroundColor: { default: "#f1f5f9", ":hover": "#e9eef5" },
 		color: eventMeta,
-		boxShadow: "none",
+		opacity: 0.85,
 	},
 	eventContent: {
 		display: "flex",
@@ -312,26 +194,9 @@ export const timetableStyles = stylex.create({
 		maxHeight: "2.5em",
 	},
 	eventMeta: {
-		color: eventMeta,
+		color: "#3d5873",
 		fontSize: "0.86em",
 		lineHeight: 1.3,
-		whiteSpace: "nowrap",
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		flexShrink: 0,
-	},
-	eventBadge: {
-		alignSelf: "flex-start",
-		maxWidth: "100%",
-		padding: "0 5px",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: "rgba(16, 24, 40, 0.1)",
-		borderRadius: "4px",
-		backgroundColor: "rgba(255, 255, 255, 0.6)",
-		color: "#3f4c5c",
-		fontSize: "0.8em",
-		lineHeight: 1.4,
 		whiteSpace: "nowrap",
 		overflow: "hidden",
 		textOverflow: "ellipsis",
@@ -351,7 +216,7 @@ export const timetableStyles = stylex.create({
 		},
 		flexShrink: 0,
 		minWidth: 0,
-		color: "#637082",
+		color: "#3d5873",
 		fontSize: "0.82em",
 		lineHeight: 1.3,
 	},
@@ -365,6 +230,7 @@ export const timetableStyles = stylex.create({
 	},
 	eventTime: {
 		fontVariantNumeric: "tabular-nums",
+		fontWeight: 500,
 		whiteSpace: "nowrap",
 		flexShrink: 0,
 		marginLeft: "auto",
@@ -372,6 +238,7 @@ export const timetableStyles = stylex.create({
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 	},
+	eventWeek: { marginRight: "6px", fontWeight: 600 },
 	srOnly: {
 		position: "absolute",
 		width: "1px",

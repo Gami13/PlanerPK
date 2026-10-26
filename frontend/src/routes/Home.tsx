@@ -7,7 +7,7 @@ import { Button } from "../Components/Button";
 import { UserCard } from "../Components/UserCard";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
-import { getAuthURL, getClasses, getOverrides } from "../services/pkplaner";
+import { getAuthURL, getClasses, getColumns, getOverrides } from "../services/pkplaner";
 import { attrs, setAccessToken } from "../utils";
 
 const MOBILE_MAX = "@media (max-width: 33.75em)" as const;
@@ -105,6 +105,7 @@ export function Home() {
 	const selectedGroup = () => (userInfo()?.chosenColumn ? String(userInfo()!.chosenColumn) : false);
 	const [classes] = createResource(selectedGroup, getClasses);
 	const [overrides] = createResource(selectedGroup, getOverrides);
+	const [columns] = createResource(selectedGroup, getColumns);
 
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
@@ -161,6 +162,9 @@ export function Home() {
 					}
 				>
 					<TimetablePreview
+						groupLabel={
+							columns.error ? undefined : columns()?.find((column) => String(column.column) === selectedGroup())?.label
+						}
 						classes={classes.error ? undefined : classes()}
 						overrides={overrides.error ? undefined : overrides()}
 						loading={classes.loading || overrides.loading}
