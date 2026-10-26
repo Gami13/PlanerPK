@@ -57,6 +57,9 @@ const (
 	// PKPlanerServiceGetTimetableProcedure is the fully-qualified name of the PKPlanerService's
 	// GetTimetable RPC.
 	PKPlanerServiceGetTimetableProcedure = "/pkplaner.v1.PKPlanerService/GetTimetable"
+	// PKPlanerServiceGetImportGroupsProcedure is the fully-qualified name of the PKPlanerService's
+	// GetImportGroups RPC.
+	PKPlanerServiceGetImportGroupsProcedure = "/pkplaner.v1.PKPlanerService/GetImportGroups"
 	// PKPlanerServiceGetOverridesProcedure is the fully-qualified name of the PKPlanerService's
 	// GetOverrides RPC.
 	PKPlanerServiceGetOverridesProcedure = "/pkplaner.v1.PKPlanerService/GetOverrides"
@@ -83,6 +86,8 @@ type PKPlanerServiceClient interface {
 	GetClasses(context.Context, *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error)
 	// Public, read-only timetable without user-specific overrides.
 	GetTimetable(context.Context, *connect.Request[v1.GetTimetableRequest]) (*connect.Response[v1.GetClassesResponse], error)
+	// Groups eligible for adding classes to the authenticated user's timetable.
+	GetImportGroups(context.Context, *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error)
 	// GetOverrides returns all class overrides for the authenticated user.
 	GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error)
 	// SetOverride creates, updates, or deletes a class override for the authenticated user.
@@ -148,6 +153,12 @@ func NewPKPlanerServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(pKPlanerServiceMethods.ByName("GetTimetable")),
 			connect.WithClientOptions(opts...),
 		),
+		getImportGroups: connect.NewClient[v1.GetColumnsRequest, v1.GetColumnsResponse](
+			httpClient,
+			baseURL+PKPlanerServiceGetImportGroupsProcedure,
+			connect.WithSchema(pKPlanerServiceMethods.ByName("GetImportGroups")),
+			connect.WithClientOptions(opts...),
+		),
 		getOverrides: connect.NewClient[v1.GetOverridesRequest, v1.GetOverridesResponse](
 			httpClient,
 			baseURL+PKPlanerServiceGetOverridesProcedure,
@@ -173,6 +184,7 @@ type pKPlanerServiceClient struct {
 	getUserInfo     *connect.Client[v1.GetUserInfoRequest, v1.GetUserInfoResponse]
 	getClasses      *connect.Client[v1.GetClassesRequest, v1.GetClassesResponse]
 	getTimetable    *connect.Client[v1.GetTimetableRequest, v1.GetClassesResponse]
+	getImportGroups *connect.Client[v1.GetColumnsRequest, v1.GetColumnsResponse]
 	getOverrides    *connect.Client[v1.GetOverridesRequest, v1.GetOverridesResponse]
 	setOverride     *connect.Client[v1.SetOverrideRequest, v1.SetOverrideResponse]
 }
@@ -217,6 +229,11 @@ func (c *pKPlanerServiceClient) GetTimetable(ctx context.Context, req *connect.R
 	return c.getTimetable.CallUnary(ctx, req)
 }
 
+// GetImportGroups calls pkplaner.v1.PKPlanerService.GetImportGroups.
+func (c *pKPlanerServiceClient) GetImportGroups(ctx context.Context, req *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error) {
+	return c.getImportGroups.CallUnary(ctx, req)
+}
+
 // GetOverrides calls pkplaner.v1.PKPlanerService.GetOverrides.
 func (c *pKPlanerServiceClient) GetOverrides(ctx context.Context, req *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error) {
 	return c.getOverrides.CallUnary(ctx, req)
@@ -245,6 +262,8 @@ type PKPlanerServiceHandler interface {
 	GetClasses(context.Context, *connect.Request[v1.GetClassesRequest]) (*connect.Response[v1.GetClassesResponse], error)
 	// Public, read-only timetable without user-specific overrides.
 	GetTimetable(context.Context, *connect.Request[v1.GetTimetableRequest]) (*connect.Response[v1.GetClassesResponse], error)
+	// Groups eligible for adding classes to the authenticated user's timetable.
+	GetImportGroups(context.Context, *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error)
 	// GetOverrides returns all class overrides for the authenticated user.
 	GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error)
 	// SetOverride creates, updates, or deletes a class override for the authenticated user.
@@ -306,6 +325,12 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 		connect.WithSchema(pKPlanerServiceMethods.ByName("GetTimetable")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pKPlanerServiceGetImportGroupsHandler := connect.NewUnaryHandler(
+		PKPlanerServiceGetImportGroupsProcedure,
+		svc.GetImportGroups,
+		connect.WithSchema(pKPlanerServiceMethods.ByName("GetImportGroups")),
+		connect.WithHandlerOptions(opts...),
+	)
 	pKPlanerServiceGetOverridesHandler := connect.NewUnaryHandler(
 		PKPlanerServiceGetOverridesProcedure,
 		svc.GetOverrides,
@@ -336,6 +361,8 @@ func NewPKPlanerServiceHandler(svc PKPlanerServiceHandler, opts ...connect.Handl
 			pKPlanerServiceGetClassesHandler.ServeHTTP(w, r)
 		case PKPlanerServiceGetTimetableProcedure:
 			pKPlanerServiceGetTimetableHandler.ServeHTTP(w, r)
+		case PKPlanerServiceGetImportGroupsProcedure:
+			pKPlanerServiceGetImportGroupsHandler.ServeHTTP(w, r)
 		case PKPlanerServiceGetOverridesProcedure:
 			pKPlanerServiceGetOverridesHandler.ServeHTTP(w, r)
 		case PKPlanerServiceSetOverrideProcedure:
@@ -379,6 +406,10 @@ func (UnimplementedPKPlanerServiceHandler) GetClasses(context.Context, *connect.
 
 func (UnimplementedPKPlanerServiceHandler) GetTimetable(context.Context, *connect.Request[v1.GetTimetableRequest]) (*connect.Response[v1.GetClassesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.GetTimetable is not implemented"))
+}
+
+func (UnimplementedPKPlanerServiceHandler) GetImportGroups(context.Context, *connect.Request[v1.GetColumnsRequest]) (*connect.Response[v1.GetColumnsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pkplaner.v1.PKPlanerService.GetImportGroups is not implemented"))
 }
 
 func (UnimplementedPKPlanerServiceHandler) GetOverrides(context.Context, *connect.Request[v1.GetOverridesRequest]) (*connect.Response[v1.GetOverridesResponse], error) {

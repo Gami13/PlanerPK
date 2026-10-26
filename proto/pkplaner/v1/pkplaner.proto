@@ -28,6 +28,8 @@ service PKPlanerService {
   rpc GetClasses(GetClassesRequest) returns (GetClassesResponse);
   // Public, read-only timetable without user-specific overrides.
   rpc GetTimetable(GetTimetableRequest) returns (GetClassesResponse);
+  // Groups eligible for adding classes to the authenticated user's timetable.
+  rpc GetImportGroups(GetColumnsRequest) returns (GetColumnsResponse);
 
   // GetOverrides returns all class overrides for the authenticated user.
   rpc GetOverrides(GetOverridesRequest) returns (GetOverridesResponse);
@@ -120,6 +122,8 @@ message ClassOverride {
   string start_hour    = 2; // "HH:MM" or empty for no time shift
   bool   is_hidden     = 3;
   bool   is_transparent = 4;
+  // Nonzero includes the referenced class from this source group.
+  int32 source_column = 5;
 }
 
 // GetClassesRequest is empty — the user's chosen_column is read from auth context.

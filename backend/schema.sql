@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS overrides (
     start_hour TEXT NOT NULL DEFAULT '',
     is_hidden BOOLEAN NOT NULL DEFAULT 0,
     is_transparent BOOLEAN NOT NULL DEFAULT 0,
+    source_column INTEGER NOT NULL DEFAULT 0,
     UNIQUE(user_id, class_hash)
 );
 

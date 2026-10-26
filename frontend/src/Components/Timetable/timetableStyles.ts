@@ -26,6 +26,7 @@ export const timetableStyles = stylex.create({
 		gap: `${spacing.xs} ${spacing.md}`,
 	},
 	headingGroup: { display: "flex", flexDirection: "column", gap: "3px" },
+	headerActions: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px" },
 	titleRow: { display: "flex", alignItems: "baseline", gap: "8px" },
 	title: { margin: 0, fontSize: "1.3em", fontWeight: 600, letterSpacing: "-0.015em", color: colors.primaryText },
 	subtitle: {

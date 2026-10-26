@@ -51,6 +51,7 @@ export function ClassCard(props: ClassCardProps) {
 			startHour: o.startHour,
 			isHidden: o.isHidden,
 			isTransparent: o.isTransparent,
+			sourceColumn: props.override?.sourceColumn ?? 0,
 		} as ClassOverride;
 
 		const success = await run(() => setClassOverride(updatedOverride));

@@ -104,7 +104,7 @@ func (q *Queries) GetBuildingPlaces(ctx context.Context) ([]BuildingPlace, error
 }
 
 const getOverridesForUser = `-- name: GetOverridesForUser :many
-SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent FROM overrides WHERE user_id = ?1
+SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent, source_column FROM overrides WHERE user_id = ?1
 `
 
 func (q *Queries) GetOverridesForUser(ctx context.Context, userID int64) ([]Override, error) {
@@ -123,6 +123,7 @@ func (q *Queries) GetOverridesForUser(ctx context.Context, userID int64) ([]Over
 			&i.StartHour,
 			&i.IsHidden,
 			&i.IsTransparent,
+			&i.SourceColumn,
 		); err != nil {
 			return nil, err
 		}
@@ -299,9 +300,9 @@ func (q *Queries) UpsertBuildingPlace(ctx context.Context, arg UpsertBuildingPla
 }
 
 const upsertOverride = `-- name: UpsertOverride :exec
-INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent)
-VALUES (?1, ?2, ?3, ?4, ?5)
-ON CONFLICT(user_id, class_hash) DO UPDATE SET start_hour = excluded.start_hour, is_hidden = excluded.is_hidden, is_transparent = excluded.is_transparent
+INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent, source_column)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+ON CONFLICT(user_id, class_hash) DO UPDATE SET start_hour = excluded.start_hour, is_hidden = excluded.is_hidden, is_transparent = excluded.is_transparent, source_column = excluded.source_column
 `
 
 type UpsertOverrideParams struct {
@@ -310,6 +311,7 @@ type UpsertOverrideParams struct {
 	StartHour     string `json:"start_hour"`
 	IsHidden      bool   `json:"is_hidden"`
 	IsTransparent bool   `json:"is_transparent"`
+	SourceColumn  int64  `json:"source_column"`
 }
 
 func (q *Queries) UpsertOverride(ctx context.Context, arg UpsertOverrideParams) error {
@@ -319,6 +321,7 @@ func (q *Queries) UpsertOverride(ctx context.Context, arg UpsertOverrideParams) 
 		arg.StartHour,
 		arg.IsHidden,
 		arg.IsTransparent,
+		arg.SourceColumn,
 	)
 	return err
 }

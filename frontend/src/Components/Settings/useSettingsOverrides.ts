@@ -26,7 +26,7 @@ export function useSettingsOverrides(
 	});
 
 	const handleOverrideSaved = (u: ClassOverride) => {
-		const hasNoOverrides = !u.isHidden && !u.isTransparent && !u.startHour;
+		const hasNoOverrides = !u.isHidden && !u.isTransparent && !u.startHour && !u.sourceColumn;
 
 		mutateOverrides((prev) => {
 			const updated = new Map(prev ?? []);

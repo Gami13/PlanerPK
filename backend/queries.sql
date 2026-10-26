@@ -38,12 +38,12 @@ FROM users WHERE access_token = sqlc.arg(access_token);
 UPDATE users SET last_synced = (strftime('%Y-%m-%d %H:%M:%S+00:00', 'now')) WHERE access_token = sqlc.arg(access_token);
 
 -- name: GetOverridesForUser :many
-SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent FROM overrides WHERE user_id = sqlc.arg(user_id);
+SELECT id, user_id, class_hash, start_hour, is_hidden, is_transparent, source_column FROM overrides WHERE user_id = sqlc.arg(user_id);
 
 -- name: UpsertOverride :exec
-INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent)
-VALUES (sqlc.arg(user_id), sqlc.arg(class_hash), sqlc.arg(start_hour), sqlc.arg(is_hidden), sqlc.arg(is_transparent))
-ON CONFLICT(user_id, class_hash) DO UPDATE SET start_hour = excluded.start_hour, is_hidden = excluded.is_hidden, is_transparent = excluded.is_transparent;
+INSERT INTO overrides (user_id, class_hash, start_hour, is_hidden, is_transparent, source_column)
+VALUES (sqlc.arg(user_id), sqlc.arg(class_hash), sqlc.arg(start_hour), sqlc.arg(is_hidden), sqlc.arg(is_transparent), sqlc.arg(source_column))
+ON CONFLICT(user_id, class_hash) DO UPDATE SET start_hour = excluded.start_hour, is_hidden = excluded.is_hidden, is_transparent = excluded.is_transparent, source_column = excluded.source_column;
 
 -- name: DeleteOverride :exec
 DELETE FROM overrides WHERE user_id = sqlc.arg(user_id) AND class_hash = sqlc.arg(class_hash);

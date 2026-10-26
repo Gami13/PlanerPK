@@ -8,7 +8,7 @@ import { attrs } from "../../utils";
 import { DayLabels } from "../../constants";
 import { timetableStyles } from "../Timetable/timetableStyles";
 
-const styles = stylex.create({
+export const overrideDialogStyles = stylex.create({
 	dialog: {
 		width: "min( calc(100% - 2rem), 30rem)",
 		maxHeight: "calc(100dvh - 2rem)",
@@ -34,7 +34,13 @@ const styles = stylex.create({
 		color: "#0b2a45",
 	},
 	headerTitle: { paddingRight: "22px" },
-	headerFooter: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 12px", marginTop: "4px" },
+	headerFooter: {
+		display: "flex",
+		justifyContent: "space-between",
+		flexWrap: "wrap",
+		gap: "2px 12px",
+		marginTop: "4px",
+	},
 	body: { display: "flex", flexDirection: "column", padding: "8px 20px 16px", gap: "4px" },
 	title: { margin: 0, fontSize: "1.05rem", lineHeight: 1.3, fontWeight: 600 },
 	meta: { margin: 0, fontSize: "0.8rem", color: "#576475", lineHeight: 1.45 },
@@ -75,6 +81,7 @@ const styles = stylex.create({
 	reset: { marginRight: "auto" },
 	error: { margin: 0, color: colors.inactiveText, fontSize: "0.85em" },
 });
+const styles = overrideDialogStyles;
 
 export function ClassOverrideDialog(props: {
 	classInfo: ClassInfo;
@@ -100,6 +107,7 @@ export function ClassOverrideDialog(props: {
 			isHidden: reset ? false : hidden(),
 			isTransparent: reset ? false : transparent(),
 			startHour: reset ? "" : start(),
+			sourceColumn: reset ? 0 : (props.override?.sourceColumn ?? 0),
 		} as ClassOverride;
 		try {
 			if (!(await setClassOverride(updated))) {
@@ -123,7 +131,12 @@ export function ClassOverrideDialog(props: {
 			onClick={(event) => {
 				if (event.target !== dialog || pending()) return;
 				const bounds = dialog.getBoundingClientRect();
-				if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+				if (
+					event.clientX < bounds.left ||
+					event.clientX > bounds.right ||
+					event.clientY < bounds.top ||
+					event.clientY > bounds.bottom
+				) {
 					dialog.close();
 				}
 			}}
@@ -141,7 +154,9 @@ export function ClassOverrideDialog(props: {
 				aria-busy={pending()}
 			>
 				<header {...attrs(stylex.props(styles.header))}>
-					<Show when={props.classInfo.type}><span {...attrs(stylex.props(timetableStyles.eventType))}>{props.classInfo.type}</span></Show>
+					<Show when={props.classInfo.type}>
+						<span {...attrs(stylex.props(timetableStyles.eventType))}>{props.classInfo.type}</span>
+					</Show>
 					<h2 id={`${id}-title`} {...attrs(stylex.props(styles.title, styles.headerTitle))}>
 						{props.classInfo.name}
 					</h2>
@@ -150,14 +165,15 @@ export function ClassOverrideDialog(props: {
 					</Show>
 					<div {...attrs(stylex.props(styles.headerFooter))}>
 						<span {...attrs(stylex.props(styles.meta))}>{props.classInfo.location}</span>
-						<span {...attrs(stylex.props(styles.meta))}>{DayLabels[props.classInfo.day] ?? props.classInfo.day} · {props.classInfo.startTime}–{props.classInfo.endTime}</span>
+						<span {...attrs(stylex.props(styles.meta))}>
+							{DayLabels[props.classInfo.day] ?? props.classInfo.day} · {props.classInfo.startTime}–
+							{props.classInfo.endTime}
+						</span>
 					</div>
 				</header>
 				<div {...attrs(stylex.props(styles.body))}>
 					<label {...attrs(stylex.props(styles.label))}>
-						<span {...attrs(stylex.props(styles.copy))}>
-							Ukryj w kalendarzu
-						</span>
+						<span {...attrs(stylex.props(styles.copy))}>Ukryj w kalendarzu</span>
 						<input
 							{...attrs(stylex.props(styles.checkbox))}
 							type="checkbox"
@@ -169,9 +185,7 @@ export function ClassOverrideDialog(props: {
 					<label {...attrs(stylex.props(styles.label))}>
 						<span {...attrs(stylex.props(styles.copy))}>
 							Zachowaj pierwotny termin
-							<span {...attrs(stylex.props(styles.meta))}>
-								Widoczny, ale nie blokuje czasu.
-							</span>
+							<span {...attrs(stylex.props(styles.meta))}>Widoczny, ale nie blokuje czasu.</span>
 						</span>
 						<input
 							{...attrs(stylex.props(styles.checkbox))}
@@ -194,9 +208,7 @@ export function ClassOverrideDialog(props: {
 							onInput={(event) => setStart(event.currentTarget.value)}
 						/>
 					</label>
-					<p {...attrs(stylex.props(styles.meta, styles.hint))}>
-						Zmiany w kalendarzu po następnej synchronizacji.
-					</p>
+					<p {...attrs(stylex.props(styles.meta, styles.hint))}>Zmiany w kalendarzu po następnej synchronizacji.</p>
 					<Show when={error()}>
 						<p {...attrs(stylex.props(styles.error))} role="alert">
 							Nie udało się zapisać zmian. Spróbuj ponownie.
@@ -210,7 +222,7 @@ export function ClassOverrideDialog(props: {
 						disabled={pending()}
 						onClick={() => void save(true)}
 					>
-						Przywróć domyślne
+						{props.override?.sourceColumn ? "Usuń z mojego planu" : "Przywróć domyślne"}
 					</button>
 					<button
 						{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary))}

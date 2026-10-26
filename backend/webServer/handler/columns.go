@@ -85,7 +85,7 @@ func (h *PKPlanerHandler) SetChosenColumn(
 		RefreshToken: user.RefreshToken,
 		Expiry:       user.Expiry,
 		ExpiresIn:    user.ExpiresIn,
-	}, h.Query, overrides, b)
+	}, h.Query, overrides, b, *groups)
 
 	return connect.NewResponse(&pkplanerv1.SetChosenColumnResponse{}), nil
 }

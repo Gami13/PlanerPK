@@ -103,6 +103,17 @@ export const PKPlanerService = {
       kind: MethodKind.Unary,
     },
     /**
+     * Groups eligible for adding classes to the authenticated user's timetable.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.GetImportGroups
+     */
+    getImportGroups: {
+      name: "GetImportGroups",
+      I: GetColumnsRequest,
+      O: GetColumnsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
      * GetOverrides returns all class overrides for the authenticated user.
      *
      * @generated from rpc pkplaner.v1.PKPlanerService.GetOverrides

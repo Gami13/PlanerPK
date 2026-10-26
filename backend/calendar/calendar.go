@@ -12,16 +12,17 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func ImportTimetable(allTimetables *types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *buildings.Buildings) {
+func ImportTimetable(allTimetables *types.Timetable, groupColumn int64, token *oauth2.Token, queries db.Querier, overrides []db.Override, buildings *buildings.Buildings, groups []types.ColumnGroup) {
 	ctx := context.Background()
 
 	slog.Info("Starting timetable import", slog.Int64("group_column", groupColumn))
 
-	timetable, ok := (*allTimetables)[groupColumn]
+	_, ok := (*allTimetables)[groupColumn]
 	if !ok {
 		slog.Error("Group column not found in timetable", slog.Int64("group_column", groupColumn))
 		return
 	}
+	timetable := UserTimetable(*allTimetables, groupColumn, overrides, groups)
 	srv, err := createService(ctx, token)
 	if err != nil {
 		slog.Error("Failed to create calendar service", slog.Any("error", err))

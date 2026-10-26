@@ -18,6 +18,7 @@ import (
 	"github.com/woodpkrs/PlanerPK/calendar"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	"github.com/woodpkrs/PlanerPK/legend"
+	"github.com/woodpkrs/PlanerPK/migrations"
 	"github.com/woodpkrs/PlanerPK/snapshot"
 	"github.com/woodpkrs/PlanerPK/types"
 	"github.com/woodpkrs/PlanerPK/webServer"
@@ -83,6 +84,9 @@ func initializeApp() (queries db.Querier) {
 		panic(err)
 	}
 
+	if err := migrations.EnsureOverrideSource(context.Background(), database); err != nil {
+		panic(err)
+	}
 	queries = db.New(database)
 	slog.Info("Database initialized successfully")
 
@@ -227,6 +231,6 @@ func updateAllTimetables(queries db.Querier, cache *cache.Cache) {
 				slog.Any("error", err))
 			overrides = nil
 		}
-		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, cache.Buildings())
+		calendar.ImportTimetable(allTimetables, *user.ChosenColumn, utils.GetToken(&user), queries, overrides, cache.Buildings(), *cache.AvailableGroups())
 	}
 }

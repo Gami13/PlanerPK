@@ -9,6 +9,8 @@ import { AppContext } from "../appContext";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
 import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
 import { ClassOverrideDialog } from "../Components/Settings/ClassOverrideDialog";
+import { AddClassDialog } from "../Components/Settings/AddClassDialog";
+import { primitiveStyles } from "../styles/primitives";
 import type { ClassInfo, ClassOverride } from "../gen/pkplaner/v1/pkplaner_pb";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
 import { UIText } from "../constants";
@@ -25,18 +27,21 @@ export function Settings() {
 	const [columns] = createResource(getColumns);
 	const [classes, { refetch: refetchClasses }] = createResource(getClasses);
 	const [overrides, { mutate: mutateOverrides }] = createResource(getOverrides);
-	const loadedClasses = () => (classes.error ? undefined : classes());
-	const loadedOverrides = () => (overrides.error ? undefined : overrides());
+	const loadedClasses = () => (classes.error ? undefined : classes.latest);
+	const loadedOverrides = () => (overrides.error ? undefined : overrides.latest);
 
 	const [editingClass, setEditingClass] = createSignal<ClassInfo>();
 	const [showHidden, setShowHidden] = createSignal(false);
+	const [addingClass, setAddingClass] = createSignal(false);
 	function handleOverrideSaved(updated: ClassOverride) {
 		mutateOverrides((previous) => {
 			const next = new Map(previous ?? []);
-			if (!updated.isHidden && !updated.isTransparent && !updated.startHour) next.delete(updated.classHash);
+			if (!updated.isHidden && !updated.isTransparent && !updated.startHour && !updated.sourceColumn)
+				next.delete(updated.classHash);
 			else next.set(updated.classHash, updated);
 			return next;
 		});
+		void refetchClasses();
 	}
 
 	const chosenColumn = createMemo(() => Number(AppState.store.userInfo?.chosenColumn ?? 0n));
@@ -106,6 +111,16 @@ export function Settings() {
 				</SettingsIntro>
 
 				<TimetablePreview
+					headerAction={
+						<button
+							{...attrs(stylex.props(primitiveStyles.buttonBase, primitiveStyles.buttonSecondary))}
+							type="button"
+							disabled={!chosenColumn() || classes.loading || !!classes.error || overrides.loading || !!overrides.error}
+							onClick={() => setAddingClass(true)}
+						>
+							+ Dodaj zajęcia
+						</button>
+					}
 					expand
 					onClassSelect={setEditingClass}
 					showHidden={showHidden()}
@@ -127,6 +142,13 @@ export function Settings() {
 							onClose={() => setEditingClass(undefined)}
 						/>
 					)}
+				</Show>
+				<Show when={addingClass()}>
+					<AddClassDialog
+						existingClasses={loadedClasses() ?? []}
+						onAdded={handleOverrideSaved}
+						onClose={() => setAddingClass(false)}
+					/>
 				</Show>
 			</section>
 		</main>

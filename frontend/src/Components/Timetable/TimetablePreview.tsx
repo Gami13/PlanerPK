@@ -67,17 +67,19 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 						<p {...attrs(stylex.props(styles.subtitle))}>Kliknij zajęcia, aby zmienić ich ustawienia.</p>
 					</Show>
 				</div>
-				{props.headerAction}
-				<Show when={props.onShowHiddenChange}>
-					<button
-						{...attrs(stylex.props(styles.hiddenToggle))}
-						type="button"
-						aria-pressed={!!props.showHidden}
-						onClick={() => props.onShowHiddenChange?.(!props.showHidden)}
-					>
-						{props.showHidden ? "Ukryj ukryte zajęcia" : "Pokaż ukryte zajęcia"}
-					</button>
-				</Show>
+				<div {...attrs(stylex.props(styles.headerActions))}>
+					{props.headerAction}
+					<Show when={props.onShowHiddenChange}>
+						<button
+							{...attrs(stylex.props(styles.hiddenToggle))}
+							type="button"
+							aria-pressed={!!props.showHidden}
+							onClick={() => props.onShowHiddenChange?.(!props.showHidden)}
+						>
+							{props.showHidden ? "Ukryj ukryte zajęcia" : "Pokaż ukryte zajęcia"}
+						</button>
+					</Show>
+				</div>
 			</header>
 			<Switch
 				fallback={

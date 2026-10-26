@@ -783,6 +783,8 @@ type ClassOverride struct {
 	StartHour     string                 `protobuf:"bytes,2,opt,name=start_hour,json=startHour,proto3" json:"start_hour,omitempty"` // "HH:MM" or empty for no time shift
 	IsHidden      bool                   `protobuf:"varint,3,opt,name=is_hidden,json=isHidden,proto3" json:"is_hidden,omitempty"`
 	IsTransparent bool                   `protobuf:"varint,4,opt,name=is_transparent,json=isTransparent,proto3" json:"is_transparent,omitempty"`
+	// Nonzero includes the referenced class from this source group.
+	SourceColumn  int32 `protobuf:"varint,5,opt,name=source_column,json=sourceColumn,proto3" json:"source_column,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -843,6 +845,13 @@ func (x *ClassOverride) GetIsTransparent() bool {
 		return x.IsTransparent
 	}
 	return false
+}
+
+func (x *ClassOverride) GetSourceColumn() int32 {
+	if x != nil {
+		return x.SourceColumn
+	}
+	return 0
 }
 
 // GetClassesRequest is empty — the user's chosen_column is read from auth context.
@@ -1184,14 +1193,15 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	" \x01(\tR\asummary\x12\x1e\n" +
 	"\n" +
 	"recurrence\x18\v \x01(\tR\n" +
-	"recurrence\"\x91\x01\n" +
+	"recurrence\"\xb6\x01\n" +
 	"\rClassOverride\x12\x1d\n" +
 	"\n" +
 	"class_hash\x18\x01 \x01(\tR\tclassHash\x12\x1d\n" +
 	"\n" +
 	"start_hour\x18\x02 \x01(\tR\tstartHour\x12\x1b\n" +
 	"\tis_hidden\x18\x03 \x01(\bR\bisHidden\x12%\n" +
-	"\x0eis_transparent\x18\x04 \x01(\bR\risTransparent\"\x13\n" +
+	"\x0eis_transparent\x18\x04 \x01(\bR\risTransparent\x12#\n" +
+	"\rsource_column\x18\x05 \x01(\x05R\fsourceColumn\"\x13\n" +
 	"\x11GetClassesRequest\"-\n" +
 	"\x13GetTimetableRequest\x12\x16\n" +
 	"\x06column\x18\x01 \x01(\x05R\x06column\"F\n" +
@@ -1202,7 +1212,7 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\toverrides\x18\x01 \x03(\v2\x1a.pkplaner.v1.ClassOverrideR\toverrides\"L\n" +
 	"\x12SetOverrideRequest\x126\n" +
 	"\boverride\x18\x01 \x01(\v2\x1a.pkplaner.v1.ClassOverrideR\boverride\"\x15\n" +
-	"\x13SetOverrideResponse2\xcc\x06\n" +
+	"\x13SetOverrideResponse2\xa0\a\n" +
 	"\x0fPKPlanerService\x12M\n" +
 	"\n" +
 	"GetColumns\x12\x1e.pkplaner.v1.GetColumnsRequest\x1a\x1f.pkplaner.v1.GetColumnsResponse\x12\\\n" +
@@ -1214,7 +1224,8 @@ const file_pkplaner_v1_pkplaner_proto_rawDesc = "" +
 	"\vGetUserInfo\x12\x1f.pkplaner.v1.GetUserInfoRequest\x1a .pkplaner.v1.GetUserInfoResponse\x12M\n" +
 	"\n" +
 	"GetClasses\x12\x1e.pkplaner.v1.GetClassesRequest\x1a\x1f.pkplaner.v1.GetClassesResponse\x12Q\n" +
-	"\fGetTimetable\x12 .pkplaner.v1.GetTimetableRequest\x1a\x1f.pkplaner.v1.GetClassesResponse\x12S\n" +
+	"\fGetTimetable\x12 .pkplaner.v1.GetTimetableRequest\x1a\x1f.pkplaner.v1.GetClassesResponse\x12R\n" +
+	"\x0fGetImportGroups\x12\x1e.pkplaner.v1.GetColumnsRequest\x1a\x1f.pkplaner.v1.GetColumnsResponse\x12S\n" +
 	"\fGetOverrides\x12 .pkplaner.v1.GetOverridesRequest\x1a!.pkplaner.v1.GetOverridesResponse\x12P\n" +
 	"\vSetOverride\x12\x1f.pkplaner.v1.SetOverrideRequest\x1a .pkplaner.v1.SetOverrideResponseB9Z7github.com/woodpkrs/PlanerPK/gen/pkplaner/v1;pkplanerv1b\x06proto3"
 
@@ -1268,20 +1279,22 @@ var file_pkplaner_v1_pkplaner_proto_depIdxs = []int32{
 	11, // 9: pkplaner.v1.PKPlanerService.GetUserInfo:input_type -> pkplaner.v1.GetUserInfoRequest
 	15, // 10: pkplaner.v1.PKPlanerService.GetClasses:input_type -> pkplaner.v1.GetClassesRequest
 	16, // 11: pkplaner.v1.PKPlanerService.GetTimetable:input_type -> pkplaner.v1.GetTimetableRequest
-	18, // 12: pkplaner.v1.PKPlanerService.GetOverrides:input_type -> pkplaner.v1.GetOverridesRequest
-	20, // 13: pkplaner.v1.PKPlanerService.SetOverride:input_type -> pkplaner.v1.SetOverrideRequest
-	2,  // 14: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
-	4,  // 15: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
-	6,  // 16: pkplaner.v1.PKPlanerService.SetUserActive:output_type -> pkplaner.v1.SetUserActiveResponse
-	8,  // 17: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
-	10, // 18: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
-	12, // 19: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
-	17, // 20: pkplaner.v1.PKPlanerService.GetClasses:output_type -> pkplaner.v1.GetClassesResponse
-	17, // 21: pkplaner.v1.PKPlanerService.GetTimetable:output_type -> pkplaner.v1.GetClassesResponse
-	19, // 22: pkplaner.v1.PKPlanerService.GetOverrides:output_type -> pkplaner.v1.GetOverridesResponse
-	21, // 23: pkplaner.v1.PKPlanerService.SetOverride:output_type -> pkplaner.v1.SetOverrideResponse
-	14, // [14:24] is the sub-list for method output_type
-	4,  // [4:14] is the sub-list for method input_type
+	1,  // 12: pkplaner.v1.PKPlanerService.GetImportGroups:input_type -> pkplaner.v1.GetColumnsRequest
+	18, // 13: pkplaner.v1.PKPlanerService.GetOverrides:input_type -> pkplaner.v1.GetOverridesRequest
+	20, // 14: pkplaner.v1.PKPlanerService.SetOverride:input_type -> pkplaner.v1.SetOverrideRequest
+	2,  // 15: pkplaner.v1.PKPlanerService.GetColumns:output_type -> pkplaner.v1.GetColumnsResponse
+	4,  // 16: pkplaner.v1.PKPlanerService.SetChosenColumn:output_type -> pkplaner.v1.SetChosenColumnResponse
+	6,  // 17: pkplaner.v1.PKPlanerService.SetUserActive:output_type -> pkplaner.v1.SetUserActiveResponse
+	8,  // 18: pkplaner.v1.PKPlanerService.Authorize:output_type -> pkplaner.v1.AuthorizeResponse
+	10, // 19: pkplaner.v1.PKPlanerService.GetAuthURL:output_type -> pkplaner.v1.GetAuthURLResponse
+	12, // 20: pkplaner.v1.PKPlanerService.GetUserInfo:output_type -> pkplaner.v1.GetUserInfoResponse
+	17, // 21: pkplaner.v1.PKPlanerService.GetClasses:output_type -> pkplaner.v1.GetClassesResponse
+	17, // 22: pkplaner.v1.PKPlanerService.GetTimetable:output_type -> pkplaner.v1.GetClassesResponse
+	2,  // 23: pkplaner.v1.PKPlanerService.GetImportGroups:output_type -> pkplaner.v1.GetColumnsResponse
+	19, // 24: pkplaner.v1.PKPlanerService.GetOverrides:output_type -> pkplaner.v1.GetOverridesResponse
+	21, // 25: pkplaner.v1.PKPlanerService.SetOverride:output_type -> pkplaner.v1.SetOverrideResponse
+	15, // [15:26] is the sub-list for method output_type
+	4,  // [4:15] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
