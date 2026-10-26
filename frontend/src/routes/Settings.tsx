@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { createMemo, createResource, useContext } from "solid-js";
+import { createMemo, createResource, createSignal, Show, useContext } from "solid-js";
 
 import { PageTitle } from "../Components/PageTitle";
 import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
@@ -8,10 +8,9 @@ import { AppContext } from "../appContext";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
 import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
 import { SettingCard } from "../Components/Settings/SettingCard";
-import { OverridesProvider } from "../Components/Settings/OverridesContext";
-import { OverridesSection } from "../Components/Settings/OverridesSection";
+import { ClassOverrideDialog } from "../Components/Settings/ClassOverrideDialog";
+import type { ClassInfo, ClassOverride } from "../gen/pkplaner/v1/pkplaner_pb";
 import { SettingsIntro } from "../Components/Settings/SettingsIntro";
-import { useSettingsOverrides } from "../Components/Settings/useSettingsOverrides";
 import { UIText } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
 import { spacing } from "../styles/tokens.stylex";
@@ -42,8 +41,15 @@ export function Settings() {
 	const loadedClasses = () => (classes.error ? undefined : classes());
 	const loadedOverrides = () => (overrides.error ? undefined : overrides());
 
-	const { selected, setSelected, addSelected, visibleClasses, availableClasses, handleOverrideSaved } =
-		useSettingsOverrides(loadedClasses, loadedOverrides, mutateOverrides);
+	const [editingClass, setEditingClass] = createSignal<ClassInfo>();
+	function handleOverrideSaved(updated: ClassOverride) {
+		mutateOverrides((previous) => {
+			const next = new Map(previous ?? []);
+			if (!updated.isHidden && !updated.isTransparent && !updated.startHour) next.delete(updated.classHash);
+			else next.set(updated.classHash, updated);
+			return next;
+		});
+	}
 
 	const chosenColumn = createMemo(() => Number(AppState.store.userInfo?.chosenColumn ?? 0n));
 
@@ -108,6 +114,8 @@ export function Settings() {
 				</SettingCard>
 
 				<TimetablePreview
+					onClassSelect={setEditingClass}
+					showHidden
 					classes={loadedClasses()}
 					overrides={loadedOverrides()}
 					loading={classes.loading || overrides.loading}
@@ -116,24 +124,16 @@ export function Settings() {
 					noGroup={chosenColumn() === 0}
 				/>
 
-				<OverridesProvider
-					value={{
-						classes: loadedClasses,
-						overrides: loadedOverrides,
-						selected,
-						setSelected,
-						addSelected,
-						visibleClasses,
-						availableClasses,
-						handleOverrideSaved,
-					}}
-				>
-					<OverridesSection
-						chosenColumn={chosenColumn()}
-						classesLoading={classes.loading}
-						classesError={classes.error}
-					/>
-				</OverridesProvider>
+				<Show when={editingClass()} keyed>
+					{(classInfo) => (
+						<ClassOverrideDialog
+							classInfo={classInfo}
+							override={loadedOverrides()?.get(classInfo.hash)}
+							onSaved={handleOverrideSaved}
+							onClose={() => setEditingClass(undefined)}
+						/>
+					)}
+				</Show>
 			</section>
 		</main>
 	);

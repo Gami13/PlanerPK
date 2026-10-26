@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
+import type { ClassInfo } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { attrs } from "../../utils";
 import { formatTime, isWeeklyRecurrence, weekMarker, type PositionedEntry } from "./timetable";
 import { timetableStyles as styles } from "./timetableStyles";
@@ -7,6 +8,7 @@ import { defaultTitleTemplate, formatClassTitle } from "./titleTemplate";
 
 export function TimetableEvent(props: {
 	entry: PositionedEntry;
+	onClassSelect?: (classInfo: ClassInfo) => void;
 	start: number;
 	pixelsPerMinute: number;
 }) {
@@ -29,19 +31,33 @@ export function TimetableEvent(props: {
 		!props.entry.ghost && !week() && !!info().recurrence && !isWeeklyRecurrence(info().recurrence);
 	const time = () => `${formatTime(props.entry.start)}–${formatTime(props.entry.end)}`;
 	const tooltip = () =>
-		[
-			title(),
-			info().teacher,
-			info().recurrence,
-			info().location,
-			time(),
-		]
-			.filter(Boolean)
-			.join("\n");
+		[title(), info().teacher, info().recurrence, info().location, time()].filter(Boolean).join("\n");
 
 	return (
 		<article
-			{...attrs(stylex.props(styles.event, props.entry.ghost && styles.ghost))}
+			{...attrs(
+				stylex.props(
+					styles.event,
+					props.entry.ghost && styles.ghost,
+					props.entry.hidden && styles.hidden,
+					!!props.onClassSelect && styles.interactive
+				)
+			)}
+			role={props.onClassSelect ? "button" : undefined}
+			tabIndex={props.onClassSelect ? 0 : undefined}
+			aria-haspopup={props.onClassSelect ? "dialog" : undefined}
+			aria-label={
+				props.onClassSelect
+					? `${title()}, ${time()}${props.entry.hidden ? ", ukryte" : ""}${props.entry.ghost ? ", transparentne" : ""}. Edytuj zajęcia`
+					: undefined
+			}
+			onClick={() => props.onClassSelect?.(info())}
+			onKeyDown={(event) => {
+				if (props.onClassSelect && (event.key === "Enter" || event.key === " ")) {
+					event.preventDefault();
+					props.onClassSelect(info());
+				}
+			}}
 			style={{
 				top: `${(props.entry.start - props.start) * props.pixelsPerMinute}px`,
 				height: `${duration() * props.pixelsPerMinute - 1}px`,
@@ -51,16 +67,25 @@ export function TimetableEvent(props: {
 			title={tooltip()}
 		>
 			<Show when={info().type}>
-				<span {...attrs(stylex.props(styles.eventType))} title={`Typ zajęć: ${info().type}`} aria-label={`Typ zajęć: ${info().type}`}>
+				<span
+					{...attrs(stylex.props(styles.eventType))}
+					title={`Typ zajęć: ${info().type}`}
+					aria-label={`Typ zajęć: ${info().type}`}
+				>
 					{info().type}
 				</span>
 			</Show>
 			<div {...attrs(stylex.props(styles.eventContent))}>
 				<h4 {...attrs(stylex.props(styles.eventName, !!info().type && styles.eventNameWithType))}>{heading()}</h4>
 				<Show when={info().teacher}>
-					<span {...attrs(stylex.props(styles.eventTeacher))} title={info().teacher}>{info().teacher}</span>
+					<span {...attrs(stylex.props(styles.eventTeacher))} title={info().teacher}>
+						{info().teacher}
+					</span>
 				</Show>
-				<Show when={props.entry.ghost}>
+				<Show when={props.entry.hidden}>
+					<span {...attrs(stylex.props(styles.eventMeta))}>Ukryte{props.entry.ghost ? " · transparentne" : ""}</span>
+				</Show>
+				<Show when={props.entry.ghost && !props.entry.hidden}>
 					<span {...attrs(stylex.props(styles.eventMeta))}>Poprzednia pozycja</span>
 				</Show>
 				<Show when={showRecurrence() && roomy()}>

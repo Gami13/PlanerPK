@@ -49,6 +49,7 @@ export type TimetableEntry = {
 	start: number;
 	end: number;
 	ghost: boolean;
+	hidden?: boolean;
 };
 
 export type PositionedEntry = TimetableEntry & { lane: number; lanes: number };
@@ -65,7 +66,11 @@ export function formatTime(minutes: number): string {
 	return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
-export function prepareEntries(classes: ClassInfo[], overrides?: Map<string, ClassOverride>): TimetableEntry[] {
+export function prepareEntries(
+	classes: ClassInfo[],
+	overrides?: Map<string, ClassOverride>,
+	showHidden = false
+): TimetableEntry[] {
 	return classes.flatMap((classInfo) => {
 		if (!weekdays.some((day) => day.key === classInfo.day)) return [];
 		const start = parseTime(classInfo.startTime);
@@ -84,9 +89,20 @@ export function prepareEntries(classes: ClassInfo[], overrides?: Map<string, Cla
 				ghost: false,
 			});
 		}
+		// Hidden entries stay at their original time in the settings preview.
+		if (override?.isHidden && showHidden && !override.isTransparent) {
+			entries.push({ id: classInfo.hash, classInfo, start, end, ghost: false, hidden: true });
+		}
 		// Match the calendar resolver: a transparent original exists only for a hidden or moved class.
 		if (override?.isTransparent && (override.isHidden || shifted !== undefined)) {
-			entries.push({ id: `${classInfo.hash}-original`, classInfo, start, end, ghost: true });
+			entries.push({
+				id: `${classInfo.hash}-original`,
+				classInfo,
+				start,
+				end,
+				ghost: true,
+				hidden: showHidden && override.isHidden,
+			});
 		}
 		return entries;
 	});

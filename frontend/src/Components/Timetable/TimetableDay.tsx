@@ -1,12 +1,14 @@
 import * as stylex from "@stylexjs/stylex";
 import { createMemo, For, Show } from "solid-js";
 import { attrs } from "../../utils";
+import type { ClassInfo } from "../../gen/pkplaner/v1/pkplaner_pb";
 import { positionEntries, type TimetableEntry } from "./timetable";
 import { TimetableEvent } from "./TimetableEvent";
 import { timetableStyles as styles } from "./timetableStyles";
 
 export function TimetableDay(props: {
 	label: string;
+	onClassSelect?: (classInfo: ClassInfo) => void;
 	entries: TimetableEntry[];
 	start: number;
 	end: number;
@@ -61,6 +63,7 @@ export function TimetableDay(props: {
 					{(entry) => (
 						<TimetableEvent
 							entry={entry}
+							onClassSelect={props.onClassSelect}
 							start={props.start}
 							pixelsPerMinute={props.pixelsPerMinute}
 						/>

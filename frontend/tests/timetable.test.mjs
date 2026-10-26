@@ -61,6 +61,21 @@ test("transparency alone does not duplicate an unchanged lesson", () => {
 	assert.equal(prepareEntries([lesson()], new Map([["lesson", { isTransparent: true }]])).length, 1);
 });
 
+test("settings retains hidden classes at their original slot without duplicating ghosts", () => {
+	const overrides = new Map([["lesson", { isHidden: true, startHour: "11:00" }]]);
+	const hidden = prepareEntries([lesson()], overrides, true);
+	assert.equal(hidden.length, 1);
+	assert.equal(hidden[0].hidden, true);
+	assert.equal(hidden[0].start, 480);
+	assert.equal(prepareEntries([lesson()], overrides).length, 0);
+	overrides.set("lesson", { isHidden: true, isTransparent: true });
+	const ghost = prepareEntries([lesson()], overrides, true);
+	assert.equal(ghost.length, 1);
+	assert.equal(ghost[0].hidden, true);
+	assert.equal(ghost[0].ghost, true);
+	assert.equal(prepareEntries([lesson()], overrides)[0].hidden, false);
+});
+
 test("overlaps share lanes, touching and unrelated lessons use full width", () => {
 	const entries = positionEntries(
 		prepareEntries([

@@ -165,10 +165,28 @@ export const timetableStyles = stylex.create({
 		gap: "1px",
 		zIndex: { default: 1, ":hover": 3 },
 	},
+	interactive: {
+		cursor: "pointer",
+		outline: { default: "none", ":focus-visible": "2px solid #1a73e8" },
+		outlineOffset: "-2px",
+	},
 	ghost: {
-		backgroundColor: { default: "#f1f5f9", ":hover": "#e9eef5" },
+		backgroundColor: { default: "#f5f9fe", ":hover": "#edf4fc" },
 		color: eventMeta,
-		opacity: 0.85,
+		opacity: 0.5,
+		borderWidth: "1px",
+		borderStyle: "dashed",
+		borderColor: "#b8c9dc",
+	},
+	hidden: {
+		opacity: 0.5,
+		backgroundColor: { default: "#f0f2f5", ":hover": "#e8ecf1" },
+		backgroundImage:
+			"repeating-linear-gradient(45deg, transparent 0px, transparent 16px, rgba(90, 108, 130, 0.14) 16px, rgba(90, 108, 130, 0.14) 32px)",
+		color: "#526174",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: "#d0d7e0",
 	},
 	eventContent: {
 		display: "flex",

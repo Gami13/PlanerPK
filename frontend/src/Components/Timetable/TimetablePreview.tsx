@@ -14,6 +14,8 @@ type TimetablePreviewProps = {
 	error?: unknown;
 	groupLabel?: string;
 	noGroup?: boolean;
+	showHidden?: boolean;
+	onClassSelect?: (classInfo: ClassInfo) => void;
 };
 
 function currentMinute(): number {
@@ -26,7 +28,7 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 	const todayIndex = weekday >= 1 && weekday <= 5 ? weekday - 1 : undefined;
 	const [selected, setSelected] = createSignal(todayIndex ?? 0);
 	const [now, setNow] = createSignal(currentMinute());
-	const entries = createMemo(() => prepareEntries(props.classes ?? [], props.overrides));
+	const entries = createMemo(() => prepareEntries(props.classes ?? [], props.overrides, props.showHidden));
 	// Begin half an hour before the first labeled hour, leaving room above its centered label.
 	const firstHour = createMemo(() => Math.floor(Math.min(8 * 60, ...entries().map((entry) => entry.start)) / 60) * 60);
 	const start = createMemo(() => firstHour() - 30);
@@ -57,6 +59,9 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 					</p>
 				</Show>
 			</header>
+			<Show when={props.onClassSelect}>
+				<p {...attrs(stylex.props(styles.subtitle))}>Kliknij zajęcia, aby zmienić ich ustawienia.</p>
+			</Show>
 			<Switch
 				fallback={
 					<>
@@ -90,6 +95,7 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 									{(day, index) => (
 										<TimetableDay
 											label={day.label}
+											onClassSelect={props.onClassSelect}
 											entries={entries().filter((entry) => entry.classInfo.day === day.key)}
 											start={start()}
 											end={end()}
