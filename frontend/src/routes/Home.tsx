@@ -5,8 +5,9 @@ import { A } from "@solidjs/router";
 import { AppContext } from "../appContext";
 import { Button } from "../Components/Button";
 import { UserCard } from "../Components/UserCard";
+import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 import { GOOGLE_CALENDAR_URL, PK_WEBSITE_URL } from "../constants";
-import { getAuthURL } from "../services/pkplaner";
+import { getAuthURL, getClasses, getOverrides } from "../services/pkplaner";
 import { attrs, setAccessToken } from "../utils";
 
 const MOBILE_MAX = "@media (max-width: 33.75em)" as const;
@@ -22,6 +23,7 @@ const styles = stylex.create({
 		width: "100%",
 	},
 	basicSection: {
+		width: "100%",
 		gap: "1em",
 		alignItems: "center",
 		display: "flex",
@@ -100,6 +102,9 @@ export function Home() {
 	const AppState = useContext(AppContext);
 	const [authURL] = createResource(getAuthURL);
 	const userInfo = () => AppState.store.userInfo;
+	const selectedGroup = () => (userInfo()?.chosenColumn ? String(userInfo()!.chosenColumn) : false);
+	const [classes] = createResource(selectedGroup, getClasses);
+	const [overrides] = createResource(selectedGroup, getOverrides);
 
 	return (
 		<main {...attrs(stylex.props(styles.main))}>
@@ -143,9 +148,26 @@ export function Home() {
 					</Show>
 				</div>
 
-				<div {...attrs(stylex.props(styles.imageContainer))}>
-					<img {...attrs(stylex.props(styles.googleCalendarPreview))} src="/google-calendar-preview.png" />
-				</div>
+				<Show
+					when={userInfo()}
+					fallback={
+						<div {...attrs(stylex.props(styles.imageContainer))}>
+							<img
+								{...attrs(stylex.props(styles.googleCalendarPreview))}
+								src="/google-calendar-preview.png"
+								alt="Przykładowy plan zajęć w Kalendarzu Google"
+							/>
+						</div>
+					}
+				>
+					<TimetablePreview
+						classes={classes.error ? undefined : classes()}
+						overrides={overrides.error ? undefined : overrides()}
+						loading={classes.loading || overrides.loading}
+						error={classes.error || overrides.error}
+						noGroup={!selectedGroup()}
+					/>
+				</Show>
 				<p>
 					<A href="/privacy-policy">Polityka prywatności</A>
 				</p>

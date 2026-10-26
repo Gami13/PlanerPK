@@ -44,6 +44,7 @@ func (h *PKPlanerHandler) GetClasses(
 				Location:  class.Location,
 				Teacher:   class.Teacher,
 				Audience:  class.Audience,
+				Summary:   class.Summary(),
 			})
 		}
 	}

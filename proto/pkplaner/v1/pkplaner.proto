@@ -105,6 +105,8 @@ message ClassInfo {
   string location   = 7;
   string teacher    = 8;
   string audience   = 9;
+  // Exact event title used by Google Calendar, including week A/B and other notes.
+  string summary    = 10;
 }
 
 // ClassOverride holds the override settings for a single class (identified by hash).

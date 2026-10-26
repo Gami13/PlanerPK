@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+func TestCalendarSummaryIncludesWeekAndClassDetails(t *testing.T) {
+	class := Class{
+		Name: "Matematyka dyskretna", Type: "L", Teacher: "Biskup Piotr",
+		Audience: "GL2", AdditionalInfo: "A",
+	}
+	want := "Matematyka dyskretna (L) - Biskup Piotr [GL2] | A"
+	if got := class.Summary(); got != want {
+		t.Fatalf("Summary() = %q, want %q", got, want)
+	}
+	if got := class.ToEvent(nil, nil).Summary; got != want {
+		t.Fatalf("calendar summary = %q, want %q", got, want)
+	}
+}
+
 func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	class := Class{Name: "Subject", Audience: "GL2"}
 	if !strings.Contains(class.Summary(), "GL2") {

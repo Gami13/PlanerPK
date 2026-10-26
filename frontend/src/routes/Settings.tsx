@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { createMemo, createResource, useContext } from "solid-js";
 
 import { PageTitle } from "../Components/PageTitle";
+import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
 
 import { AppContext } from "../appContext";
 import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
@@ -38,9 +39,11 @@ export function Settings() {
 	const [columns] = createResource(getColumns);
 	const [classes, { refetch: refetchClasses }] = createResource(getClasses);
 	const [overrides, { mutate: mutateOverrides }] = createResource(getOverrides);
+	const loadedClasses = () => (classes.error ? undefined : classes());
+	const loadedOverrides = () => (overrides.error ? undefined : overrides());
 
 	const { selected, setSelected, addSelected, visibleClasses, availableClasses, handleOverrideSaved } =
-		useSettingsOverrides(classes, overrides, mutateOverrides);
+		useSettingsOverrides(loadedClasses, loadedOverrides, mutateOverrides);
 
 	const chosenColumn = createMemo(() => Number(AppState.store.userInfo?.chosenColumn ?? 0n));
 
@@ -104,10 +107,19 @@ export function Settings() {
 					/>
 				</SettingCard>
 
+				<TimetablePreview
+					classes={loadedClasses()}
+					overrides={loadedOverrides()}
+					loading={classes.loading || overrides.loading}
+					error={classes.error || overrides.error}
+					groupLabel={currentColumnLabel()}
+					noGroup={chosenColumn() === 0}
+				/>
+
 				<OverridesProvider
 					value={{
-						classes,
-						overrides,
+						classes: loadedClasses,
+						overrides: loadedOverrides,
 						selected,
 						setSelected,
 						addSelected,
