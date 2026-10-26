@@ -14,7 +14,6 @@ export function TimetableDay(props: {
 	selected: boolean;
 	today: boolean;
 	now?: number;
-	groupLabel?: string;
 }) {
 	const entries = createMemo(() => positionEntries(props.entries));
 	const intervals = () => Array.from({ length: (props.end - props.start) / 30 }, (_, i) => props.start + i * 30);
@@ -64,7 +63,6 @@ export function TimetableDay(props: {
 							entry={entry}
 							start={props.start}
 							pixelsPerMinute={props.pixelsPerMinute}
-							groupLabel={props.groupLabel}
 						/>
 					)}
 				</For>

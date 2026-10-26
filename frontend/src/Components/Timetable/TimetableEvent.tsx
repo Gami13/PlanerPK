@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
 import { attrs } from "../../utils";
-import { formatTime, isWeeklyRecurrence, shouldShowAudience, weekMarker, type PositionedEntry } from "./timetable";
+import { formatTime, isWeeklyRecurrence, weekMarker, type PositionedEntry } from "./timetable";
 import { timetableStyles as styles } from "./timetableStyles";
 import { defaultTitleTemplate, formatClassTitle } from "./titleTemplate";
 
@@ -9,7 +9,6 @@ export function TimetableEvent(props: {
 	entry: PositionedEntry;
 	start: number;
 	pixelsPerMinute: number;
-	groupLabel?: string;
 }) {
 	const info = () => props.entry.classInfo;
 	const duration = () => props.entry.end - props.entry.start;
@@ -25,7 +24,6 @@ export function TimetableEvent(props: {
 			? withoutTeacher.slice(0, -typeSuffix.length)
 			: withoutTeacher;
 	};
-	const showAudience = () => !props.entry.ghost && shouldShowAudience(info().type, info().audience, props.groupLabel);
 	const week = () => (props.entry.ghost ? undefined : weekMarker(info().recurrence));
 	const showRecurrence = () =>
 		!props.entry.ghost && !week() && !!info().recurrence && !isWeeklyRecurrence(info().recurrence);
@@ -34,7 +32,6 @@ export function TimetableEvent(props: {
 		[
 			title(),
 			info().teacher,
-			info().audience && `Grupa: ${info().audience}`,
 			info().recurrence,
 			info().location,
 			time(),
@@ -65,15 +62,6 @@ export function TimetableEvent(props: {
 				</Show>
 				<Show when={props.entry.ghost}>
 					<span {...attrs(stylex.props(styles.eventMeta))}>Poprzednia pozycja</span>
-				</Show>
-				<Show when={showAudience() && roomy()}>
-					<span
-						{...attrs(stylex.props(styles.eventMeta))}
-						title={`Grupa: ${info().audience}`}
-						aria-label={`Grupa: ${info().audience}`}
-					>
-						{info().audience}
-					</span>
 				</Show>
 				<Show when={showRecurrence() && roomy()}>
 					<span

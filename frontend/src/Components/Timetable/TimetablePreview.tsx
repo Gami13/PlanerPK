@@ -40,7 +40,7 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 		for (let hour = firstHour(); hour < end(); hour += 60) labels.push(hour);
 		return labels;
 	};
-	const pixelsPerMinute = 1;
+	const pixelsPerMinute = 0.85;
 
 	onMount(() => {
 		const timer = setInterval(() => setNow(currentMinute()), 60_000);
@@ -97,7 +97,6 @@ export function TimetablePreview(props: TimetablePreviewProps) {
 											selected={index() === selected()}
 											today={index() === todayIndex}
 											now={index() === todayIndex ? now() : undefined}
-											groupLabel={props.groupLabel}
 										/>
 									)}
 								</For>
