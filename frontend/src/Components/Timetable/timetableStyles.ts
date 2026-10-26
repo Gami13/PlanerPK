@@ -5,7 +5,7 @@ import { borderRadius, colors, spacing } from "../../styles/tokens.stylex";
 const hourLine = "#dfe5ed";
 const halfHourLine = "#eef2f7";
 const eventMeta = "#576475";
-const todayAccent = "#e8453c";
+const todayAccent = "#bd7773";
 const singleDay = "@media (max-width: 820px)";
 
 export const timetableStyles = stylex.create({
@@ -124,17 +124,17 @@ export const timetableStyles = stylex.create({
 		position: "absolute",
 		left: 0,
 		right: 0,
-		height: "2px",
+		height: "1px",
 		backgroundColor: todayAccent,
 		zIndex: 3,
 		pointerEvents: "none",
 	},
 	nowDot: {
 		position: "absolute",
-		left: "-3px",
-		top: "-3px",
-		width: "8px",
-		height: "8px",
+		left: "-2px",
+		top: "-2px",
+		width: "5px",
+		height: "5px",
 		borderRadius: borderRadius.full,
 		backgroundColor: todayAccent,
 	},
@@ -155,7 +155,7 @@ export const timetableStyles = stylex.create({
 	},
 	event: {
 		backgroundColor: { default: "#e4eefb", ":hover": "#d6e7fb" },
-		containerType: "inline-size",
+		containerType: "size",
 		position: "absolute",
 		overflow: "hidden",
 		padding: "5px 7px 4px",
@@ -219,13 +219,13 @@ export const timetableStyles = stylex.create({
 		lineHeight: 1.25,
 		letterSpacing: "-0.005em",
 		minWidth: 0,
-		flexShrink: 1,
+		flexShrink: 0,
 		display: "-webkit-box",
 		WebkitBoxOrient: "vertical",
-		WebkitLineClamp: 2,
+		WebkitLineClamp: { default: 2, "@container (max-height: 90px)": 1 },
 		overflow: "hidden",
 		overflowWrap: "anywhere",
-		maxHeight: "2.5em",
+		maxHeight: { default: "2.5em", "@container (max-height: 90px)": "1.25em" },
 	},
 	eventType: {
 		position: "absolute",
@@ -249,6 +249,7 @@ export const timetableStyles = stylex.create({
 	},
 	eventNameWithType: { paddingRight: "26px" },
 	eventTeacher: {
+		display: { default: "block", "@container (max-height: 55px)": "none" },
 		fontSize: "0.9em",
 		fontWeight: 400,
 		color: "#3d5873",
@@ -259,6 +260,7 @@ export const timetableStyles = stylex.create({
 		flexShrink: 0,
 	},
 	eventMeta: {
+		display: { default: "block", "@container (max-height: 90px)": "none" },
 		color: "#3d5873",
 		fontSize: "0.86em",
 		lineHeight: 1.3,
@@ -286,6 +288,7 @@ export const timetableStyles = stylex.create({
 		lineHeight: 1.3,
 	},
 	eventRoom: {
+		display: { default: "block", "@container (max-height: 55px)": "none" },
 		flex: "1 1 auto",
 		minWidth: 0,
 		whiteSpace: "nowrap",

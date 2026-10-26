@@ -106,6 +106,7 @@ export function Settings() {
 				</SettingsIntro>
 
 				<TimetablePreview
+					expand
 					onClassSelect={setEditingClass}
 					showHidden={showHidden()}
 					onShowHiddenChange={setShowHidden}
