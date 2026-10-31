@@ -1,6 +1,7 @@
 import { PageTitle } from "#components/PageTitle";
 import * as stylex from "@stylexjs/stylex";
 import { createMemo, createResource, createSignal, Show, useContext } from "solid-js";
+import { A } from "@solidjs/router";
 import { AppContext } from "../appContext";
 import { Button } from "../Components/Button";
 import { UserCard } from "../Components/UserCard";
@@ -170,7 +171,9 @@ export function Home() {
 					loading={classes.loading || columns.loading || (viewingOwnPlan() && overrides.loading)}
 					error={classes.error || columns.error || (viewingOwnPlan() && overrides.error)}
 				/>
-				{/* Restore the privacy-policy link once the policy has been revised. */}
+				<p {...attrs(stylex.props(pageStyles.footer))}>
+					<A href="/privacy-policy">Polityka prywatności</A>
+				</p>
 			</section>
 		</main>
 	);

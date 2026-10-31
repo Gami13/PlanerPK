@@ -48,7 +48,7 @@ export function PrivacyPolicy() {
 		<main {...attrs(stylex.props(styles.main))}>
 			<PageTitle title="Polityka prywatności" />
 			<h1 {...attrs(stylex.props(styles.heading))}>Polityka prywatności</h1>
-			<p {...attrs(stylex.props(styles.muted))}>Ostatnia aktualizacja: 23 września 2026 r.</p>
+			<p {...attrs(stylex.props(styles.muted))}>Ostatnia aktualizacja: 31 października 2026 r.</p>
 
 			<section {...attrs(stylex.props(styles.section))}>
 				<h2 {...attrs(stylex.props(styles.sectionHeading))}>1. Administrator</h2>
@@ -65,15 +65,23 @@ export function PrivacyPolicy() {
 					<li>profil Google (e-mail, imię, zdjęcie) — wyświetlanie konta;</li>
 					<li>dane uwierzytelniające OAuth — logowanie i dostęp do API Google w imieniu użytkownika;</li>
 					<li>
-						wydarzenia Kalendarza Google — synchronizacja rozkładu (Serwis nie modyfikuje wydarzeń, których sam nie
-						utworzył);
+						utworzony przez Serwis kalendarz „PlanerPK" i jego wydarzenia — synchronizacja rozkładu (Serwis nie
+						odczytuje ani nie modyfikuje pozostałych kalendarzy użytkownika);
 					</li>
-					<li>wybraną grupę zajęć i ustawienia konta.</li>
+					<li>
+						wybrana grupa zajęć, ustawienia konta oraz nadpisania zajęć (między innymi klasy dodane z innych grup,
+						ukryte zajęcia i zmienione godziny).
+					</li>
 				</ul>
 			</section>
 
 			<section {...attrs(stylex.props(styles.section))}>
 				<h2 {...attrs(stylex.props(styles.sectionHeading))}>3. Wykorzystanie danych Google</h2>
+				<p>
+					Serwis prosi wyłącznie o zakres <code>calendar.app.created</code>: utworzenie własnego kalendarza
+					„PlanerPK" i zarządzanie wydarzeniami w tym kalendarzu. Serwis nie ma dostępu do pozostałych kalendarzy
+					użytkownika.
+				</p>
 				<p>
 					Dane Google nie są sprzedawane, wykorzystywane do reklam, profilowania ani do trenowania modeli AI.
 					Korzystanie odbywa się zgodnie z{" "}
@@ -91,8 +99,10 @@ export function PrivacyPolicy() {
 					Komunikacja z Serwisem odbywa się przez HTTPS. Dostęp do serwera jest ograniczony do administratorów.
 				</p>
 				<p>
-					Dane przechowywane są tak długo, jak konto jest aktywne. Po usunięciu konta wszystkie powiązane dane (profil,
-					dane uwierzytelniające, ustawienia, nadpisania zajęć) są trwale usuwane z bazy danych.
+					Dane przechowywane są tak długo, jak konto jest aktywne. Usunięcie konta następuje na żądanie wysłane na
+					adres <a href="mailto:gami@gami.ovh">gami@gami.ovh</a>; po jego realizacji profil, dane uwierzytelniające,
+					ustawienia i nadpisania zajęć są trwale usuwane z bazy danych. Wydarzenia wcześniej zapisane w Kalendarzu
+					Google pozostają w nim, dopóki użytkownik sam ich nie usunie.
 				</p>
 			</section>
 
@@ -108,13 +118,14 @@ export function PrivacyPolicy() {
 			<section {...attrs(stylex.props(styles.section))}>
 				<h2 {...attrs(stylex.props(styles.sectionHeading))}>6. Prawa użytkownika i usunięcie danych</h2>
 				<p>
-					Użytkownik ma prawo dostępu, sprostowania i usunięcia swoich danych. Zgodę na dostęp do Kalendarza Google
-					można cofnąć w <a href="https://myaccount.google.com/permissions">ustawieniach konta Google</a>.
+					Użytkownik ma prawo dostępu do swoich danych, ich sprostowania, usunięcia oraz ograniczenia przetwarzania.
+					Zgodę na dostęp do Kalendarza Google można cofnąć w{" "}
+					<a href="https://myaccount.google.com/permissions">ustawieniach konta Google</a>; cofnięcie zgody
+					uniemożliwia dalszą synchronizację.
 				</p>
 				<p>
-					Aby usunąć konto i wszystkie powiązane dane z Serwisu, napisz na{" "}
-					<a href="mailto:gami@gami.ovh">gami@gami.ovh</a>. Usunięcie danych Serwisu nie usuwa wydarzeń już zapisanych w
-					Kalendarzu Google.
+					Aby usunąć konto i wszystkie powiązane dane z Serwisu, wyślij żądanie na{" "}
+					<a href="mailto:gami@gami.ovh">gami@gami.ovh</a>. Żądanie realizujemy bez zbędnej zwłoki.
 				</p>
 			</section>
 

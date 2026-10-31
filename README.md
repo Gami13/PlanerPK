@@ -33,7 +33,7 @@ The data directory has this layout:
 └── downloads/
 ```
 
-The OAuth `credentials.json` file should be mounted read-only. It is never included in the image.
+The OAuth `credentials.json` file should be mounted read-only. It is never included in the image. In Google Cloud, the OAuth consent screen requests `calendar.app.created`, `userinfo.email`, and `userinfo.profile`, and its privacy policy URL points at the public `/privacy-policy` route (for example `https://planpk.gami.ovh/privacy-policy`).
 
 ### Timetable calendar behavior
 
