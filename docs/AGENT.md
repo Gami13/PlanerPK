@@ -45,6 +45,8 @@ The earlier full-JSON replacement plan is superseded.
   contents are compared; contentHash is not stored and old values are ignored.
 - Calendar creation uses the saved ID or creates a new PlanerPK calendar. There is
   no name search or automatic recovery for a missing/inaccessible saved calendar.
+  OAuth requests only `calendar.app.created` (plus `email`/`profile`): create the
+  secondary calendar and manage its events, never read the user's other calendars.
 - List all pages of managed series and exceptions, not expanded instances. Block
   the entire write batch if it changes/deletes a series with recurring exceptions;
   unrelated series can sync. Do not silently discard manual meeting changes.

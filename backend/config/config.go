@@ -132,7 +132,9 @@ func loadOAuthCredentials(cfg *Configuration) error {
 		return fmt.Errorf("read credentials file: %w", err)
 	}
 
-	oauthConfig, err := google.ConfigFromJSON(credentials, calendar.CalendarScope, "email", "profile")
+	// Only the dedicated PlanerPK secondary calendar is needed: app.created can
+	// create it and manage its events without reading the user's other calendars.
+	oauthConfig, err := google.ConfigFromJSON(credentials, calendar.CalendarAppCreatedScope, "email", "profile")
 	if err != nil {
 		return fmt.Errorf("parse OAuth config: %w", err)
 	}

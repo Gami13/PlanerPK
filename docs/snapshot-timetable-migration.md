@@ -82,7 +82,10 @@ move. Event collections consistently use []*calendar.Event.
 Each user has a persisted users.calendar_id. A saved ID is authoritative; without
 one, create a PlanerPK secondary calendar and save its ID before event sync.
 There is no search for an existing calendar by name and no writes to primary.
-An inaccessible saved calendar causes an error, not automatic recreation.
+Only `calendar.app.created` (plus `email`/`profile`) is requested, so the app can
+create its own secondary calendar and manage events on it, but cannot read the
+user's other calendars. An inaccessible saved calendar causes an error, not
+automatic recreation.
 
 Both scheduled refresh and group selection use this flow:
 

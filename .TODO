@@ -16,10 +16,10 @@
 ☐ Deferred: support snapshot `academicCalendar.replacementDays` (replacement dates follow the timetable of the dates they replace); skip during the current timetable migration
 ☐ Deferred: support snapshot block `allowedDates` and `excludedDates`; both intentionally skipped during the current timetable migration
 ☐ Deferred: support snapshot `academicCalendar.regularStationaryStart`; intentionally skipped during the current timetable migration
-☐ Switch Google OAuth scope to `CalendarEventsOwnedScope` (`calendar.events.owned`) in `backend/config/config.go` & update scopes in Google Cloud Console
-☐ Refactor calendar sync to dedicated secondary calendar (enables `calendar.app.created` scope):
+✔ Switch Google OAuth scope to `calendar.CalendarAppCreatedScope` (`calendar.app.created`) in `backend/config/config.go` & update scopes in Google Cloud Console @done(26-10-31 18:10)
+✔ Refactor calendar sync to dedicated secondary calendar:
   - Add `calendar_id TEXT` column to `users` table in `backend/schema.sql`
   - Call `Calendars.Insert` on first sync to create dedicated "PlanerPK" calendar and save ID
-  - Replace hardcoded `"primary"` target with stored `calendar_id` across `backend/calendar/calendar.go`
-  - Call `Calendars.Delete` on user account deletion
-  - Switch OAuth scope to `calendar.CalendarAppCreatedScope` (`calendar.app.created`) to eliminate all personal calendar reads
+  - Replace hardcoded `"primary"` target with stored `calendar_id`
+☐ Call `Calendars.Delete` on user account deletion
+☐ Have existing users re-consent (or revoke the old `calendar` grant) so the narrower scope applies to their tokens
