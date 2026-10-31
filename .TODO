@@ -18,7 +18,7 @@
 ☐ Deferred: support snapshot `academicCalendar.regularStationaryStart`; intentionally skipped during the current timetable migration
 ☐ Switch Google OAuth scope to `CalendarEventsOwnedScope` (`calendar.events.owned`) in `backend/config/config.go` & update scopes in Google Cloud Console
 ☐ Refactor calendar sync to dedicated secondary calendar (enables `calendar.app.created` scope):
-  - Add `calendar_id TEXT` column to `users` table in `backend/schema.sql` / migrations
+  - Add `calendar_id TEXT` column to `users` table in `backend/schema.sql`
   - Call `Calendars.Insert` on first sync to create dedicated "PlanerPK" calendar and save ID
   - Replace hardcoded `"primary"` target with stored `calendar_id` across `backend/calendar/calendar.go`
   - Call `Calendars.Delete` on user account deletion

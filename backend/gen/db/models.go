@@ -26,6 +26,7 @@ type Override struct {
 	StartHour     string `json:"start_hour"`
 	IsHidden      bool   `json:"is_hidden"`
 	IsTransparent bool   `json:"is_transparent"`
+	SourceColumn  int64  `json:"source_column"`
 }
 
 type User struct {

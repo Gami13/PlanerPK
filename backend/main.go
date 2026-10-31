@@ -229,7 +229,7 @@ func updateAllTimetables(queries db.Querier, cache *cache.Cache, pendingSync boo
 		slog.Info("Updating timetable for user",
 			slog.String("email", *user.Email),
 			slog.Int64("column", *user.ChosenColumn))
-		if err := calendar.ImportTimetable(allTimetables, utils.GetToken(&user), queries, state, cache.Buildings()); err != nil {
+		if err := calendar.ImportTimetable(allTimetables, utils.GetToken(&user), queries, state, cache.Buildings(), *cache.AvailableGroups()); err != nil {
 			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
 			failed = true
 		}

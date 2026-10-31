@@ -37,6 +37,9 @@ The earlier full-JSON replacement plan is superseded.
   meetings; no next-weekday fallback remains.
 - Both live callers use the new dedicated-calendar pipeline. User settings and
   overrides are reloaded under a per-user sync lock within one application process.
+- Overrides with a nonzero source_column import a class from another group in the
+  same academic year. Compose them with UserTimetable before building events; never
+  mutate the cached timetable.
 - Google identities use overrideId (existing class hash, with _ghost for ghosts).
   Snapshot block IDs are not assumed stable across publications. Actual event
   contents are compared; contentHash is not stored and old values are ignored.

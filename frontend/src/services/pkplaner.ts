@@ -66,12 +66,20 @@ export async function getColumns(): Promise<ColumnGroup[]> {
 }
 
 export async function getClasses(): Promise<ClassInfo[]> {
-	const classes = await withFallback(async () => (await rpc.getClasses({})).classes, [] as ClassInfo[]);
+	const classes = (await rpc.getClasses({})).classes;
 	return sortClassesBySchedule(classes);
 }
 
+export async function getPublicTimetable(column: number): Promise<ClassInfo[]> {
+	return sortClassesBySchedule((await rpc.getTimetable({ column })).classes);
+}
+
+export async function getImportGroups(): Promise<ColumnGroup[]> {
+	return (await rpc.getImportGroups({})).columns;
+}
+
 export async function getOverrides(): Promise<Map<string, ClassOverride>> {
-	const overrides = await withFallback(async () => (await rpc.getOverrides({})).overrides, [] as ClassOverride[]);
+	const overrides = (await rpc.getOverrides({})).overrides;
 	return new Map(overrides.map((override) => [override.classHash, override] as const));
 }
 

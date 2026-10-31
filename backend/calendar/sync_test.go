@@ -104,7 +104,7 @@ func TestSyncTimetable(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			run := func() error { return syncTimetable(ctx, srv, &all, "token", queries, state, nil) }
+			run := func() error { return syncTimetable(ctx, srv, &all, "token", queries, state, nil, nil) }
 			if mode == "concurrent" {
 				var wg sync.WaitGroup
 				for range 2 {

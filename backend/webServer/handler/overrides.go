@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/woodpkrs/PlanerPK/gen/db"
 	pkplanerv1 "github.com/woodpkrs/PlanerPK/gen/pkplaner/v1"
+	"github.com/woodpkrs/PlanerPK/types"
 )
 
 // GetOverrides returns all class overrides for the authenticated user.
@@ -29,6 +30,7 @@ func (h *PKPlanerHandler) GetOverrides(
 			StartHour:     row.StartHour,
 			IsHidden:      row.IsHidden,
 			IsTransparent: row.IsTransparent,
+			SourceColumn:  int32(row.SourceColumn),
 		}
 	}
 
@@ -53,7 +55,7 @@ func (h *PKPlanerHandler) SetOverride(
 	}
 
 	// Delete when all override fields are zero/empty.
-	if ovr.StartHour == "" && !ovr.IsHidden && !ovr.IsTransparent {
+	if ovr.StartHour == "" && !ovr.IsHidden && !ovr.IsTransparent && ovr.SourceColumn == 0 {
 		slog.Info("Deleting override", slog.String("class_hash", ovr.ClassHash))
 		if err := h.Query.DeleteOverride(ctx, db.DeleteOverrideParams{
 			UserID:    user.ID,
@@ -63,6 +65,18 @@ func (h *PKPlanerHandler) SetOverride(
 		}
 		h.syncUserTimetable(user)
 		return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
+	}
+	if ovr.SourceColumn != 0 {
+		if user.ChosenColumn == nil || !types.CanImportGroup(*h.cache.AvailableGroups(), *user.ChosenColumn, int64(ovr.SourceColumn)) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("source group must be in the same academic year"))
+		}
+		timetables := *h.cache.Timetable()
+		if !hasClass(timetables[int64(ovr.SourceColumn)], ovr.ClassHash) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("class not found in source group"))
+		}
+		if hasClass(timetables[*user.ChosenColumn], ovr.ClassHash) {
+			return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("class already belongs to your group"))
+		}
 	}
 
 	slog.Info("Upserting override",
@@ -77,10 +91,22 @@ func (h *PKPlanerHandler) SetOverride(
 		StartHour:     ovr.StartHour,
 		IsHidden:      ovr.IsHidden,
 		IsTransparent: ovr.IsTransparent,
+		SourceColumn:  int64(ovr.SourceColumn),
 	}); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to upsert override: %w", err))
 	}
 
 	h.syncUserTimetable(user)
 	return connect.NewResponse(&pkplanerv1.SetOverrideResponse{}), nil
+}
+
+func hasClass(timetable types.GroupTimetable, hash string) bool {
+	for _, classes := range timetable {
+		for _, class := range classes {
+			if class.Hash() == hash {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -18,17 +18,17 @@ var userSyncLocks sync.Map // user ID -> *sync.Mutex; one application instance.
 
 // ImportTimetable syncs snapshot-resolved events to the user's dedicated calendar.
 // A failed read, build, or write never advances the successful-sync timestamp.
-func ImportTimetable(all *types.Timetable, token *oauth2.Token, queries db.Querier, state *snapshot.State, buildings *buildings.Buildings) error {
+func ImportTimetable(all *types.Timetable, token *oauth2.Token, queries db.Querier, state *snapshot.State, buildings *buildings.Buildings, groups []types.ColumnGroup) error {
 	ctx := context.Background()
 	srv, err := createService(ctx, token)
 	if err != nil {
 		return err
 	}
-	return syncTimetable(ctx, srv, all, token.AccessToken, queries, state, buildings)
+	return syncTimetable(ctx, srv, all, token.AccessToken, queries, state, buildings, groups)
 }
 
 // syncTimetable serializes work per user and reloads their settings under the lock.
-func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timetable, accessToken string, queries db.Querier, state *snapshot.State, buildings *buildings.Buildings) error {
+func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timetable, accessToken string, queries db.Querier, state *snapshot.State, buildings *buildings.Buildings, groups []types.ColumnGroup) error {
 	user, err := queries.GetUserByAccessToken(ctx, accessToken)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timeta
 	if all == nil {
 		return fmt.Errorf("timetable is missing")
 	}
-	timetable, ok := (*all)[*user.ChosenColumn]
+	_, ok := (*all)[*user.ChosenColumn]
 	if !ok {
 		return fmt.Errorf("group column %d not found", *user.ChosenColumn)
 	}
@@ -61,6 +61,7 @@ func syncTimetable(ctx context.Context, srv *calendar.Service, all *types.Timeta
 	for _, override := range overrides {
 		byClass[override.ClassHash] = override
 	}
+	timetable := UserTimetable(*all, *user.ChosenColumn, overrides, groups)
 	events, err := buildTimetableEvents(timetable, state, byClass, buildings)
 	if err != nil {
 		return err

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetClassesRequest, GetClassesResponse, GetColumnsRequest, GetColumnsResponse, GetOverridesRequest, GetOverridesResponse, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse, SetOverrideRequest, SetOverrideResponse, SetUserActiveRequest, SetUserActiveResponse } from "./pkplaner_pb.js";
+import { AuthorizeRequest, AuthorizeResponse, GetAuthURLRequest, GetAuthURLResponse, GetClassesRequest, GetClassesResponse, GetColumnsRequest, GetColumnsResponse, GetOverridesRequest, GetOverridesResponse, GetTimetableRequest, GetUserInfoRequest, GetUserInfoResponse, SetChosenColumnRequest, SetChosenColumnResponse, SetOverrideRequest, SetOverrideResponse, SetUserActiveRequest, SetUserActiveResponse } from "./pkplaner_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -89,6 +89,28 @@ export const PKPlanerService = {
       name: "GetClasses",
       I: GetClassesRequest,
       O: GetClassesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Public, read-only timetable without user-specific overrides.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.GetTimetable
+     */
+    getTimetable: {
+      name: "GetTimetable",
+      I: GetTimetableRequest,
+      O: GetClassesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Groups eligible for adding classes to the authenticated user's timetable.
+     *
+     * @generated from rpc pkplaner.v1.PKPlanerService.GetImportGroups
+     */
+    getImportGroups: {
+      name: "GetImportGroups",
+      I: GetColumnsRequest,
+      O: GetColumnsResponse,
       kind: MethodKind.Unary,
     },
     /**

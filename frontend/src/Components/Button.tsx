@@ -1,29 +1,28 @@
 import { A } from "@solidjs/router";
 import * as stylex from "@stylexjs/stylex";
-import { Show, type JSX } from "solid-js";
+import { Show, splitProps, type JSX } from "solid-js";
 import { primitiveStyles } from "../styles/primitives";
 import { attrs } from "../utils";
 
-const styles = {
-	buttonBase: primitiveStyles.buttonBase,
-	primaryButton: primitiveStyles.buttonPrimary,
-	secondaryButton: primitiveStyles.buttonSecondary,
-};
-
-type ButtonProps = {
-	children: JSX.Element;
+type ButtonProps = JSX.ButtonHTMLAttributes<HTMLButtonElement> & {
 	isPrimary?: boolean;
-	onClick?: () => void;
+	styles?: stylex.StyleXStyles;
 	href?: string;
 	isVanillaLink?: boolean;
 };
 
 export function Button(props: ButtonProps) {
-	const buttonStyles = () =>
-		props.isPrimary
-			? stylex.props(styles.buttonBase, styles.primaryButton)
-			: stylex.props(styles.buttonBase, styles.secondaryButton);
-	const buttonAttrs = () => attrs(buttonStyles());
+	const [, buttonProps] = splitProps(props, ["children", "isPrimary", "styles", "href", "isVanillaLink", "class"]);
+	const buttonAttrs = () => {
+		const styled = attrs(
+			stylex.props(
+				primitiveStyles.buttonBase,
+				props.isPrimary ? primitiveStyles.buttonPrimary : primitiveStyles.buttonSecondary,
+				props.styles
+			)
+		);
+		return { ...styled, class: [styled.class, props.class].filter(Boolean).join(" ") };
+	};
 
 	return (
 		<>
@@ -38,7 +37,7 @@ export function Button(props: ButtonProps) {
 				</a>
 			</Show>
 			<Show when={!props.href}>
-				<button {...buttonAttrs()} onClick={props.onClick}>
+				<button {...buttonAttrs()} {...buttonProps}>
 					{props.children}
 				</button>
 			</Show>

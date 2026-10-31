@@ -8,10 +8,47 @@ import (
 	"time"
 )
 
+func TestClassHashPreservesLegacyFormat(t *testing.T) {
+	class := Class{
+		Name: "Subject", Level: "B2", Type: "L", Teacher: "Teacher", TotalHours: "30h",
+		AdditionalInfo: "A", Location: "Room 1", Day: time.Monday,
+		StartTime: time.Date(2000, 1, 1, 8, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2000, 1, 1, 9, 30, 0, 0, time.UTC),
+	}
+	want := "Subject B2 (L) - Teacher | 30h | A|1|08:00|09:30|Room 1"
+	if got := class.Hash(); got != want {
+		t.Fatalf("Hash() = %q, want %q", got, want)
+	}
+	class.Audience = "GL2"
+	if got := class.Hash(); got != want+"|GL2" {
+		t.Fatalf("Hash() = %q, want audience appended to legacy hash", got)
+	}
+	if got := (Class{Name: "Subject"}).Hash(); got != "Subject|0|00:00|00:00|" {
+		t.Fatalf("empty fields changed hash punctuation: %q", got)
+	}
+}
+
+func TestCalendarSummaryIncludesWeekAndClassDetails(t *testing.T) {
+	class := Class{
+		Name: "Matematyka dyskretna", Type: "L", Teacher: "Biskup Piotr",
+		Audience: "GL2", AdditionalInfo: "A",
+	}
+	want := "Matematyka dyskretna (L) - Biskup Piotr"
+	if got := class.Summary(); got != want {
+		t.Fatalf("Summary() = %q, want %q", got, want)
+	}
+	if got := class.ToEvent(nil, ClassSchedule{}).Summary; got != want {
+		t.Fatalf("calendar summary = %q, want %q", got, want)
+	}
+	if got := class.ToEvent(nil, ClassSchedule{}).Description; got != "Grupa: GL2<br>Info: A" {
+		t.Fatalf("calendar description = %q, want group and info rows", got)
+	}
+}
+
 func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	class := Class{Name: "Subject", Audience: "GL2"}
-	if !strings.Contains(class.Summary(), "GL2") {
-		t.Errorf("Summary() = %q, want audience", class.Summary())
+	if strings.Contains(class.Summary(), "GL2") {
+		t.Errorf("Summary() = %q, audience should only appear in the description", class.Summary())
 	}
 	if !strings.Contains(class.String(), "GL2") {
 		t.Errorf("String() = %q, want audience", class.String())
@@ -23,7 +60,10 @@ func TestAudienceIsIncludedInClassOutput(t *testing.T) {
 	if _, ok := event.ExtendedProperties.Private["hash"]; ok {
 		t.Error("ToEvent() retained the old hash property")
 	}
-	if !strings.Contains(event.Summary, "GL2") || !strings.Contains(event.Description, "GL2") || event.ExtendedProperties.Private["audience"] != "GL2" {
+	if !strings.Contains(event.Description, "Grupa: GL2") || strings.Contains(event.Description, "Audience:") {
+		t.Errorf("calendar description = %q, want Polish group label", event.Description)
+	}
+	if strings.Contains(event.Summary, "GL2") || !strings.Contains(event.Description, "GL2") || event.ExtendedProperties.Private["audience"] != "GL2" {
 		t.Errorf("ToEvent() omitted audience: %+v", event)
 	}
 }

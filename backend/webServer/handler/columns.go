@@ -79,7 +79,7 @@ func (h *PKPlanerHandler) syncUserTimetable(user db.User) {
 	b := h.cache.Buildings()
 	token := utils.GetToken(&user)
 	go func() {
-		if err := calendar.ImportTimetable(allTimetables, token, h.Query, state, b); err != nil {
+		if err := calendar.ImportTimetable(allTimetables, token, h.Query, state, b, *h.cache.AvailableGroups()); err != nil {
 			slog.Error("Timetable sync failed", slog.Int64("user_id", user.ID), slog.Any("error", err))
 		}
 	}()

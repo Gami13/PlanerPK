@@ -6,7 +6,7 @@ plugins:
     opt: paths=source_relative
 
   # Connect Go service stubs
-  - remote: buf.build/connectrpc/go
+  - remote: buf.build/connectrpc/go:v1.20.0
     out: backend/gen
     opt: paths=source_relative
 
