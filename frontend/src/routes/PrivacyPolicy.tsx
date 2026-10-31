@@ -32,6 +32,7 @@ const styles = stylex.create({
 		display: "flex",
 		flexDirection: "column",
 		gap: "0.45em",
+		listStylePosition: "inside",
 		paddingInlineStart: "1.5em",
 	},
 	link: {

@@ -27,24 +27,31 @@ body,
 	min-height: 100%;
 }
 
-body,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-ul,
-ol,
-li,
-figure,
-figcaption,
-blockquote,
-dl,
-dd {
-	margin: 0;
-	padding: 0;
+/*
+ * Keep the reset in a layer below StyleX's priority layer. Unlayered rules
+ * always beat layered ones, so leaving this outside a layer would silently
+ * cancel component-level padding/margin (for example list indentation).
+ */
+@layer reset {
+	body,
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p,
+	ul,
+	ol,
+	li,
+	figure,
+	figcaption,
+	blockquote,
+	dl,
+	dd {
+		margin: 0;
+		padding: 0;
+	}
 }
 
 body {
