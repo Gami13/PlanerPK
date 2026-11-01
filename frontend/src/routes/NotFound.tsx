@@ -1,6 +1,6 @@
-import { PageTitle } from "../Components/PageTitle";
+import { PageTitle } from "../components/PageTitle";
 import * as stylex from "@stylexjs/stylex";
-import { Button } from "../Components/Button";
+import { Button } from "../components/Button";
 import { pageStyles } from "../styles/pageStyles";
 import { attrs } from "../utils";
 

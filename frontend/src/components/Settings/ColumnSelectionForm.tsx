@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Show } from "solid-js";
-import { Button } from "../../Components/Button";
+import { Button } from "../Button";
 import { ColumnOptions } from "../ColumnOptions";
 import { UIText } from "../../constants";
 import type { ColumnGroup } from "../../gen/pkplaner/v1/pkplaner_pb";

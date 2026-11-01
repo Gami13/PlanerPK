@@ -4,7 +4,7 @@ import {
 	resolveGuestSelection,
 	readGuestSelection,
 	saveGuestSelection,
-} from "../src/Components/Timetable/guestSelection.ts";
+} from "../src/components/Timetable/guestSelection.ts";
 
 test("defaults to the first available timetable and restores valid selections", () => {
 	const columns = [{ column: 3 }, { column: 7 }];

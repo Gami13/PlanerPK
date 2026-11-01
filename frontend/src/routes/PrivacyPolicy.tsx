@@ -1,6 +1,6 @@
 import { A } from "@solidjs/router";
 import * as stylex from "@stylexjs/stylex";
-import { PageTitle } from "../Components/PageTitle";
+import { PageTitle } from "../components/PageTitle";
 import { attrs } from "../utils";
 
 const styles = stylex.create({

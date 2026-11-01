@@ -1,18 +1,18 @@
 import * as stylex from "@stylexjs/stylex";
 import { createMemo, createResource, createSignal, Show, useContext } from "solid-js";
 
-import { PageTitle } from "../Components/PageTitle";
+import { PageTitle } from "../components/PageTitle";
 import { pageStyles } from "../styles/pageStyles";
-import { TimetablePreview } from "../Components/Timetable/TimetablePreview";
+import { TimetablePreview } from "../components/Timetable/TimetablePreview";
 
 import { AppContext } from "../appContext";
-import { Button } from "../Components/Button";
-import { AccountStatusToggle } from "../Components/Settings/AccountStatusToggle";
-import { ColumnSelectionForm } from "../Components/Settings/ColumnSelectionForm";
-import { ClassOverrideDialog } from "../Components/Settings/ClassOverrideDialog";
-import { AddClassDialog } from "../Components/Settings/AddClassDialog";
+import { Button } from "../components/Button";
+import { AccountStatusToggle } from "../components/Settings/AccountStatusToggle";
+import { ColumnSelectionForm } from "../components/Settings/ColumnSelectionForm";
+import { ClassOverrideDialog } from "../components/Settings/ClassOverrideDialog";
+import { AddClassDialog } from "../components/Settings/AddClassDialog";
 import type { ClassInfo, ClassOverride } from "../gen/pkplaner/v1/pkplaner_pb";
-import { SettingsIntro } from "../Components/Settings/SettingsIntro";
+import { SettingsIntro } from "../components/Settings/SettingsIntro";
 import { UIText } from "../constants";
 import { getClasses, getColumns, getOverrides, setChosenColumn, setUserActive } from "../services/pkplaner";
 import { attrs, getGroupByColumnIndex } from "../utils";

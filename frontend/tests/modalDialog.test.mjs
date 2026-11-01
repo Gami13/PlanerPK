@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createModalDialog } from "../src/Components/createModalDialog.ts";
+import { createModalDialog } from "../src/components/createModalDialog.ts";
 
 function fixture() {
 	let pending = false;

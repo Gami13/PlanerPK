@@ -7,7 +7,7 @@ import {
 	parseTime,
 	positionEntries,
 	prepareEntries,
-} from "../src/Components/Timetable/timetable.ts";
+} from "../src/components/Timetable/timetable.ts";
 
 const lesson = (patch = {}) => ({
 	hash: "lesson",

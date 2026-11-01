@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "@solidjs/router";
 import { onMount, useContext } from "solid-js";
-import { PageTitle } from "../Components/PageTitle";
+import { PageTitle } from "../components/PageTitle";
 import * as stylex from "@stylexjs/stylex";
 import { pageStyles } from "../styles/pageStyles";
 import { attrs } from "../utils";
