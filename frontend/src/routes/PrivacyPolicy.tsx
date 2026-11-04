@@ -1,6 +1,7 @@
 import { A } from "@solidjs/router";
 import * as stylex from "@stylexjs/stylex";
 import { PageTitle } from "../components/PageTitle";
+import { CONTACT_EMAIL } from "../constants";
 import { attrs } from "../utils";
 
 const styles = stylex.create({
@@ -56,7 +57,7 @@ export function PrivacyPolicy() {
 				<p>
 					Administratorem serwisu PlanerPK („Serwis"), służącego do synchronizacji planu zajęć Politechniki
 					Krakowskiej z Kalendarzem Google, są jego twórcy. Kontakt we wszystkich sprawach związanych z danymi:{" "}
-					<a href="mailto:gami@gami.ovh">gami@gami.ovh</a>.
+					<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
 				</p>
 			</section>
 
@@ -117,7 +118,7 @@ export function PrivacyPolicy() {
 					</li>
 					<li>
 						<strong>Usunięcie konta:</strong> Wyślij wiadomość na{" "}
-						<a href="mailto:gami@gami.ovh">gami@gami.ovh</a> — trwale usuniemy Twój profil, tokeny i ustawienia z
+						<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> — trwale usuniemy Twój profil, tokeny i ustawienia z
 						bazy danych. Wydarzenia zapisane wcześniej w Kalendarzu Google pozostają w nim do momentu ręcznego
 						usunięcia kalendarza „PlanerPK" przez użytkownika.
 					</li>
