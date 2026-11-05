@@ -18,7 +18,7 @@ The earlier full-JSON replacement plan is superseded.
   Normal sync deletions are limited to managed events in the saved target calendar.
 - The user accepted a fresh database for calendar_id; no schema migration or
   automatic database deletion was requested. Do not recreate accounts on login.
-- Runtime deployment is Docker/Nix. Diagnostic Go commands are developer tools,
+- Runtime deployment is Docker. Diagnostic Go commands are developer tools,
   not an alternative supported deployment. See backend/cmd/README.md.
 
 ## Current code
@@ -85,7 +85,7 @@ The user manually verified the live cutover. Latest full backend checks passed:
 go test ./... and git diff --check. Tests use mock Google HTTP responses and
 in-memory SQLite; no real calendars were touched by development tools.
 Race testing was attempted but blocked by the local Windows CGO toolchain.
-Docker/Nix builds were not run in this cleanup.
+Docker builds were not run in this cleanup.
 
 Deferred features remain deferred; see the behavior reference. Documentation and
 small test/setup cleanup are appropriate follow-ups, not an invitation to expand

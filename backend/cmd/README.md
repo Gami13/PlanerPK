@@ -2,7 +2,7 @@
 
 Developer tools for inspecting matching, dates, event diffs, and classText samples.
 Run commands from the `backend/` directory. These are not supported alternatives
-to the application's Docker/Nix deployment.
+to the application's Docker deployment.
 
 ## Snapshot subject index
 

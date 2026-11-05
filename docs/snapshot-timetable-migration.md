@@ -125,7 +125,7 @@ network requests, OAuth, database operations, or calendar writes. See
 
 comparedates shows raw Excel weekday/time slots alongside snapshot occurrences;
 it no longer constructs the old next-weekday events. Matching/index/date commands
-remain diagnostic tools. Full app deployment is supported through Docker/Nix.
+remain diagnostic tools. Full app deployment is supported through Docker.
 
 Backend tests cover builders, schedules, overrides, content comparison,
 pagination, exceptions, mocked writes, calendar-ID persistence, concurrent sync,

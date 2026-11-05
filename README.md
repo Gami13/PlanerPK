@@ -1,80 +1,124 @@
-# GoogleCalendarTimetable
+# PlanerPK
 
-## Deployment model
+**Your university timetable, living in your Google Calendar.**
 
-PlanerPK is intended for managed deployment only. Supported deployments are:
+[![Live app](https://img.shields.io/badge/live-planpk.gami.ovh-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://planpk.gami.ovh)
+[![Go 1.26](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)](#tech-stack)
+[![SolidJS](https://img.shields.io/badge/SolidJS-1.9-446B9E?logo=solid&logoColor=white)](#tech-stack)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](#tech-stack)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](#deployment)
 
-- a Docker container built from the repository `Dockerfile`;
-- the NixOS module, which provides the same runtime filesystem contract.
+### [Open the live app → planpk.gami.ovh](https://planpk.gami.ovh)
 
-Running the Go binary, `go run`, or `nix run` directly on the host is not supported. The runtime serves frontend assets from its internal `static` directory, stores mutable data under `DATA_DIR` (default `/data`), and reads OAuth credentials from `DATA_DIR/credentials.json`.
+<img src="docs/planpk-preview.png" alt="PlanerPK weekly timetable preview for a student group" width="100%" />
 
-## Docker workflow
+## Overview
 
-The repository ships with a multi-stage `Dockerfile`. It builds the SolidJS frontend and compiles the Go backend. Timetables are downloaded directly as `.xlsx` files.
+PlanerPK is a full-stack service that keeps a student's Google Calendar in sync
+with the official timetable published by Politechnika Krakowska (CUT). It parses
+the university's Excel workbook and scheduling JSON, resolves every class to
+dated meetings, and continuously reconciles a dedicated Google Calendar — so the
+schedule stays current without manual copying.
 
-The container has two filesystem areas:
+PlanerPK currently supports the **Informatyka** programme. Students sign in with
+Google, choose their year, semester, and group, and get a live timetable preview
+they can customize: hide classes, shift start times, make events transparent, or
+add a class from another group. Everything else — recurring series, A/B weeks,
+semester halves, room changes, and last-minute updates — is handled
+automatically.
 
-- `static` contains the internal compiled frontend assets.
-- `/data` contains all mutable runtime data and should be mounted as one persistent volume.
+## Highlights
 
-The runtime does not use the XDG directory hierarchy. All mutable paths are derived from `DATA_DIR`, while the static directory remains internal to the deployment.
+- **Two-source timetable importer** — merges Excel (group membership and class
+  details) with the publisher's JSON snapshot (dated schedules), so weekly
+  series and concrete-date classes are modeled correctly instead of guessed.
+- **Idempotent, diff-based calendar sync** — compares the desired event content
+  with the live calendar and only creates, patches, or deletes what changed.
+  User-added reminders and other unrelated fields are preserved.
+- **Real recurrence semantics** — bounded `RRULE`s, A/B teaching-week parity,
+  semester halves, full-day and partial-day closures via `EXDATE`, and
+  timezone-safe `Europe/Warsaw` timestamps across DST.
+- **Change detection before API calls** — SHA-256 hashes of the workbook and the
+  publisher snapshot skip scheduled Google requests when upstream data has not
+  changed, keeping sync cheap and quiet.
+- **Per-user customization** — hide a class, shift its start time, make it
+  transparent ("ghost"), or import a class from another group, all without
+  mutating the shared cached timetable.
+- **Least-privilege OAuth** — requests only `calendar.app.created` (plus
+  `email`/`profile`), allowing the app to create and manage its own secondary
+  calendar while being unable to read any other calendar belonging to the user.
+- **Concurrency-safe cache** — atomic pointer swaps give every request a
+  consistent snapshot while refreshes happen in the background.
+- **Deployment-ready** — multi-stage Docker image and Docker Compose support with
+  a persistent data volume.
+- **Broad automated tests** — table-driven Go tests across parsing, matching,
+  scheduling, sync, and HTTP behavior, plus frontend tests for timetable
+  positioning and selection logic.
 
-The data directory has this layout:
+## Known limitation
 
-```text
-/data/
-├── credentials.json
-├── state/
-│   ├── database.db
-│   └── current_timetable_stats.json
-├── logs/
-├── current_timetable/
-└── downloads/
+Google Maps links are currently unavailable. The university's updated Excel
+format removed the classroom legend that powered classroom-to-building matching,
+so the Google Places integration is dormant and events keep only the original
+room/location text. Timetable sync is unaffected.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    XLSX[PK timetable .xlsx] --> IMP[Go importer]
+    JSON[PK scheduling JSON] --> IMP
+    IMP --> CACHE[(Atomic in-memory cache)]
+    CACHE --> RPC[Connect RPC / Protobuf API]
+    RPC --> SPA[SolidJS SPA]
+    CACHE --> SYNC[Calendar diff engine]
+    SYNC --> DB[(SQLite)]
+    SYNC --> GCAL[Google Calendar API]
 ```
 
-The OAuth `credentials.json` file should be mounted read-only. It is never included in the image. In Google Cloud, the OAuth consent screen requests `calendar.app.created`, `userinfo.email`, and `userinfo.profile`, and its privacy policy URL points at the public `/privacy-policy` route (for example `https://planpk.gami.ovh/privacy-policy`).
+The importer builds one consistent timetable before publishing it, so reads
+never observe a partially rebuilt cache. Calendar synchronization runs per user,
+reloads that user's settings and overrides, and writes only the necessary changes
+to their dedicated PlanerPK calendar.
 
-### Timetable calendar behavior
+## Tech stack
 
-Excel provides class details and group membership; the university JSON snapshot
-provides dated schedules. Events sync to a dedicated **PlanerPK** calendar whose
-ID is saved per user, not to the primary calendar. Weekly classes use recurring
-series; concrete-date classes remain single events. Existing hide, time-shift,
-and transparent ghost overrides are preserved.
+| Layer | Technology |
+| --- | --- |
+| Backend | Go 1.26, Connect RPC, Protobuf, `log/slog` |
+| Frontend | SolidJS, TypeScript, StyleX, Vite |
+| Data | SQLite (`modernc.org/sqlite`, WAL), `excelize` for XLSX parsing |
+| Integrations | Google Calendar API, OAuth 2.0 |
+| Infrastructure | Multi-stage Docker, Docker Compose |
+| Tooling | Buf, sqlc, pnpm, gofumpt, ESLint, Prettier |
 
-Startup needs usable upstream Excel and JSON inputs. There is no offline JSON
-fallback. Failed syncs are not marked successful; changes to series with manual
-recurring exceptions stop for review rather than silently discarding exceptions.
+## Project layout
 
-When upgrading from a schema without `users.calendar_id`, provision a fresh
-database explicitly. No migration or automatic reset is included; keep OAuth
-credentials and other deployment files intact. Normal logins preserve users and
-their saved calendar IDs. No existing calendars are deleted as upgrade cleanup.
+| Path | Purpose |
+| --- | --- |
+| `backend/` | Go service: importer, matching, cache, calendar sync, RPC handlers |
+| `frontend/` | SolidJS single-page app and design system |
+| `proto/` | Protobuf service and message definitions |
+| `static/` | Built frontend assets served by the backend |
+| `Dockerfile` | Reproducible multi-stage build for the full application |
 
-See [Importer behavior and deferred features](docs/snapshot-timetable-migration.md)
-and [diagnostic commands](backend/cmd/README.md), including the offline diff preview.
+## Deployment
 
-### Building-place cache upgrade
+PlanerPK is meant to be deployed via Docker using the repository `Dockerfile`.
+The multi-stage image builds the SolidJS frontend and compiles the Go backend.
+The container serves compiled assets from its internal `static` directory and
+keeps all mutable runtime data under `DATA_DIR` (default `/data`), which should
+be mounted as one persistent volume. The data directory stores the SQLite
+database, logs, cached state, and downloaded timetables.
 
-Building-place resolution is controlled by `BUILDING_LOCATIONS_ENABLED` and is
-disabled by default. When enabled, the resolver rebuilds classroom mappings
-from the current timetable legend and only adds Google Maps links after
-confirming a Google Places result. Unresolved classroom matches and rejected
-place candidates are logged while imports continue without unsafe map links.
-When disabled, raw classroom/location text is still included in calendar events,
-but building mappings, place-cache updates, Google Places lookups, and map links
-are skipped. See [Building place resolution](docs/building-place-resolution.md)
-for matching, cache, and diagnostic behavior.
-
-When upgrading from the legacy seeded building/classroom schema, remove
-`/data/state/database.db` once before starting this version; the cache is
-recreated from the imported legend.
+The OAuth `credentials.json` file should be mounted read-only and is never
+included in the image. It requests only the calendar and profile scopes needed
+to create and manage PlanerPK's own calendar.
 
 ### Build the image
 
 ```sh
-docker build -t google-calendar-timetable .
+docker build -t planer-pk .
 ```
 
 ### Run with Docker Compose
@@ -87,8 +131,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/gami13/google-calendar-timetable:latest
-    container_name: google-calendar-timetable
+    image: planer-pk:latest
+    container_name: planer-pk
     ports:
       - "8080:8080"
     environment:
@@ -96,7 +140,6 @@ services:
       LOG_LEVEL: "INFO"
       MINUTES_BETWEEN: "5"
       TZ: "Europe/Warsaw"
-      GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY}"
     volumes:
       - ./data:/data
       - ./credentials.json:/data/credentials.json:ro
@@ -109,23 +152,35 @@ Start the application with:
 docker compose up --build
 ```
 
-The backend uses `DATA_DIR=/data` by default. Every mutable runtime path is derived from it; `static` remains internal to the deployment.
+The container listens on port `8080`. `API_BASE_URL` is substituted into the
+built frontend at startup and should point at the deployment, for example
+`https://planpk.gami.ovh/api`.
 
 ### Runtime settings
 
-The backend supports these environment variables:
-
 - `DATA_DIR` — mutable data root; defaults to `/data`.
 - `LOG_LEVEL` — `DEBUG`, `INFO`, `WARN`, or `ERROR`.
-- `MINUTES_BETWEEN` — combined timetable refresh interval. Unchanged cache contents skip scheduled Google sync; group/override changes sync directly.
-- `TZ` — container process timezone; use `Europe/Warsaw` for local class dates and DST.
+- `MINUTES_BETWEEN` — timetable refresh interval; unchanged data skips scheduled calendar sync.
+- `TZ` — process timezone; use `Europe/Warsaw` for class dates and DST.
 - `TIMETABLE_URL` — direct timetable download URL.
-- `GOOGLE_PLACES_API_KEY` — Google Places API key used to enrich building details.
-- `BUILDING_LOCATIONS_ENABLED` — feature flag for classroom-to-building matching, place-cache updates, Google Places lookups, and map links; defaults to `false`.
-- `DISCORD_WEBHOOK_URL` — optional Discord webhook used for error notifications.
+- `DISCORD_WEBHOOK_URL` — optional Discord webhook for error notifications.
 
-The active worksheet is selected automatically using the `YYYY_YYYY` academic-year naming convention, with the academic-year transition on September 15. On each import, the timetable hour column, slot duration, and day boundaries are inferred from consistent time sequences in the worksheet; they are no longer configured through environment variables.
+## Development
 
-The container listens on port `8080`. Change the host-facing port through the Compose mapping, for example `9000:8080`; the backend does not need a port environment variable. The frontend-only `API_BASE_URL` setting is substituted into the built frontend by the Docker entrypoint. It should be supplied by the deployment, for example `https://planpk.gami.ovh/api`.
+Backend checks:
 
-Protobuf generation is run from the repository root with `buf generate --template buf.gen.yaml` and writes to `backend/gen` and `frontend/src/gen`.
+```sh
+cd backend
+go test ./...
+```
+
+Protobuf generation is run from the repository root with
+`buf generate --template buf.gen.yaml` and writes to `backend/gen` and
+`frontend/src/gen`.
+
+## Privacy
+
+PlanerPK requests the minimum Google Calendar permission needed to create and
+maintain its own dedicated calendar. It does not read the user's other
+calendars. The public privacy policy is available at
+[planpk.gami.ovh/privacy-policy](https://planpk.gami.ovh/privacy-policy).
